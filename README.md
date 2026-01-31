@@ -113,6 +113,7 @@ EM-Connect is an event management system where:
 /ws-hub for golang websocket service  
 /frontend for basic web frontend  
 /infra for docker and deployment configs  
+
 ---
 
 ## running locally
