@@ -1,15 +1,16 @@
 # em-connect
 
-em-connect is backend-first event management system im building to learn real-world system design using spring boot and golang together. It focuses on core event management features like event creation, user registrations with capacity handling, ticket generation, and notifications, all implemented in an event-driven architecture.
+em-connect is a backend-first event management system i am building to learn real-world system design using spring boot and golang together. it focuses on core event management features like event creation, user registrations with capacity handling, ticket generation, and notifications, all implemented using an event-driven architecture, with a basic yet usable frontend on top.
 
 ---
 
 ## what this project is
 
-em-connect is an event management backend where:
+em-connect is an event management system where:
 
 - spring boot handles core business logic and rest apis
 - golang services handle background work, notifications, and real-time updates
+- a lightweight frontend consumes the apis and websocket streams
 - services communicate using events instead of tight coupling
 
 ---
@@ -21,38 +22,45 @@ em-connect is an event management backend where:
 - jwt-based authentication
 - role-based access control
 - roles include user, organizer, and admin
+- frontend handles auth state and token storage
 
 ### event management
 - create, update, and publish events
 - define event capacity, time, and venue
 - only organizers or admins can manage events
 - users can view only published events
+- frontend provides event listing and event detail pages
 
 ### registrations
 - users can register for events
 - capacity is enforced atomically
 - no overbooking under concurrent requests
 - users can view their own registrations
+- frontend shows registration status clearly
 
 ### ticketing
 - each confirmed registration generates a ticket
 - tickets have unique codes and qr support
 - ticket generation happens asynchronously
+- tickets can be viewed and downloaded from the frontend
 - tickets can be validated at entry
 
 ### notifications
 - email notifications for registrations and updates
 - notifications are processed asynchronously
 - retries are supported for failed deliveries
+- frontend shows basic in-app notification status
 
 ### real-time updates
 - live participant count via websocket
 - real-time announcements for events
+- frontend updates counts and messages without refresh
 
 ### admin and reporting
 - event-level registration stats
 - capacity usage metrics
 - basic system health endpoints
+- simple admin views in the frontend for organizers
 
 ---
 
@@ -67,6 +75,11 @@ em-connect is an event management backend where:
   - notification worker for email and messages
   - ticket worker for ticket and qr generation
   - websocket hub for real-time updates
+
+- frontend application
+  - consumes rest apis
+  - connects to websocket hub
+  - provides usable ui for users and organizers
 
 - postgres
   - primary data store
@@ -87,17 +100,19 @@ em-connect is an event management backend where:
 - rabbitmq or redis streams
 - redis
 - docker and docker compose
+- frontend using react or a simple js framework
 
 ---
 
 ## repository structure
 
-/em-connect
+/em-connect  
 /api-service        spring boot application  
 /notifications      golang notification worker  
 /ticket-worker      golang ticket generator  
 /ws-hub             golang websocket service  
-/infra               docker and deployment configs  
+/frontend           basic web frontend  
+/infra              docker and deployment configs  
 
 ---
 
@@ -106,21 +121,18 @@ em-connect is an event management backend where:
 1. install docker and docker compose
 2. clone the repository
 3. run docker compose up
-4. access the spring boot api on localhost
-5. rabbitmq and postgres start automatically
+4. access the frontend in the browser
+5. spring boot api, rabbitmq, and postgres start automatically
 
 ---
 
 ## mvp scope
 
 the minimum viable product includes:
-- authentication
+- authentication with frontend integration
 - event creation and listing
 - user registration with capacity handling
 - async ticket generation
 - email notification on registration
+- basic frontend for users and organizers
 - dockerized local setup
-
-
-
-
