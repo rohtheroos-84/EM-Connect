@@ -1,12 +1,12 @@
-# em-connect
+# EM-Connect
 
-em-connect is a backend-first event management system i am building to learn real-world system design using spring boot and golang together. it focuses on core event management features like event creation, user registrations with capacity handling, ticket generation, and notifications, all implemented using an event-driven architecture, with a basic yet usable frontend on top.
+EM-Connect is a backend-first event management system I am building to learn real-world system design using Spring Boot and Golang together. It focuses on core event management features like event creation, user registrations with capacity handling, ticket generation, and notifications, all implemented using an event-driven architecture, with a basic yet usable frontend on top.
 
 ---
 
 ## what this project is
 
-em-connect is an event management system where:
+EM-Connect is an event management system where:
 
 - spring boot handles core business logic and rest apis
 - golang services handle background work, notifications, and real-time updates
@@ -107,13 +107,12 @@ em-connect is an event management system where:
 ## repository structure
 
 /em-connect  
-/api-service        spring boot application  
-/notifications      golang notification worker  
-/ticket-worker      golang ticket generator  
-/ws-hub             golang websocket service  
-/frontend           basic web frontend  
-/infra              docker and deployment configs  
-
+/api-service    ->    spring boot application  
+/notifications    ->    golang notification worker  
+/ticket-worker      ->    golang ticket generator  
+/ws-hub             ->    golang websocket service  
+/frontend           ->    basic web frontend  
+/infra              ->    docker and deployment configs  
 ---
 
 ## running locally
