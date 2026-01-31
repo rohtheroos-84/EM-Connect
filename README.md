@@ -107,12 +107,12 @@ EM-Connect is an event management system where:
 ## repository structure
 
 /em-connect  
-/api-service    -    spring boot application  
-/notifications    -    golang notification worker  
-/ticket-worker      -    golang ticket generator  
-/ws-hub             -    golang websocket service  
-/frontend           -    basic web frontend  
-/infra              -    docker and deployment configs  
+/api-service for spring boot application  
+/notifications for golang notification worker  
+/ticket-worker for golang ticket generator  
+/ws-hub for golang websocket service  
+/frontend for basic web frontend  
+/infra for docker and deployment configs  
 ---
 
 ## running locally
