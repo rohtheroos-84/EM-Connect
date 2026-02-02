@@ -26,6 +26,20 @@ docker-compose down = "Close the kitchen"
 
 - Spring Boot gives you pre-configured, ready-to-use building blocks for web applications.
 - JPA (Java Persistence API) is a standard for mapping Java objects to database tables as Database speaks SQL and Java speaks Objects, JPA is the translator.
+- Flyway manages database schema changes over time, ensuring all environments are in sync.
+
+- Created a basic Spring Boot application using Spring Initializr with dependencies for web, JPA, and PostgreSQL.
+- And added folder structure for future modules:
+
+controller - HTTP request handlers (REST endpoints)
+service - Business logic
+repository - Database access
+entity - Database table mappings
+dto - Data Transfer Objects (request/response shapes)
+config - Configuration classes
+db/migration - Flyway SQL scripts
+
+- And replaced application.properties with application.yml for better structure and readability.
 
 
 ## Phase 2 Notes
