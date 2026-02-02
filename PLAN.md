@@ -437,6 +437,19 @@ Section to document insights, challenges, and solutions as things progress:
 - Completed Step 1.1 on 2nd Feb '26
 - Docker version: 28.3.2
 - PostgreSQL running on port 5432
+- Note: 
+
+docker-compose.yml = Recipe book for your entire kitchen
+
+services:
+  postgres = "I need a fridge (database storage)"
+  rabbitmq = "I need an oven (message cooking)"  
+  redis = "I need a microwave (quick reheating/caching)"
+  api = "I need a chef (business logic)"
+  workers = "I need assistants (background tasks)"
+
+docker-compose up = "Start cooking!"
+docker-compose down = "Close the kitchen"
 
 ### Phase 2 Notes
 
