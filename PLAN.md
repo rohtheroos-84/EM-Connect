@@ -14,8 +14,8 @@
 
 **Tasks:**
 - [x] Create the folder structure manually
-- [ ] Write a basic `docker-compose.yml` with just PostgreSQL
-- [ ] Verify you can connect to Postgres locally
+- [x] Write a basic `docker-compose.yml` with just PostgreSQL
+- [x] Verify you can connect to Postgres locally
 
 ---
  
