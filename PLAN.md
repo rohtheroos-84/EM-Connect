@@ -13,12 +13,12 @@
 - Git workflow for monorepos vs polyrepos
 
 **Tasks:**
-- [ ] Create the folder structure manually
+- [x] Create the folder structure manually
 - [ ] Write a basic `docker-compose.yml` with just PostgreSQL
 - [ ] Verify you can connect to Postgres locally
 
 ---
-
+ 
 ### Step 1.2: Spring Boot API Skeleton
 **Goal:** Get a running Spring Boot application with database connectivity.
 
@@ -416,7 +416,7 @@
 
 | Phase | Description | Status |
 |-------|-------------|--------|
-| 1 | Foundation & Core Setup | ⬜ Not Started |
+| 1 | Foundation & Core Setup | 🟡 In Progress |
 | 2 | Authentication System | ⬜ Not Started |
 | 3 | Event Management | ⬜ Not Started |
 | 4 | Registration System | ⬜ Not Started |
@@ -434,7 +434,9 @@
 Section to document insights, challenges, and solutions as things progress:
 
 ### Phase 1 Notes
-
+- Completed Step 1.1 on 2nd Feb '26
+- Docker version: 28.3.2
+- PostgreSQL running on port 5432
 
 ### Phase 2 Notes
 
