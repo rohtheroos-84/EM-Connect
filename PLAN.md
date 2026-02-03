@@ -49,10 +49,10 @@
 - Database constraints and validation
 
 **Tasks:**
-- [ ] Design the user table schema
-- [ ] Create User entity with proper annotations
-- [ ] Implement UserRepository
-- [ ] Write integration tests for the repository
+- [x] Design the user table schema
+- [x] Create User entity with proper annotations
+- [x] Implement UserRepository
+- [x] Write integration tests for the repository
 
 ---
 
