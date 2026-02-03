@@ -66,10 +66,10 @@
 - Exception handling in Spring
 
 **Tasks:**
-- [ ] Create registration endpoint
-- [ ] Create login endpoint
-- [ ] Handle validation errors properly
-- [ ] Write controller tests
+- [x] Create registration endpoint
+- [x] Create login endpoint
+- [x] Handle validation errors properly
+- [x] Write controller tests
 
 ---
 

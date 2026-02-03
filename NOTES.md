@@ -93,7 +93,36 @@ db/migration - Flyway SQL scripts
 
 - The reason why we use DTOs instead of entities directly in controllers is to separate the internal data model from the external API contract. This provides better security, flexibility, and maintainability.
 
+- Built Registration API at POST /api/auth/register
+- Built Login API at POST /api/auth/login
+- Built Health Check API at GET /api/health
 
+- Can be checked using Postman or Invoke-RestMethod commands:
+1. Registration
+Invoke-RestMethod -Uri "http://localhost:8080/api/auth/register" `
+  -Method POST `
+  -ContentType "application/json" `
+  -Body '{"email":"john@example.com","password":"password123","name":"John Doe"}'
+
+2. Login
+Invoke-RestMethod -Uri "http://localhost:8080/api/auth/login" `
+  -Method POST `
+  -ContentType "application/json" `
+  -Body '{"email":"john@example.com","password":"password123"}'
+
+3. Health Check
+Invoke-RestMethod -Uri "http://localhost:8080/api/health"
+
+- Also you have to do all these after starting up the Docker containers and spinning up springboot using:
+"docker-compose up"
+        &
+".\mvnw.cmd spring-boot:run"
+
+- Also created validation and exception handling mechanisms for better error responses like:
+i. Registering with a duplicate email
+ii. Resgistering with invalid email format
+iii. Logging in with incorrect password 
+iv. Logging in with non-existent email
 
 
 ## Phase 3 Notes
