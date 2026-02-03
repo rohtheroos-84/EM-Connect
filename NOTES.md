@@ -66,6 +66,33 @@ db/migration - Flyway SQL scripts
   FOREIGN KEY - Ensures referential integrity between tables
   CHECK - Ensures values in a column meet a specific condition
 
+### 2.2: Registration and Login APIs
+
+- Registration API:
+  Accepts user details, hashes the password using BCrypt, and saves the user to the database. It also validates that the email is unique before saving.
+
+- Login API:
+  Accepts email and password, retrieves the user by email, and verifies the password using BCrypt's match function. If valid, it returns a success response; otherwise, it returns an error.
+
+- DTOs (Data Transfer Objects) are simple Java classes that define what data goes in and out of your API.
+
+- Bean Validation annotations are used to enforce rules on DTO fields:
+  @NotBlank - Field must not be null or empty
+  @Email - Field must be a valid email format
+  @Size - Field must meet specified length constraints
+
+- When something goes wrong in the application, like a validation error or an exception, we want to return a clear and consistent error response to the client, but we usually get ugly errors that aint understandable. So we create Custom Exception Handlers using @ControllerAdvice and @ExceptionHandler to catch specific exceptions and return structured error responses.
+
+- HTTP Status Codes:
+  200 OK - Request succeeded
+  201 Created - Resource successfully created
+  400 Bad Request - Client sent invalid data
+  401 Unauthorized - Authentication failed
+  404 Not Found - Resource not found
+  500 Internal Server Error - Server encountered an error
+
+- The reason why we use DTOs instead of entities directly in controllers is to separate the internal data model from the external API contract. This provides better security, flexibility, and maintainability.
+
 
 
 
