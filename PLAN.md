@@ -417,7 +417,7 @@
 | Phase | Description | Status |
 |-------|-------------|--------|
 | 1 | Foundation & Core Setup | ✅ Completed |
-| 2 | Authentication System | ⬜ Not Started |
+| 2 | Authentication System | In Progress |
 | 3 | Event Management | ⬜ Not Started |
 | 4 | Registration System | ⬜ Not Started |
 | 5 | Event-Driven Architecture | ⬜ Not Started |
