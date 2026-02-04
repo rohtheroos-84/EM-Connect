@@ -124,6 +124,29 @@ ii. Resgistering with invalid email format
 iii. Logging in with incorrect password 
 iv. Logging in with non-existent email
 
+### 2.3: JWT Implementation:
+
+- Traditional Web Sessions vs JWT:
+  Web Sessions store session data on the server, while JWTs are self-contained tokens that carry user info and are stored client-side.
+
+- Session Structure/Process:
+  Client logs in -> Server creates session -> Session ID stored in cookie -> Server retrieves session data on requests
+
+- JWT Structure(3 parts separated by dots):
+  Header: Metadata about the token (type, algorithm)
+  Payload: Claims (user info, expiration)
+  Signature: Verifies token integrity
+  
+- JWT Format: header.payload.signature (Base64Url encoded)
+
+- JWT Processing:
+  Client logs in(POST Request) -> Server generates JWT -> Client stores JWT (localStorage/cookie) -> Client sends JWT in Authorization header on requests(GET Request) -> Server verifies JWT signature and extracts claims and send back the requested resource.
+
+- Spring Security Filter chain is a series of filters that process incoming requests for authentication and authorization before reaching the controller.
+
+
+
+
 
 ## Phase 3 Notes
 
