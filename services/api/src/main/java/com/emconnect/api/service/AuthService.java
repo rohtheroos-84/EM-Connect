@@ -16,10 +16,14 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
 
-    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public AuthService(UserRepository userRepository, 
+                       PasswordEncoder passwordEncoder,
+                       JwtService jwtService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.jwtService = jwtService;
     }
 
     public AuthResponse register(RegisterRequest request) {
@@ -33,17 +37,25 @@ public class AuthService {
         // Create new user
         User user = new User(
             request.getEmail(),
-            passwordEncoder.encode(request.getPassword()),  // Hash password!
+            passwordEncoder.encode(request.getPassword()),
             request.getName()
         );
 
         // Save to database
         User savedUser = userRepository.save(user);
 
-        // Return response
+        // Generate JWT token
+        String token = jwtService.generateToken(
+            savedUser.getId(),
+            savedUser.getEmail(),
+            savedUser.getRole()
+        );
+
+        // Return response with token
         return new AuthResponse(
             "Registration successful",
-            new UserResponse(savedUser)
+            new UserResponse(savedUser),
+            token
         );
     }
 
@@ -59,10 +71,18 @@ public class AuthService {
             throw new InvalidCredentialsException("Invalid email or password");
         }
 
-        // Return response (token will be added in Step 2.3)
+        // Generate JWT token
+        String token = jwtService.generateToken(
+            user.getId(),
+            user.getEmail(),
+            user.getRole()
+        );
+
+        // Return response with token
         return new AuthResponse(
             "Login successful",
-            new UserResponse(user)
+            new UserResponse(user),
+            token
         );
     }
 }

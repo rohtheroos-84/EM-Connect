@@ -38,3 +38,8 @@ management:
   endpoint:
     health:
       show-details: always
+
+# JWT Configuration
+jwt:
+  secret: myVerySecureSecretKeyThatIsAtLeast256BitsLongForHS256Algorithm2024!
+  expiration: 86400000  # 24 hours in milliseconds
