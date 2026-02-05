@@ -1,3 +1,4 @@
+// filepath: c:\Users\rohit\Downloads\EM-Connect\services\api\src\main\java\com\emconnect\api\dto\UserResponse.java
 package com.emconnect.api.dto;
 
 import com.emconnect.api.entity.User;
@@ -20,7 +21,7 @@ public class UserResponse {
         this.id = user.getId();
         this.email = user.getEmail();
         this.name = user.getName();
-        this.role = user.getRole();
+        this.role = user.getRole().name();  // Convert enum to string
         this.createdAt = user.getCreatedAt();
     }
 

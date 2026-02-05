@@ -159,6 +159,41 @@ iv. Logging in with non-existent email
 
 - Role Hierarchy allows roles to inherit permissions from other roles. Ex: "ROLE_ADMIN" > "ROLE_USER" and "ROLE_USER" > "ROLE_GUEST" and super admin has all roles, etc.
 
+- Listing all users:
+docker exec -it emconnect-postgres psql -U emconnect -d emconnect -c "SELECT id, email, name, role FROM users;"
+
+- Adding an admin user:
+  i. Create a user who will become admin
+  $newAdmin = Invoke-RestMethod -Uri "http://localhost:8080/api/auth/register" `
+    -Method POST `
+    -ContentType "application/json" `
+    -Body '{"email":"testadmin@test.com","password":"admin123","name":"Test Admin No. x"}'
+
+  Write-Host "Created user with ID: $($newAdmin.user.id)"
+
+  ii. Promote to admin in database
+  docker exec -it emconnect-postgres psql -U emconnect -d emconnect -c "UPDATE users SET role = 'ADMIN' WHERE email = 'testadmin@test.com';"
+
+  iii. Login (get fresh token with ADMIN role)
+  $adminLogin = Invoke-RestMethod -Uri "http://localhost:8080/api/auth/login" `
+    -Method POST `
+    -ContentType "application/json" `
+    -Body '{"email":"testadmin@test.com","password":"admin123"}'
+
+  $adminToken = $adminLogin.token
+  Write-Host "Role: $($adminLogin.user.role)"
+  Write-Host "Token obtained: $($adminToken.Substring(0, 50))..."
+
+  iv. Test admin dashboard
+  Write-Host "`nTesting Admin Dashboard:"
+  Invoke-RestMethod -Uri "http://localhost:8080/api/admin/dashboard" `
+    -Headers @{ Authorization = "Bearer $adminToken" }
+
+  v. Test get all users
+  Write-Host "`nTesting Get All Users:"
+  Invoke-RestMethod -Uri "http://localhost:8080/api/admin/users" `
+    -Headers @{ Authorization = "Bearer $adminToken" }
+
 
 
 ## Phase 3 Notes

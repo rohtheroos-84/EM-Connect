@@ -1,5 +1,6 @@
 package com.emconnect.api.service;
 
+import com.emconnect.api.entity.Role;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
@@ -32,17 +33,17 @@ public class JwtService {
     }
 
     // Generate JWT token for a user
-    public String generateToken(Long userId, String email, String role) {
+    public String generateToken(Long userId, String email, Role role) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("email", email);
-        claims.put("role", role);
+        claims.put("role", role.name());
 
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtExpiration);
 
         return Jwts.builder()
                 .claims(claims)
-                .subject(String.valueOf(userId))  // User ID as subject
+                .subject(String.valueOf(userId))
                 .issuedAt(now)
                 .expiration(expiryDate)
                 .signWith(getSigningKey())

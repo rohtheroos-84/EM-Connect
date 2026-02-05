@@ -20,8 +20,9 @@ public class User {
     @Column(nullable = false, length = 100)
     private String name;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private String role = "USER";
+    private Role role = Role.USER;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -38,7 +39,7 @@ public class User {
         this.email = email;
         this.password = password;
         this.name = name;
-        this.role = "USER";
+        this.role = Role.USER;
     }
 
     // Automatically set timestamps before saving
@@ -86,11 +87,11 @@ public class User {
         this.name = name;
     }
 
-    public String getRole() {
+    public Role getRole() {
         return role;
     }
 
-    public void setRole(String role) {
+    public void setRole(Role role) {
         this.role = role;
     }
 
