@@ -195,7 +195,6 @@ docker exec -it emconnect-postgres psql -U emconnect -d emconnect -c "SELECT id,
     -Headers @{ Authorization = "Bearer $adminToken" }
 
 
-
 ## Phase 3 Notes
 
 

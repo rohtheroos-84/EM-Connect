@@ -99,9 +99,9 @@
 - Role hierarchies
 
 **Tasks:**
-- [ ] Add roles to user entity
-- [ ] Implement role-based endpoint restrictions
-- [ ] Test different role scenarios
+- [x] Add roles to user entity
+- [x] Implement role-based endpoint restrictions
+- [x] Test different role scenarios
 
 ---
 
@@ -417,7 +417,7 @@
 | Phase | Description | Status |
 |-------|-------------|--------|
 | 1 | Foundation & Core Setup | ✅ Completed |
-| 2 | Authentication System | In Progress |
+| 2 | Authentication System | ✅ Completed |
 | 3 | Event Management | ⬜ Not Started |
 | 4 | Registration System | ⬜ Not Started |
 | 5 | Event-Driven Architecture | ⬜ Not Started |
