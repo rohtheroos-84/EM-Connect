@@ -83,10 +83,10 @@
 - Token refresh strategies
 
 **Tasks:**
-- [ ] Implement JWT generation and validation
-- [ ] Create authentication filter
-- [ ] Configure Spring Security
-- [ ] Protect endpoints based on authentication
+- [x] Implement JWT generation and validation
+- [x] Create authentication filter
+- [x] Configure Spring Security
+- [x] Protect endpoints based on authentication
 
 ---
 

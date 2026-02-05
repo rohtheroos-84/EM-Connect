@@ -144,6 +144,8 @@ iv. Logging in with non-existent email
 
 - Spring Security Filter chain is a series of filters that process incoming requests for authentication and authorization before reaching the controller.
 
+### 2.4: 
+
 
 
 
