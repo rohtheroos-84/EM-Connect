@@ -144,9 +144,20 @@ iv. Logging in with non-existent email
 
 - Spring Security Filter chain is a series of filters that process incoming requests for authentication and authorization before reaching the controller.
 
-### 2.4: 
+### 2.4: Role-based Access Control (RBAC)
 
+- RBAC is a method of restricting access to resources based on user roles. Each role has specific permissions that determine what actions a user can perform. Ex: Admin can manage users, User can view content.
 
+- Spring Security has Authoritys and Roles:
+  Authority: A granular permission (e.g., "READ_PRIVILEGES")
+  Role: A collection of authorities (e.g., "ROLE_ADMIN" includes "READ_PRIVILEGES", "WRITE_PRIVILEGES")
+
+- There are 3 ways to implement RBAC in Spring Security:
+  1. Method-level security using @PreAuthorize and @Secured annotations
+  2. URL-based security using HttpSecurity configuration
+  3. Custom access decision voters for complex logic
+
+- Role Hierarchy allows roles to inherit permissions from other roles. Ex: "ROLE_ADMIN" > "ROLE_USER" and "ROLE_USER" > "ROLE_GUEST" and super admin has all roles, etc.
 
 
 
