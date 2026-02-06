@@ -57,6 +57,11 @@ public class SecurityConfig {
                     "/api/test/**"       // Test endpoints (remove in production!)
                 ).permitAll()
                 
+                // Public event endpoints (GET only)
+                .requestMatchers("GET", "/api/events").permitAll()
+                .requestMatchers("GET", "/api/events/search").permitAll()
+                .requestMatchers("GET", "/api/events/{id}").permitAll()
+                
                 // Admin-only endpoints
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 
