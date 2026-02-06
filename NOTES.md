@@ -211,6 +211,68 @@ Page<Event> eventsPage = eventRepository.findAll(pageable);
 
 and a page object will be returned with the requested page of events, total pages, total elements, etc.
 
+To test crud ops, follow below steps:
+
+Step 1: Restart Application:
+cd c:\Users\rohit\Downloads\EM-Connect\services\api
+.\mvnw.cmd spring-boot:run
+
+Step 2: Login to Get Token:
+$login = Invoke-RestMethod -Uri "http://localhost:8080/api/auth/login" `
+  -Method POST `
+  -ContentType "application/json" `
+  -Body '{"email":"regularuser@example.com","password":"password123"}'
+
+$token = $login.token
+Write-Host "Token: $token"
+
+Step 3: Create an Event:
+$event = Invoke-RestMethod -Uri "http://localhost:8080/api/events" `
+  -Method POST `
+  -ContentType "application/json" `
+  -Headers @{ Authorization = "Bearer $token" } `
+  -Body '{
+    "title": "Spring Boot Workshop",
+    "description": "Learn Spring Boot from scratch",
+    "location": "Online - Zoom",
+    "startDate": "2026-03-15T10:00:00",
+    "endDate": "2026-03-15T16:00:00",
+    "capacity": 50
+  }'
+
+$event
+
+Step 4: Publish the event:
+$eventId = $event.id
+Invoke-RestMethod -Uri "http://localhost:8080/api/events/$eventId/publish" `
+  -Method POST `
+  -Headers @{ Authorization = "Bearer $token" }
+
+Step 5: Get all published events(NO AUTH REQUIRED!!!):
+Invoke-RestMethod -Uri "http://localhost:8080/api/events"
+
+Step 6: Get MY Events:
+Invoke-RestMethod -Uri "http://localhost:8080/api/events/my-events" `
+  -Headers @{ Authorization = "Bearer $token" }
+
+Step 7: Update Events:
+Invoke-RestMethod -Uri "http://localhost:8080/api/events/$eventId" `
+  -Method PUT `
+  -ContentType "application/json" `
+  -Headers @{ Authorization = "Bearer $token" } `
+  -Body '{"title": "Advanced Spring Boot Workshop", "capacity": 100}'
+
+Step 8: Search Events:
+Invoke-RestMethod -Uri "http://localhost:8080/api/events/search?keyword=spring"
+
+p.s. THIS IS SO EFFING COOOOOOL
+
+### 3.2: Event State Management:
+
+
+
+
+
 ## Phase 4 Notes
 
 

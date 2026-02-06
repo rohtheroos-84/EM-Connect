@@ -117,10 +117,10 @@
 - [x] Pagination in Spring Data
 
 **Tasks:**
-- [ ] Design event table schema
-- [ ] Create Event entity with relationships
-- [ ] Implement CRUD operations
-- [ ] Add event listing with filters and pagination
+- [x] Design event table schema
+- [x] Create Event entity with relationships
+- [x] Implement CRUD operations
+- [x] Add event listing with filters and pagination
 
 ---
 
