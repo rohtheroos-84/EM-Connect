@@ -8,9 +8,9 @@
 **Goal:** Set up the development environment and understand the project layout.
 
 **Learn:**
-- Docker basics and docker-compose
-- Project organization for multi-service architectures
-- Git workflow for monorepos vs polyrepos
+- [x] Docker basics and docker-compose
+- [x] Project organization for multi-service architectures
+- [x] Git workflow for monorepos vs polyrepos
 
 **Tasks:**
 - [x] Create the folder structure manually
@@ -23,10 +23,10 @@
 **Goal:** Get a running Spring Boot application with database connectivity.
 
 **Learn:**
-- Spring Boot project initialization
-- Spring Data JPA basics
-- Database migrations (Flyway or Liquibase)
-- Application configuration and profiles
+- [x] Spring Boot project initialization
+- [x] Spring Data JPA basics
+- [x] Database migrations (Flyway or Liquibase)
+- [x] Application configuration and profiles
 
 **Tasks:**
 - [x] Initialize Spring Boot project with required dependencies
@@ -43,10 +43,10 @@
 **Goal:** Implement the user data layer.
 
 **Learn:**
-- JPA entity mapping
-- Repository pattern in Spring Data
-- Password hashing (BCrypt)
-- Database constraints and validation
+- [x] JPA entity mapping
+- [x] Repository pattern in Spring Data
+- [x] Password hashing (BCrypt)
+- [x] Database constraints and validation
 
 **Tasks:**
 - [x] Design the user table schema
@@ -60,10 +60,10 @@
 **Goal:** Build authentication endpoints.
 
 **Learn:**
-- REST controller design
-- Request/Response DTOs
-- Input validation with Bean Validation
-- Exception handling in Spring
+- [x] REST controller design
+- [x] Request/Response DTOs
+- [x] Input validation with Bean Validation
+- [x] Exception handling in Spring
 
 **Tasks:**
 - [x] Create registration endpoint
@@ -77,10 +77,10 @@
 **Goal:** Secure your APIs with JWT tokens.
 
 **Learn:**
-- How JWT works (header, payload, signature)
-- Spring Security filter chain
-- Stateless authentication
-- Token refresh strategies
+- [x] How JWT works (header, payload, signature)
+- [x] Spring Security filter chain
+- [x] Stateless authentication
+- [x] Token refresh strategies
 
 **Tasks:**
 - [x] Implement JWT generation and validation
@@ -94,9 +94,9 @@
 **Goal:** Implement authorization.
 
 **Learn:**
-- RBAC concepts
-- Spring Security method-level security
-- Role hierarchies
+- [x] RBAC concepts
+- [x] Spring Security method-level security
+- [x] Role hierarchies
 
 **Tasks:**
 - [x] Add roles to user entity
@@ -111,10 +111,10 @@
 **Goal:** Implement core event management.
 
 **Learn:**
-- Entity relationships (User → Event)
-- Service layer patterns
-- Business logic separation
-- Pagination in Spring Data
+- [ ] Entity relationships (User → Event)
+- [ ] Service layer patterns
+- [ ] Business logic separation
+- [ ] Pagination in Spring Data
 
 **Tasks:**
 - [ ] Design event table schema
@@ -128,9 +128,9 @@
 **Goal:** Handle event lifecycle (draft → published → cancelled).
 
 **Learn:**
-- State machine patterns
-- Business rule enforcement
-- Audit fields (createdAt, updatedAt)
+- [ ] State machine patterns
+- [ ] Business rule enforcement
+- [ ] Audit fields (createdAt, updatedAt)
 
 **Tasks:**
 - [ ] Implement event states
@@ -145,9 +145,9 @@
 **Goal:** Allow users to register for events.
 
 **Learn:**
-- Many-to-many relationships
-- Unique constraints
-- Business validation
+- [ ] Many-to-many relationships
+- [ ] Unique constraints
+- [ ] Business validation
 
 **Tasks:**
 - [ ] Design registration table
@@ -161,10 +161,10 @@
 **Goal:** Enforce capacity limits under concurrent load.
 
 **Learn:**
-- Race conditions and why they matter
-- Pessimistic vs optimistic locking
-- Database-level atomicity
-- Transaction isolation levels
+- [ ] Race conditions and why they matter
+- [ ] Pessimistic vs optimistic locking
+- [ ] Database-level atomicity
+- [ ] Transaction isolation levels
 
 **Tasks:**
 - [ ] Implement capacity check in registration
@@ -180,9 +180,9 @@
 **Goal:** Add RabbitMQ and understand messaging.
 
 **Learn:**
-- Message broker concepts (queues, exchanges, bindings)
-- Pub/sub vs point-to-point
-- Message durability and acknowledgments
+- [ ] Message broker concepts (queues, exchanges, bindings)
+- [ ] Pub/sub vs point-to-point
+- [ ] Message durability and acknowledgments
 
 **Tasks:**
 - [ ] Add RabbitMQ to docker-compose
@@ -195,10 +195,10 @@
 **Goal:** Emit domain events when things happen.
 
 **Learn:**
-- Domain events pattern
-- Spring AMQP
-- Event payload design
-- Transactional outbox pattern (conceptually)
+- [ ] Domain events pattern
+- [ ] Spring AMQP
+- [ ] Event payload design
+- [ ] Transactional outbox pattern (conceptually)
 
 **Tasks:**
 - [ ] Configure RabbitMQ in Spring Boot
@@ -211,10 +211,10 @@
 **Goal:** Build your first Go service that consumes messages.
 
 **Learn:**
-- Go project structure
-- Go modules and dependencies
-- Connecting to RabbitMQ from Go
-- Goroutines and channels basics
+- [ ] Go project structure
+- [ ] Go modules and dependencies
+- [ ] Connecting to RabbitMQ from Go
+- [ ] Goroutines and channels basics
 
 **Tasks:**
 - [ ] Set up Go project
@@ -228,10 +228,10 @@
 **Goal:** Actually send emails.
 
 **Learn:**
-- SMTP basics
-- Email templating
-- Retry mechanisms
-- Dead letter queues
+- [ ] SMTP basics
+- [ ] Email templating
+- [ ] Retry mechanisms
+- [ ] Dead letter queues
 
 **Tasks:**
 - [ ] Integrate with an email service (Mailgun, SendGrid, or local SMTP)
@@ -247,9 +247,9 @@
 **Goal:** Generate tickets asynchronously.
 
 **Learn:**
-- QR code generation
-- File/image generation in Go
-- Storing generated assets
+- [ ] QR code generation
+- [ ] File/image generation in Go
+- [ ] Storing generated assets
 
 **Tasks:**
 - [ ] Create ticket worker Go service
@@ -263,9 +263,9 @@
 **Goal:** Complete the ticket flow.
 
 **Learn:**
-- File serving from Spring Boot
-- Ticket validation logic
-- Idempotency in async systems
+- [ ] File serving from Spring Boot
+- [ ] Ticket validation logic
+- [ ] Idempotency in async systems
 
 **Tasks:**
 - [ ] Endpoint to retrieve user's tickets
@@ -280,10 +280,10 @@
 **Goal:** Build real-time communication.
 
 **Learn:**
-- WebSocket protocol basics
-- Connection management
-- Broadcasting patterns
-- Go concurrency for connection handling
+- [ ] WebSocket protocol basics
+- [ ] Connection management
+- [ ] Broadcasting patterns
+- [ ] Go concurrency for connection handling
 
 **Tasks:**
 - [ ] Create WebSocket hub in Go
@@ -296,9 +296,9 @@
 **Goal:** Push real-time updates to clients.
 
 **Learn:**
-- Connecting services via message broker
-- Fan-out patterns
-- Client reconnection handling
+- [ ] Connecting services via message broker
+- [ ] Fan-out patterns
+- [ ] Client reconnection handling
 
 **Tasks:**
 - [ ] Push participant count updates
@@ -313,10 +313,10 @@
 **Goal:** Create a functional frontend.
 
 **Learn:**
-- React project setup
-- API integration patterns
-- Authentication state management
-- Protected routes
+- [ ] React project setup
+- [ ] API integration patterns
+- [ ] Authentication state management
+- [ ] Protected routes
 
 **Tasks:**
 - [ ] Set up React project
@@ -330,9 +330,9 @@
 **Goal:** Build core user flows.
 
 **Learn:**
-- REST API consumption
-- Loading and error states
-- Optimistic UI updates
+- [ ] REST API consumption
+- [ ] Loading and error states
+- [ ] Optimistic UI updates
 
 **Tasks:**
 - [ ] Event listing page
@@ -346,9 +346,9 @@
 **Goal:** Integrate WebSocket.
 
 **Learn:**
-- WebSocket client in browser
-- React state updates from WebSocket
-- Reconnection strategies
+- [ ] WebSocket client in browser
+- [ ] React state updates from WebSocket
+- [ ] Reconnection strategies
 
 **Tasks:**
 - [ ] Connect to WebSocket hub
@@ -363,10 +363,10 @@
 **Goal:** Add caching layer.
 
 **Learn:**
-- Redis data structures
-- Cache-aside pattern
-- Cache invalidation strategies
-- TTL and eviction
+- [ ] Redis data structures
+- [ ] Cache-aside pattern
+- [ ] Cache invalidation strategies
+- [ ] TTL and eviction
 
 **Tasks:**
 - [ ] Add Redis to docker-compose
@@ -382,10 +382,10 @@
 **Goal:** Make the system observable.
 
 **Learn:**
-- Structured logging
-- Correlation IDs across services
-- Health checks and readiness probes
-- Basic metrics
+- [ ] Structured logging
+- [ ] Correlation IDs across services
+- [ ] Health checks and readiness probes
+- [ ] Basic metrics
 
 **Tasks:**
 - [ ] Implement structured logging in all services
@@ -399,10 +399,10 @@
 **Goal:** Handle failures gracefully.
 
 **Learn:**
-- Circuit breaker pattern
-- Retry with backoff
-- Graceful degradation
-- Timeout handling
+- [ ] Circuit breaker pattern
+- [ ] Retry with backoff
+- [ ] Graceful degradation
+- [ ] Timeout handling
 
 **Tasks:**
 - [ ] Add timeouts to external calls
