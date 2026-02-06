@@ -111,10 +111,10 @@
 **Goal:** Implement core event management.
 
 **Learn:**
-- [ ] Entity relationships (User → Event)
-- [ ] Service layer patterns
-- [ ] Business logic separation
-- [ ] Pagination in Spring Data
+- [x] Entity relationships (User → Event)
+- [x] Service layer patterns
+- [x] Business logic separation
+- [x] Pagination in Spring Data
 
 **Tasks:**
 - [ ] Design event table schema

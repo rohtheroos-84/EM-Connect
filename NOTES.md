@@ -197,6 +197,19 @@ docker exec -it emconnect-postgres psql -U emconnect -d emconnect -c "SELECT id,
 
 ## Phase 3 Notes
 
+### 3.1: Event Entity & CRUD:
+
+- in sql, we use foreign keys to link tables together, in JPA we use @ManyToOne and @OneToMany annotations to create relationships between entities. For example, an Event can have many Attendees, so we would have a @OneToMany relationship from Event to Attendee and a @ManyToOne relationship from Attendee to Event.
+
+- without a service layer, all the business logic would be in the controller, which can lead to messy and hard-to-maintain code. The service layer allows us to separate concerns, making our code cleaner and more modular.
+
+- pagination is a technique to split large datasets into smaller chunks (pages) to improve performance and user experience. In Spring Data JPA, we can use the Pageable interface to request specific pages of data from the repository.
+
+Example:
+Pageable pageable = PageRequest.of(page, size, Sort.by("date").descending());
+Page<Event> eventsPage = eventRepository.findAll(pageable);
+
+and a page object will be returned with the requested page of events, total pages, total elements, etc.
 
 ## Phase 4 Notes
 
