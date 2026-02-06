@@ -418,7 +418,7 @@
 |-------|-------------|--------|
 | 1 | Foundation & Core Setup | ✅ Completed |
 | 2 | Authentication System | ✅ Completed |
-| 3 | Event Management | ⬜ Not Started |
+| 3 | Event Management | IN PROGRESS |
 | 4 | Registration System | ⬜ Not Started |
 | 5 | Event-Driven Architecture | ⬜ Not Started |
 | 6 | Ticket Generation | ⬜ Not Started |
