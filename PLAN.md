@@ -133,9 +133,9 @@
 - [x] Audit fields (createdAt, updatedAt)
 
 **Tasks:**
-- [ ] Implement event states
-- [ ] Add state transition logic
-- [ ] Ensure only published events are visible to users
+- [x] Implement event states
+- [x] Add state transition logic
+- [x] Ensure only published events are visible to users
 
 ---
 
