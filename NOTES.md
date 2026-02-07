@@ -269,9 +269,31 @@ p.s. THIS IS SO EFFING COOOOOOL
 
 ### 3.2: Event State Management:
 
+- State machine defines the possible states of an entity and the allowed transitions between those states. For example, an Event can be in states like DRAFT, PUBLISHED, CANCELLED, and there are specific rules for how it can transition between these states.
 
+- Valid Transitions table:
+From State	  To State	   Action	        Who Can Do It
+(new)	          DRAFT	  Create event	Any authenticated user
+DRAFT	        PUBLISHED	   Publish	      Organizer only
+DRAFT	        (deleted)	    Delete	      Organizer only
+PUBLISHED	    CANCELLED	    Cancel	      Organizer only
+PUBLISHED	    COMPLETED	   Complete	  System (auto) or Organizer
+CANCELLED	        -	        None	        Terminal state
+COMPLETED	        -	        None	        Terminal state
 
+- Business rules for state transitions are enforced in the service layer. For example, only the organizer can publish or cancel an event, and once an event is published, it cannot be deleted, only cancelled.
 
+- They are also enforced at the API level by checking the current state of the event before allowing certain actions. For example, you cannot publish an event that is already published or cancelled.
+
+- THEY ENSURE data validation and integrity by preventing invalid state changes. For example, you cannot cancel an event that is still in draft state or complete an event that is cancelled.
+
+- Layers of validation:
+1. DTO Validation: Ensures incoming data is valid (e.g., title is not blank, dates are valid)
+2. Business Logic Validation: Ensures actions are valid based on current state and user role (e.g., only organizer can publish, cannot publish if already published)
+3. State Validation: Ensures state transitions are valid (e.g., cannot cancel a draft event, cannot complete a cancelled event)
+4. Authorization Validation: Ensures user has permission to perform the action (e.g., only organizer can update or delete their events)
+
+- Audit fields like createdAt, updatedAt, createdBy, updatedBy can be automatically managed using JPA Auditing features. This allows us to track when an event was created or updated and by whom.
 
 ## Phase 4 Notes
 

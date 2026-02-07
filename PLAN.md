@@ -128,9 +128,9 @@
 **Goal:** Handle event lifecycle (draft → published → cancelled).
 
 **Learn:**
-- [ ] State machine patterns
-- [ ] Business rule enforcement
-- [ ] Audit fields (createdAt, updatedAt)
+- [x] State machine patterns
+- [x] Business rule enforcement
+- [x] Audit fields (createdAt, updatedAt)
 
 **Tasks:**
 - [ ] Implement event states
