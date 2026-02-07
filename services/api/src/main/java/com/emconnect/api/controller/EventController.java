@@ -120,4 +120,14 @@ public class EventController {
         Event event = eventService.cancelEvent(id, authentication.getName());
         return ResponseEntity.ok(new EventResponse(event));
     }
+
+    // Complete event (mark as finished)
+    @PostMapping("/{id}/complete")
+    public ResponseEntity<EventResponse> completeEvent(
+            @PathVariable Long id,
+            Authentication authentication) {
+        
+        Event event = eventService.completeEvent(id, authentication.getName());
+        return ResponseEntity.ok(new EventResponse(event));
+    }
 }

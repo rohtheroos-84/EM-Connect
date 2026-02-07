@@ -102,4 +102,13 @@ public class GlobalExceptionHandler {
         ErrorResponse error = new ErrorResponse("NOT_FOUND", ex.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
+
+    // Handle invalid state transition
+    @ExceptionHandler(InvalidStateTransitionException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidStateTransition(
+            InvalidStateTransitionException ex) {
+        
+        ErrorResponse error = new ErrorResponse("INVALID_STATE_TRANSITION", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
 }
