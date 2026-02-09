@@ -161,10 +161,10 @@
 **Goal:** Enforce capacity limits under concurrent load.
 
 **Learn:**
-- [ ] Race conditions and why they matter
-- [ ] Pessimistic vs optimistic locking
-- [ ] Database-level atomicity
-- [ ] Transaction isolation levels
+- [x] Race conditions and why they matter
+- [x] Pessimistic vs optimistic locking
+- [x] Database-level atomicity
+- [x] Transaction isolation levels
 
 **Tasks:**
 - [ ] Implement capacity check in registration

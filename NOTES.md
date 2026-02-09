@@ -499,8 +499,54 @@ Write-Host "New registration! Ticket: $($newReg.ticketCode)"
 1. 403 Forbidden on `/api/registrations/ticket/{ticketCode}` - Endpoint wasn't in the public permit list in SecurityConfig. Fixed by adding it to permitAll().
 2. 500 Internal Server Error on re-registration after cancel - The unique constraint (user_id, event_id) blocked creating a new row. Fixed by reactivating the existing cancelled registration instead of creating a new one.
 
+### 4.2: Capacity Handling & Concurrency:
 
+- a race condition happens when 2 or more operations try to modify the same data at the same time, leading to inconsistent results. For example, if 2 users try to register for the last available spot in an event simultaneously, both might pass the capacity check and end up overbooking the event.
 
+- there are 2 strategies to handle this:
+1. Pessimistic Locking: We can lock the event record when checking capacity and creating a registration. This ensures that only one transaction can modify the event at a time, but it can lead to performance issues and deadlocks under high contention.
+2. Optimistic Locking: We can use a version field in the event entity and check it during updates. If the version has changed since we read the event, it means another transaction has modified it, and we can retry the operation. This is more efficient but requires handling retries.
+
+- when to use which:
+| Criteria      | Pessimistic                     | Optimistic                          |
+|---------------|----------------------------------|--------------------------------------|
+| Contention    | High (many users competing)      | Low (rare conflicts)                 |
+| Performance   | Slower (blocking)                | Faster (no blocking)                 |
+| Complexity    | Simpler code                     | Needs retry logic                    |
+| Use case      | Ticket booking, bank transfers   | Profile updates, content edits       |
+| Risk          | Deadlocks if not careful         | Starvation under high load           |
+
+- DB level atomicity means that a series of operations either all succeed or all fail together. This is crucial for maintaining data integrity, especially in concurrent scenarios. For example, when registering for an event, we need to ensure that the capacity check and registration creation happen atomically to prevent overbooking.
+
+- atomic reg. looks like this:
+1. begin transaction
+  - lock event record (pessimistic) or read version (optimistic)
+  - check capacity
+  - if capacity is available, create registration
+  - commit transaction
+2. if any step fails (e.g., capacity check fails, version mismatch), rollback transaction and return an error response.
+
+- key insight: steps in 1 must happen as ONE INDIVISIBLE UNIT(aka atomic operation) to prevent race conditions and ensure data integrity.
+
+- transaction isolation levels define how transactions interact with each other and how they see changes made by other transactions. The main levels are:
+
+| Isolation Level   | Description                                      | Use Case                          |
+|-------------------|--------------------------------------------------|-----------------------------------|
+| READ UNCOMMITTED  | Can see uncommitted changes (dirty reads)        | Rarely used, can lead to issues   |
+| READ COMMITTED    | Can only see committed changes (no dirty reads)  | Default in many databases, good for most cases |
+| REPEATABLE READ   | Ensures consistent reads within a transaction     | Good for complex read operations, prevents non-repeatable reads |
+| SERIALIZABLE      | Transactions are completely isolated              | Highest integrity, lowest concurrency |
+
+1. dirty reads happen when a transaction reads data that has been modified by another transaction but not yet committed. This can lead to inconsistent data if the other transaction rolls back.
+Ex: Transaction A updates event capacity to 0 but hasn't committed yet. Transaction B reads the capacity and sees 0, but if Transaction A rolls back, the capacity is actually still available.
+
+2. non-repeatable reads happen when a transaction reads the same data twice and gets different results because another transaction modified it in between. This can lead to confusion and bugs if not handled properly.
+Ex: Transaction A reads event capacity as 10. Transaction B updates capacity to 5 and commits. Transaction A reads capacity again and sees 5, leading to inconsistent results.
+
+3. phantom reads happen when a transaction reads a set of rows that satisfy a condition, but another transaction inserts or deletes rows that affect the result set. This can lead to unexpected results if not handled properly.
+Ex: Transaction A reads all events with capacity > 0 and gets a list of 5 events. Transaction B creates a new event with capacity 10 and commits. Transaction A reads again and now sees 6 events, which can lead to confusion.
+
+- postgresql's default isolation level is READ COMMITTED, which prevents dirty reads but allows non-repeatable reads and phantom reads. For our registration scenario, we might want to use REPEATABLE READ or SERIALIZABLE to ensure data integrity under concurrent registrations.
 
 
 
