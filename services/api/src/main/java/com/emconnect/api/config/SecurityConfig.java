@@ -62,6 +62,9 @@ public class SecurityConfig {
                 .requestMatchers("GET", "/api/events/search").permitAll()
                 .requestMatchers("GET", "/api/events/{id}").permitAll()
                 
+                // Public ticket validation endpoint (for event check-in)
+                .requestMatchers("GET", "/api/registrations/ticket/**").permitAll()
+                
                 // Admin-only endpoints
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 

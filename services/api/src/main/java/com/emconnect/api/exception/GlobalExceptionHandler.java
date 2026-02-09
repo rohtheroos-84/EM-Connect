@@ -8,6 +8,9 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 //import com.emconnect.api.exception.ResourceNotFoundException;
+//import com.emconnect.api.exception.DuplicateRegistrationException;
+//import com.emconnect.api.exception.EventNotAvailableException;
+
 
 import java.util.HashMap;
 import java.util.Map;
@@ -109,6 +112,23 @@ public class GlobalExceptionHandler {
             InvalidStateTransitionException ex) {
         
         ErrorResponse error = new ErrorResponse("INVALID_STATE_TRANSITION", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+    // Handle duplicate registration (409 Conflict)
+    @ExceptionHandler(DuplicateRegistrationException.class)
+    public ResponseEntity<ErrorResponse> handleDuplicateRegistration(
+            DuplicateRegistrationException ex) {
+        
+        ErrorResponse error = new ErrorResponse("DUPLICATE_REGISTRATION", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    }
+
+    // Handle event not available for registration
+    @ExceptionHandler(EventNotAvailableException.class)
+    public ResponseEntity<ErrorResponse> handleEventNotAvailable(
+            EventNotAvailableException ex) {
+        
+        ErrorResponse error = new ErrorResponse("EVENT_NOT_AVAILABLE", ex.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 }
