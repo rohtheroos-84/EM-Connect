@@ -362,9 +362,46 @@ try {
 
 Invoke-RestMethod -Uri "http://localhost:8080/api/events"
 
-
-
 ## Phase 4 Notes
+
+### 4.1: Reg Entity & Basic Flow:
+
+- As users should be able to register for many events and an event can have many attendees, we have a many-to-many relationship between users and events. In JPA, we can model this with a join table (e.g., registrations) that has foreign keys to both users and events.
+
+- We also have to handle unique constraints to prevent duplicate registrations. For example, a user should not be able to register for the same event more than once.
+
+- we do this at 2 levels:
+1. Database Level(ITS A SAFETY NET, to handle race conditions): We can add a unique constraint on the combination of user_id and event_id in the registrations table to prevent duplicates at the database level.
+```
+ALTER TABLE registrations ADD CONSTRAINT unique_registration UNIQUE (user_id, event_id);
+```
+
+2. Application Level(gives better error msgs): Before creating a new registration, we can check if a registration already exists for the given user and event. If it does, we can return an error response.
+```
+if (registrationRepository.existsByUserIdAndEventId(userId, eventId)) {
+    throw new DuplicateRegistrationException("User is already registered for this event");
+}
+```
+
+- Business validation includes rules like:
+  - Users cannot register for events that are full (capacity reached)
+  - Users cannot register for events that have already started
+  - Users cannot register for cancelled or completed events
+  - Users can only cancel their own registrations
+  - Organizers can view all registrations for their events
+
+- The Registration flow would look like this:
+1. User sends POST /api/events/{eventId}/register with JWT token
+2. Server validates JWT and extracts user info
+3. Server checks if event exists and is in a valid state for registration
+4. Server checks if user is already registered (application level)
+5. Server checks if event capacity is reached
+6. Server creates the registration
+7. Server returns success response or error if any validation fails
+
+
+
+
 
 
 ## Phase 5 Notes

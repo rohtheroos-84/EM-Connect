@@ -145,9 +145,9 @@
 **Goal:** Allow users to register for events.
 
 **Learn:**
-- [ ] Many-to-many relationships
-- [ ] Unique constraints
-- [ ] Business validation
+- [x] Many-to-many relationships
+- [x] Unique constraints
+- [x] Business validation
 
 **Tasks:**
 - [ ] Design registration table
