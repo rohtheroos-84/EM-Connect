@@ -5,6 +5,8 @@ import com.emconnect.api.exception.*;
 import com.emconnect.api.repository.EventRepository;
 import com.emconnect.api.repository.RegistrationRepository;
 import com.emconnect.api.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -16,6 +18,8 @@ import java.time.LocalDateTime;
 
 @Service
 public class RegistrationService {
+
+    private static final Logger logger = LoggerFactory.getLogger(RegistrationService.class);
 
     private final RegistrationRepository registrationRepository;
     private final EventRepository eventRepository;
@@ -30,38 +34,59 @@ public class RegistrationService {
     }
 
     /**
-     * Register a user for an event
+     * Register a user for an event (with pessimistic locking for capacity safety).
+     * 
+     * The flow:
+     * 1. Find the user
+     * 2. Lock the event row (SELECT ... FOR UPDATE)
+     * 3. Validate all business rules
+     * 4. Create or reactivate registration
+     * 5. Commit → lock released
+     * 
+     * If two users try to register at the same time for the last seat:
+     * - User A locks the event row
+     * - User B waits (blocked by the lock)
+     * - User A completes registration, commits, lock released
+     * - User B now reads the updated count and sees event is full
      */
     @Transactional
     public Registration registerForEvent(Long eventId, String userEmail) {
-        // Find the user
+        // Step 1: Find the user (no lock needed, user row isn't contended)
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        // Find the event
-        Event event = eventRepository.findById(eventId)
+        // Step 2: Lock the event row — this is the critical section
+        // Other transactions trying to register for the SAME event will WAIT here
+        Event event = eventRepository.findByIdWithLock(eventId)
                 .orElseThrow(() -> new ResourceNotFoundException("Event not found with id: " + eventId));
 
-        // Validate registration is allowed
+        logger.info("Locked event {} for registration by user {}", eventId, userEmail);
+
+        // Step 3: Validate business rules (while we hold the lock)
         validateRegistration(event, user);
 
-        // Check if user has a cancelled registration for this event (re-registration)
-        var existingRegistration = registrationRepository.findByUserIdAndEventId(user.getId(), eventId);
-        
-        if (existingRegistration.isPresent()) {
-            // Reactivate cancelled registration
-            Registration registration = existingRegistration.get();
+        // Step 4: Check if user has a cancelled registration (reactivate it)
+        var existingRegistration = registrationRepository.findByUserIdAndEventId(
+            user.getId(), event.getId()
+        );
+
+        Registration registration;
+        if (existingRegistration.isPresent() && 
+            existingRegistration.get().getStatus() == RegistrationStatus.CANCELLED) {
+            // Reactivate the cancelled registration
+            registration = existingRegistration.get();
             registration.setStatus(RegistrationStatus.CONFIRMED);
             registration.setRegisteredAt(LocalDateTime.now());
             registration.setCancelledAt(null);
-            // Generate new ticket code for reactivated registration
-            registration.setTicketCode("TKT-" + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase());
-            return registrationRepository.save(registration);
+            logger.info("Reactivated registration {} for user {} on event {}", 
+                registration.getId(), userEmail, eventId);
+        } else {
+            // Create new registration
+            registration = new Registration(user, event);
+            logger.info("Created new registration for user {} on event {}", userEmail, eventId);
         }
 
-        // Create new registration
-        Registration registration = new Registration(user, event);
-        
+        // Step 5: Save — on commit, the lock is released
         return registrationRepository.save(registration);
     }
 
@@ -87,12 +112,15 @@ public class RegistrationService {
 
         // Check if event has already started
         if (registration.getEvent().getStartDate().isBefore(LocalDateTime.now())) {
-            throw new InvalidStateTransitionException("Cannot cancel registration for an event that has already started");
+            throw new InvalidStateTransitionException(
+                "Cannot cancel registration for an event that has already started"
+            );
         }
 
         // Cancel the registration
         registration.cancel();
-        
+        logger.info("Cancelled registration {} for user {}", registrationId, userEmail);
+
         return registrationRepository.save(registration);
     }
 
@@ -109,7 +137,8 @@ public class RegistrationService {
      */
     public Registration getRegistrationByTicketCode(String ticketCode) {
         return registrationRepository.findByTicketCode(ticketCode)
-                .orElseThrow(() -> new ResourceNotFoundException("Registration not found with ticket code: " + ticketCode));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                    "Registration not found with ticket code: " + ticketCode));
     }
 
     /**
@@ -139,10 +168,9 @@ public class RegistrationService {
     }
 
     /**
-     * Get registrations for an event (organizer only would check in controller)
+     * Get registrations for an event
      */
     public Page<Registration> getEventRegistrations(Long eventId, int page, int size) {
-        // Verify event exists
         if (!eventRepository.existsById(eventId)) {
             throw new ResourceNotFoundException("Event not found with id: " + eventId);
         }
@@ -166,7 +194,7 @@ public class RegistrationService {
     }
 
     /**
-     * Get registration count for an event
+     * Get registration count for an event (only confirmed)
      */
     public long getEventRegistrationCount(Long eventId) {
         return registrationRepository.countByEventIdAndStatus(eventId, RegistrationStatus.CONFIRMED);
@@ -175,14 +203,15 @@ public class RegistrationService {
     // ==================== Private Helper Methods ====================
 
     /**
-     * Validate that registration is allowed
+     * Validate that registration is allowed.
+     * This is called WHILE holding the pessimistic lock on the event row.
      */
     private void validateRegistration(Event event, User user) {
         // Rule 1: Event must be published
-        if (event.getStatus() != EventStatus.PUBLISHED) {
+        if (!event.getStatus().acceptsRegistrations()) {
             throw new EventNotAvailableException(
                 "Cannot register for this event",
-                "Event is not published"
+                "Event is not accepting registrations (status: " + event.getStatus() + ")"
             );
         }
 
@@ -194,19 +223,22 @@ public class RegistrationService {
             );
         }
 
-        // Rule 3: Check capacity
+        // Rule 3: Check capacity (this count is accurate because we hold the lock)
         long currentRegistrations = registrationRepository.countByEventIdAndStatus(
             event.getId(), 
             RegistrationStatus.CONFIRMED
         );
+        
         if (currentRegistrations >= event.getCapacity()) {
+            logger.warn("Event {} is full ({}/{}). Rejecting registration for user {}", 
+                event.getId(), currentRegistrations, event.getCapacity(), user.getEmail());
             throw new EventNotAvailableException(
                 "Cannot register for this event",
-                "Event is at full capacity"
+                "Event is at full capacity (" + currentRegistrations + "/" + event.getCapacity() + ")"
             );
         }
 
-        // Rule 4: User must not already be registered
+        // Rule 4: User must not already be actively registered
         if (registrationRepository.existsByUserIdAndEventIdAndStatus(
                 user.getId(), 
                 event.getId(), 
