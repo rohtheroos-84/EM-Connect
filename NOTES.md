@@ -399,6 +399,106 @@ if (registrationRepository.existsByUserIdAndEventId(userId, eventId)) {
 6. Server creates the registration
 7. Server returns success response or error if any validation fails
 
+- TEST COMMANDS PERFORMED FOR STEP 4.1:
+
+```powershell
+# Step 1: Login
+$login = Invoke-RestMethod -Uri "http://localhost:8080/api/auth/login" `
+  -Method POST `
+  -ContentType "application/json" `
+  -Body '{"email":"regularuser@example.com","password":"password123"}'
+
+$token = $login.token
+Write-Host "Logged in as: $($login.email)"
+
+# Step 2: Create and Publish an Event
+$event = Invoke-RestMethod -Uri "http://localhost:8080/api/events" `
+  -Method POST `
+  -ContentType "application/json" `
+  -Headers @{ Authorization = "Bearer $token" } `
+  -Body '{
+    "title": "Registration Test Event",
+    "description": "Testing the registration system",
+    "location": "Test Venue",
+    "startDate": "2026-05-01T10:00:00",
+    "endDate": "2026-05-01T18:00:00",
+    "capacity": 5
+  }'
+
+$eventId = $event.id
+Write-Host "Created event ID: $eventId"
+
+# Publish event
+Invoke-RestMethod -Uri "http://localhost:8080/api/events/$eventId/publish" `
+  -Method POST `
+  -Headers @{ Authorization = "Bearer $token" }
+Write-Host "Event published!"
+
+# Step 3: Register for Event
+$registration = Invoke-RestMethod -Uri "http://localhost:8080/api/events/$eventId/register" `
+  -Method POST `
+  -Headers @{ Authorization = "Bearer $token" }
+
+$registration
+Write-Host "Ticket Code: $($registration.ticketCode)"
+$regId = $registration.id
+# RESULT: Registration created with status CONFIRMED and ticket code TKT-XXXXXXXX
+
+# Step 4: Test Duplicate Registration (Should fail with 409)
+try {
+    Invoke-RestMethod -Uri "http://localhost:8080/api/events/$eventId/register" `
+      -Method POST `
+      -Headers @{ Authorization = "Bearer $token" }
+} catch {
+    Write-Host "Expected error: Duplicate registration"
+    Write-Host "Status: $($_.Exception.Response.StatusCode.value__)"  # Returns 409
+}
+
+# Step 5: Check Registration Status
+Invoke-RestMethod -Uri "http://localhost:8080/api/events/$eventId/registration-status" `
+  -Headers @{ Authorization = "Bearer $token" }
+# RESULT: {isRegistered: true, totalRegistrations: 1}
+
+# Step 6: Get My Registrations
+Invoke-RestMethod -Uri "http://localhost:8080/api/registrations/my-registrations" `
+  -Headers @{ Authorization = "Bearer $token" }
+# RESULT: Page with the user's registration(s)
+
+# Step 7: Get Registration by Ticket Code (Public endpoint for check-in)
+$ticketCode = $registration.ticketCode
+Invoke-RestMethod -Uri "http://localhost:8080/api/registrations/ticket/$ticketCode"
+# RESULT: Registration details with ticket code
+
+# Step 8: Cancel Registration
+$cancelled = Invoke-RestMethod -Uri "http://localhost:8080/api/registrations/$regId/cancel" `
+  -Method POST `
+  -Headers @{ Authorization = "Bearer $token" }
+
+$cancelled
+Write-Host "Status: $($cancelled.status)"  # Returns CANCELLED
+
+# Step 9: Try to Cancel Again (Should fail - already cancelled)
+try {
+    Invoke-RestMethod -Uri "http://localhost:8080/api/registrations/$regId/cancel" `
+      -Method POST `
+      -Headers @{ Authorization = "Bearer $token" }
+} catch {
+    Write-Host "Expected error: Already cancelled"
+}
+
+# Step 10: Re-register After Cancelling (Should work - reactivates cancelled registration)
+$newReg = Invoke-RestMethod -Uri "http://localhost:8080/api/events/$eventId/register" `
+  -Method POST `
+  -Headers @{ Authorization = "Bearer $token" }
+
+Write-Host "New registration! Ticket: $($newReg.ticketCode)"
+# RESULT: Registration reactivated with new ticket code
+```
+
+- ISSUES FOUND AND FIXED:
+1. 403 Forbidden on `/api/registrations/ticket/{ticketCode}` - Endpoint wasn't in the public permit list in SecurityConfig. Fixed by adding it to permitAll().
+2. 500 Internal Server Error on re-registration after cancel - The unique constraint (user_id, event_id) blocked creating a new row. Fixed by reactivating the existing cancelled registration instead of creating a new one.
+
 
 
 

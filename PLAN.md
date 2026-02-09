@@ -150,10 +150,10 @@
 - [x] Business validation
 
 **Tasks:**
-- [ ] Design registration table
-- [ ] Create registration endpoint
-- [ ] Prevent duplicate registrations
-- [ ] List user's registrations
+- [x] Design registration table
+- [x] Create registration endpoint
+- [x] Prevent duplicate registrations
+- [x] List user's registrations
 
 ---
 
@@ -418,8 +418,8 @@
 |-------|-------------|--------|
 | 1 | Foundation & Core Setup | ✅ Completed |
 | 2 | Authentication System | ✅ Completed |
-| 3 | Event Management | IN PROGRESS |
-| 4 | Registration System | ⬜ Not Started |
+| 3 | Event Management | ✅ Completed |
+| 4 | Registration System | IN PROGRESS |
 | 5 | Event-Driven Architecture | ⬜ Not Started |
 | 6 | Ticket Generation | ⬜ Not Started |
 | 7 | Real-Time Features | ⬜ Not Started |
