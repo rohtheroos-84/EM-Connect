@@ -167,10 +167,10 @@
 - [x] Transaction isolation levels
 
 **Tasks:**
-- [ ] Implement capacity check in registration
-- [ ] Add locking mechanism
-- [ ] Write concurrent test to verify no overbooking
-- [ ] Understand what breaks without proper locking
+- [x] Implement capacity check in registration
+- [x] Add locking mechanism
+- [x] Write concurrent test to verify no overbooking
+- [x] Understand what breaks without proper locking
 
 ---
 
@@ -419,7 +419,7 @@
 | 1 | Foundation & Core Setup | ✅ Completed |
 | 2 | Authentication System | ✅ Completed |
 | 3 | Event Management | ✅ Completed |
-| 4 | Registration System | IN PROGRESS |
+| 4 | Registration System | ✅ Completed |
 | 5 | Event-Driven Architecture | ⬜ Not Started |
 | 6 | Ticket Generation | ⬜ Not Started |
 | 7 | Real-Time Features | ⬜ Not Started |

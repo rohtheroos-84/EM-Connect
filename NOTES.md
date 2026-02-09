@@ -548,6 +548,95 @@ Ex: Transaction A reads all events with capacity > 0 and gets a list of 5 events
 
 - postgresql's default isolation level is READ COMMITTED, which prevents dirty reads but allows non-repeatable reads and phantom reads. For our registration scenario, we might want to use REPEATABLE READ or SERIALIZABLE to ensure data integrity under concurrent registrations.
 
+- TEST COMMANDS PERFORMED FOR STEP 4.2:
+
+```powershell
+# Step 1: Restart Application
+cd c:\Users\rohit\Downloads\EM-Connect\services\api
+.\mvnw.cmd spring-boot:run
+
+# Step 2: Create Test Users (10 users for concurrent testing)
+for ($i = 1; $i -le 10; $i++) {
+    try {
+        Invoke-RestMethod -Uri "http://localhost:8080/api/auth/register" `
+          -Method POST `
+          -ContentType "application/json" `
+          -Body "{`"email`":`"testuser$i@test.com`",`"password`":`"password123`",`"name`":`"Test User $i`"}"
+        Write-Host "Created testuser$i@test.com"
+    } catch {
+        Write-Host "testuser$i@test.com already exists (OK)"
+    }
+}
+
+# Step 3: Login and Create Event with Capacity 3
+$login = Invoke-RestMethod -Uri "http://localhost:8080/api/auth/login" `
+  -Method POST `
+  -ContentType "application/json" `
+  -Body '{"email":"regularuser@example.com","password":"password123"}'
+
+$token = $login.token
+
+$event = Invoke-RestMethod -Uri "http://localhost:8080/api/events" `
+  -Method POST `
+  -ContentType "application/json" `
+  -Headers @{ Authorization = "Bearer $token" } `
+  -Body '{
+    "title": "Concurrency Test - Only 3 Seats",
+    "description": "Testing pessimistic locking",
+    "location": "Small Room",
+    "startDate": "2026-06-01T10:00:00",
+    "endDate": "2026-06-01T18:00:00",
+    "capacity": 3
+  }'
+
+$eventId = $event.id
+Write-Host "Created event ID: $eventId with capacity 3"
+
+Invoke-RestMethod -Uri "http://localhost:8080/api/events/$eventId/publish" `
+  -Method POST `
+  -Headers @{ Authorization = "Bearer $token" }
+
+Write-Host "Event published!"
+
+# Step 4: Fire 10 Concurrent Registrations for 3 Seats (THE BIG TEST!)
+$emails = (1..10 | ForEach-Object { "testuser$_@test.com" }) -join ","
+
+Write-Host "Firing 10 concurrent registrations for 3 seats..."
+
+$result = Invoke-RestMethod -Uri "http://localhost:8080/api/test/concurrent-register?eventId=$eventId&userEmails=$emails" `
+  -Method POST
+
+Write-Host ""
+Write-Host "════════════════════════════════════════════"
+Write-Host "  CONCURRENCY TEST RESULTS"
+Write-Host "════════════════════════════════════════════"
+Write-Host "  Event capacity:            3"
+Write-Host "  Total attempts:            $($result.totalAttempts)"
+Write-Host "  Successful registrations:  $($result.successCount)"
+Write-Host "  Rejected registrations:    $($result.failCount)"
+Write-Host "  Confirmed in DB:           $($result.confirmedInDb)"
+Write-Host "════════════════════════════════════════════"
+
+if ($result.confirmedInDb -le 3) {
+    Write-Host "  ✅ NO OVERBOOKING! Pessimistic locking works!" -ForegroundColor Green
+} else {
+    Write-Host "  ❌ OVERBOOKING DETECTED!" -ForegroundColor Red
+}
+
+Write-Host ""
+Write-Host "Successes:"
+$result.successes | ForEach-Object { Write-Host "  ✅ $_" }
+Write-Host ""
+Write-Host "Failures:"
+$result.failures | ForEach-Object { Write-Host "  ❌ $_" }
+# EXPECTED RESULT: Exactly 3 successes, 7 failures, 3 confirmed in DB
+
+# Step 5: Verify in Database
+Invoke-RestMethod -Uri "http://localhost:8080/api/events/$eventId/registration-status" `
+  -Headers @{ Authorization = "Bearer $token" }
+# RESULT: {isRegistered: false, totalRegistrations: 3}
+# (regularuser isn't registered, but 3 test users are)
+```
 
 
 ## Phase 5 Notes
