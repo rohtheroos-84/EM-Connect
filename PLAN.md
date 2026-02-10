@@ -180,9 +180,9 @@
 **Goal:** Add RabbitMQ and understand messaging.
 
 **Learn:**
-- [ ] Message broker concepts (queues, exchanges, bindings)
-- [ ] Pub/sub vs point-to-point
-- [ ] Message durability and acknowledgments
+- [x] Message broker concepts (queues, exchanges, bindings)
+- [x] Pub/sub vs point-to-point
+- [x] Message durability and acknowledgments
 
 **Tasks:**
 - [ ] Add RabbitMQ to docker-compose
@@ -420,7 +420,7 @@
 | 2 | Authentication System | ✅ Completed |
 | 3 | Event Management | ✅ Completed |
 | 4 | Registration System | ✅ Completed |
-| 5 | Event-Driven Architecture | ⬜ Not Started |
+| 5 | Event-Driven Architecture | IN PROGRESS |
 | 6 | Ticket Generation | ⬜ Not Started |
 | 7 | Real-Time Features | ⬜ Not Started |
 | 8 | Frontend Integration | ⬜ Not Started |

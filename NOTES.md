@@ -641,6 +641,128 @@ Invoke-RestMethod -Uri "http://localhost:8080/api/events/$eventId/registration-s
 
 ## Phase 5 Notes
 
+### 5.1: Message Broker Setup:
+
+- a message broker in simple terms is like a post office for your application. It allows different parts of your application (or even different applications) to communicate with each other by sending messages through a central hub. This helps decouple components, improve scalability, and handle asynchronous processing.
+
+- ex: When a user registers for an event, instead of processing all the logic (e.g., sending confirmation email, updating analytics) in the same request, we can publish a message to a queue. Then, separate worker services can consume those messages and perform the necessary tasks without blocking the user's request, hence improving performance and user experience.
+
+- RabbitMQ is a popular open-source message broker that implements the Advanced Message Queuing Protocol (AMQP). It provides features like message queuing, routing, and delivery guarantees, making it a great choice for building scalable and resilient applications.
+
+- its architecture consists of:
+1. Producer: The component that creates and sends messages to the broker.
+2. Exchange: The component that receives messages from producers and routes them to the appropriate queues based on routing rules.
+3. Queue: The component that stores messages until they are consumed by a consumer.
+4. Consumer: The component that receives messages from the queue and processes them.
+5. Binding: The relationship between an exchange and a queue that defines how messages are routed.
+
+- exchange types:
+1. Direct Exchange: Routes messages to queues based on an exact match between the routing key and the queue binding key.
+Ex: If a message has a routing key "event.registration", it will be routed to a queue that is bound with the same key.
+
+2. Fanout Exchange: Routes messages to all queues that are bound to it, regardless of the routing key.
+Ex: If a message is sent to a fanout exchange, it will be delivered to all queues bound to that exchange.
+
+3. Topic Exchange: Routes messages to queues based on pattern matching between the routing key and the queue binding key, allowing for more flexible routing.
+Ex: If a message has a routing key "event.*", it will be routed to any queue that is bound with a matching pattern like "event.registration" or "event.cancellation".
+
+- We are going to use TOPIC exchange for our event-driven architecture because it allows us to route messages based on patterns, which is useful for handling different types of events (e.g., registration, cancellation) without needing a separate queue for each event type.
+
+- Pub/Sub (Publish/Subscribe) is a messaging pattern where producers publish messages to an exchange, and multiple consumers can subscribe to receive those messages. Ex: When an event is published, all services that are subscribed to that event type will receive the message and can process it independently.
+
+
+- Point-to-Point is a pattern where messages are sent directly from a producer to a specific consumer through a queue. Ex: When a user registers for an event, a message is sent to a specific queue that is consumed by a worker service responsible for sending confirmation emails.
+
+- Message durability ensures that messages are not lost in case of broker failure. Acknowledgments allow consumers to confirm that they have successfully processed a message, which helps the broker know when it can safely remove the message from the queue.
+
+- Message acknowledgments work like this:
+1. Producer sends message to exchange
+2. Exchange routes message to queue
+3. Consumer receives message and processes it
+4. If processing is successful, consumer sends an acknowledgment back to the broker indicating that the message has been handled and can be removed from the queue. If the consumer fails to acknowledge (e.g., due to an error or crash), the broker can re-deliver the message to another consumer, ensuring that it is eventually processed.
+
+- EM Connect Message Flow:
+
+┌─────────────────────────────────────────────────────────────────┐
+│                    EM-Connect Message Flow                      │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│   Spring Boot API                                               │
+│                                                                 │
+│   ┌────────────────────┐                                       │
+│   │ Registration       │                                       │
+│   │ Confirm / Cancel   │──── publishes ────┐                   │
+│   └────────────────────┘                   │                   │
+│                                           ▼                   │
+│   ┌────────────────────┐          ┌──────────────────┐        │
+│   │ Event              │─────────►│  Topic Exchange   │        │
+│   │ Publish / Cancel   │          │  "em.events"      │        │
+│   └────────────────────┘          └────────┬─────────┘        │
+│                                            │                  │
+│                    ┌───────────────────┬────┴────────┐        │
+│                    │                   │             │        │
+│                    ▼                   ▼             ▼        │
+│           ┌──────────────┐  ┌──────────────┐  ┌────────────┐ │
+│           │ notification.q│  │  ticket.q    │  │ websocket.q│ │
+│           └──────┬───────┘  └──────┬───────┘  └─────┬──────┘ │
+│                  │                 │                │        │
+│                  ▼                 ▼                ▼        │
+│           ┌────────────┐  ┌────────────┐  ┌────────────┐    │
+│           │ Go:        │  │ Go:        │  │ Go:        │    │
+│           │ Notifier   │  │ Ticket     │  │ WebSocket  │    │
+│           │ Worker     │  │ Worker     │  │ Hub        │    │
+│           └────────────┘  └────────────┘  └────────────┘    │
+│                                                                 │
+│   Routing Keys:                                                 │
+│                                                                 │
+│   • registration.confirmed  → notification.q, ticket.q         │
+│   • registration.cancelled  → notification.q                  │
+│   • event.published         → notification.q, websocket.q      │
+│   • event.cancelled         → notification.q, websocket.q      │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+
+
+1. A user or admin triggers an action in the Spring Boot API  
+   - Registration confirmed or cancelled  
+   - Event published or cancelled  
+
+2. The Spring Boot API publishes a message to the topic exchange  
+   - Exchange name: `em.events`  
+   - Message includes a routing key describing the action  
+
+3. The topic exchange evaluates the routing key  
+
+4. Based on the routing key, the message is routed to one or more queues  
+
+5. If the routing key is `registration.confirmed`  
+   - Message goes to `notification.q`  
+   - Message goes to `ticket.q`  
+
+6. If the routing key is `registration.cancelled`  
+   - Message goes to `notification.q`  
+
+7. If the routing key is `event.published`  
+   - Message goes to `notification.q`  
+   - Message goes to `websocket.q`  
+
+8. If the routing key is `event.cancelled`  
+   - Message goes to `notification.q`  
+   - Message goes to `websocket.q`  
+
+9. Go Notifier Worker consumes messages from `notification.q`  
+   - Sends user notifications  
+
+10. Go Ticket Worker consumes messages from `ticket.q`  
+    - Generates or manages tickets  
+
+11. Go WebSocket Hub consumes messages from `websocket.q`  
+    - Pushes real-time updates to connected clients  
+
+
+
+
+
 
 ## Phase 6 Notes
 
