@@ -272,14 +272,16 @@ p.s. THIS IS SO EFFING COOOOOOL
 - State machine defines the possible states of an entity and the allowed transitions between those states. For example, an Event can be in states like DRAFT, PUBLISHED, CANCELLED, and there are specific rules for how it can transition between these states.
 
 - Valid Transitions table:
-From State	  To State	   Action	        Who Can Do It
-(new)	          DRAFT	  Create event	Any authenticated user
-DRAFT	        PUBLISHED	   Publish	      Organizer only
-DRAFT	        (deleted)	    Delete	      Organizer only
-PUBLISHED	    CANCELLED	    Cancel	      Organizer only
-PUBLISHED	    COMPLETED	   Complete	  System (auto) or Organizer
-CANCELLED	        -	        None	        Terminal state
-COMPLETED	        -	        None	        Terminal state
+| From State | To State    | Action        | Who Can Do It                 |
+|------------|-------------|---------------|-------------------------------|
+| (new)      | DRAFT       | Create event  | Any authenticated user        |
+| DRAFT      | PUBLISHED   | Publish       | Organizer only                |
+| DRAFT      | (deleted)   | Delete        | Organizer only                |
+| PUBLISHED  | CANCELLED   | Cancel        | Organizer only                |
+| PUBLISHED  | COMPLETED   | Complete      | System (auto) or Organizer    |
+| CANCELLED  | -           | None          | Terminal state                |
+| COMPLETED  | -           | None          | Terminal state                |
+
 
 - Business rules for state transitions are enforced in the service layer. For example, only the organizer can publish or cancel an event, and once an event is published, it cannot be deleted, only cancelled.
 
@@ -288,27 +290,28 @@ COMPLETED	        -	        None	        Terminal state
 - THEY ENSURE data validation and integrity by preventing invalid state changes. For example, you cannot cancel an event that is still in draft state or complete an event that is cancelled.
 
 - Layers of validation:
-1. DTO Validation: Ensures incoming data is valid (e.g., title is not blank, dates are valid)
-2. Business Logic Validation: Ensures actions are valid based on current state and user role (e.g., only organizer can publish, cannot publish if already published)
-3. State Validation: Ensures state transitions are valid (e.g., cannot cancel a draft event, cannot complete a cancelled event)
-4. Authorization Validation: Ensures user has permission to perform the action (e.g., only organizer can update or delete their events)
+  1. DTO Validation: Ensures incoming data is valid (e.g., title is not blank, dates are valid)
+  2. Business Logic Validation: Ensures actions are valid based on current state and user role (e.g., only organizer can publish, cannot publish if already published)
+  3. State Validation: Ensures state transitions are valid (e.g., cannot cancel a draft event, cannot complete a cancelled event)
+  4. Authorization Validation: Ensures user has permission to perform the action (e.g., only organizer can update or delete their events)
 
 - Audit fields like createdAt, updatedAt, createdBy, updatedBy can be automatically managed using JPA Auditing features. This allows us to track when an event was created or updated and by whom.
 
 - To test state management, you can follow the same steps as CRUD operations but also try to perform invalid actions to see the error responses. For example:
 
-1. start docker desktop and run "docker-compose up" in the root directory to start all services
-2. start the api service using ".\mvnw.cmd spring-boot:run" in the services/api directory
-3. login to get token:
-
+  1. start docker desktop and run "docker-compose up" in the root directory to start all services
+  2. start the api service using ".\mvnw.cmd spring-boot:run" in the services/api directory
+  3. login to get token:
+```
 $login = Invoke-RestMethod -Uri "http://localhost:8080/api/auth/login" `
   -Method POST `
   -ContentType "application/json" `
   -Body '{"email":"regularuser@example.com","password":"password123"}'
 
 $token = $login.token
-
+```
 4. create an event (it will be in DRAFT state):
+```
 $event = Invoke-RestMethod -Uri "http://localhost:8080/api/events" `
   -Method POST `
   -ContentType "application/json" `
@@ -324,8 +327,9 @@ $event = Invoke-RestMethod -Uri "http://localhost:8080/api/events" `
 
 Write-Host "Event ID: $($event.id), Status: $($event.status)"
 $eventId = $event.id
-
+```
 5. try invalid transtion: draft to complete (should fail):
+```
 try {
     Invoke-RestMethod -Uri "http://localhost:8080/api/events/$eventId/complete" `
       -Method POST `
@@ -334,22 +338,25 @@ try {
     Write-Host "Expected error: Cannot transition DRAFT to COMPLETED"
     Write-Host "Status: $($_.Exception.Response.StatusCode.value__)"
 }
-
+```
 6. publish the event (valid transition):
+```
 $published = Invoke-RestMethod -Uri "http://localhost:8080/api/events/$eventId/publish" `
   -Method POST `
   -Headers @{ Authorization = "Bearer $token" }
 
 Write-Host "Status after publish: $($published.status)"
-
+```
 7. valid transition: publish to complete:
+```
 $completed = Invoke-RestMethod -Uri "http://localhost:8080/api/events/$eventId/complete" `
   -Method POST `
   -Headers @{ Authorization = "Bearer $token" }
 
 Write-Host "Status after complete: $($completed.status)"
-
+```
 8. invalid transition: complete to any (should fail):
+```
 try {
     Invoke-RestMethod -Uri "http://localhost:8080/api/events/$eventId/cancel" `
       -Method POST `
@@ -357,11 +364,12 @@ try {
 } catch {
     Write-Host "Expected error: Cannot transition from COMPLETED"
 }
+```
 
 9. finally verify that only published events are visible in the public listing (This should NOT include DRAFT, CANCELLED, or COMPLETED events):
-
+```
 Invoke-RestMethod -Uri "http://localhost:8080/api/events"
-
+```
 ## Phase 4 Notes
 
 ### 4.1: Reg Entity & Basic Flow:

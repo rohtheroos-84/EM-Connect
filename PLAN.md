@@ -185,9 +185,9 @@
 - [x] Message durability and acknowledgments
 
 **Tasks:**
-- [ ] Add RabbitMQ to docker-compose
-- [ ] Understand the RabbitMQ management UI
-- [ ] Manually publish/consume messages to learn the concepts
+- [x] Add RabbitMQ to docker-compose
+- [x] Understand the RabbitMQ management UI
+- [x] Manually publish/consume messages to learn the concepts
 
 ---
 
@@ -420,7 +420,7 @@
 | 2 | Authentication System | ✅ Completed |
 | 3 | Event Management | ✅ Completed |
 | 4 | Registration System | ✅ Completed |
-| 5 | Event-Driven Architecture | IN PROGRESS |
+| 5 | Event-Driven Architecture | 🔄 IN PROGRESS |
 | 6 | Ticket Generation | ⬜ Not Started |
 | 7 | Real-Time Features | ⬜ Not Started |
 | 8 | Frontend Integration | ⬜ Not Started |
