@@ -32,15 +32,15 @@ docker-compose down = "Close the kitchen"
 - Created a basic Spring Boot application using Spring Initializr with dependencies for web, JPA, and PostgreSQL.
 - And added folder structure for future modules:
 
-controller - HTTP request handlers (REST endpoints)
-service - Business logic
-repository - Database access
-entity - Database table mappings
-dto - Data Transfer Objects (request/response shapes)
-config - Configuration classes
-db/migration - Flyway SQL scripts
+  1. controller - HTTP request handlers (REST endpoints)
+  2. service - Business logic
+  3. repository - Database access
+  4. entity - Database table mappings
+  5. dto - Data Transfer Objects (request/response shapes)
+  6. config - Configuration classes
+  7. db/migration - Flyway SQL scripts
 
-- And replaced application.properties with application.yml for better structure and readability.
+- And also replaced application.properties with application.yml for better structure and readability.
 
 
 ## Phase 2 Notes
@@ -51,20 +51,20 @@ db/migration - Flyway SQL scripts
 
 - A Spring data JPA Repository is an interface that provides CRUD operations for the entity, Spring Data JPA generates the implementation at runtime.
 - JpaRepository gives you these without writing anything:
-  save() - Insert or update an entity
-  findById() - Retrieve an entity by its ID
-  findAll() - Retrieve all entities
-  deleteById() - Delete an entity by its ID
-  count() - Count total entities
+  - save() - Insert or update an entity
+  - findById() - Retrieve an entity by its ID
+  - findAll() - Retrieve all entities
+  - deleteById() - Delete an entity by its ID
+  - count() - Count total entities
 
 - BCrypt(BCryptPasswordEncoder) is a strong hashing algorithm for securely storing passwords. With BCrypt, passwords are hashed with a unique salt, making it very difficult to reverse-engineer the original password. You can check passwords by hashing the input and comparing it to the stored hash but you cannot retrieve the original password from the hash.
 
 - Database Constraints are rules applied to database columns to ensure data integrity. Common constraints include:
-  NOT NULL - Ensures a column cannot have null values
-  UNIQUE - Ensures all values in a column are unique
-  PRIMARY KEY - Uniquely identifies each row in a table
-  FOREIGN KEY - Ensures referential integrity between tables
-  CHECK - Ensures values in a column meet a specific condition
+  1. NOT NULL - Ensures a column cannot have null values
+  2. UNIQUE - Ensures all values in a column are unique
+  3. PRIMARY KEY - Uniquely identifies each row in a table
+  4. FOREIGN KEY - Ensures referential integrity between tables
+  5. CHECK - Ensures values in a column meet a specific condition
 
 ### 2.2: Registration and Login APIs
 
@@ -77,19 +77,19 @@ db/migration - Flyway SQL scripts
 - DTOs (Data Transfer Objects) are simple Java classes that define what data goes in and out of your API.
 
 - Bean Validation annotations are used to enforce rules on DTO fields:
-  @NotBlank - Field must not be null or empty
-  @Email - Field must be a valid email format
-  @Size - Field must meet specified length constraints
+  1. @NotBlank - Field must not be null or empty
+  2. @Email - Field must be a valid email format
+  3. @Size - Field must meet specified length constraints
 
 - When something goes wrong in the application, like a validation error or an exception, we want to return a clear and consistent error response to the client, but we usually get ugly errors that aint understandable. So we create Custom Exception Handlers using @ControllerAdvice and @ExceptionHandler to catch specific exceptions and return structured error responses.
 
 - HTTP Status Codes:
-  200 OK - Request succeeded
-  201 Created - Resource successfully created
-  400 Bad Request - Client sent invalid data
-  401 Unauthorized - Authentication failed
-  404 Not Found - Resource not found
-  500 Internal Server Error - Server encountered an error
+  1. 200 OK - Request succeeded
+  2. 201 Created - Resource successfully created
+  3. 400 Bad Request - Client sent invalid data
+  4. 401 Unauthorized - Authentication failed
+  5. 404 Not Found - Resource not found
+  6. 500 Internal Server Error - Server encountered an error
 
 - The reason why we use DTOs instead of entities directly in controllers is to separate the internal data model from the external API contract. This provides better security, flexibility, and maintainability.
 
@@ -99,30 +99,31 @@ db/migration - Flyway SQL scripts
 
 - Can be checked using Postman or Invoke-RestMethod commands:
 1. Registration
+```
 Invoke-RestMethod -Uri "http://localhost:8080/api/auth/register" `
   -Method POST `
   -ContentType "application/json" `
   -Body '{"email":"john@example.com","password":"password123","name":"John Doe"}'
-
+```
 2. Login
+```
 Invoke-RestMethod -Uri "http://localhost:8080/api/auth/login" `
   -Method POST `
   -ContentType "application/json" `
   -Body '{"email":"john@example.com","password":"password123"}'
-
+```
 3. Health Check
+```
 Invoke-RestMethod -Uri "http://localhost:8080/api/health"
-
+```
 - Also you have to do all these after starting up the Docker containers and spinning up springboot using:
-"docker-compose up"
-        &
-".\mvnw.cmd spring-boot:run"
+```docker-compose up``` in the root directory and then ```.\mvnw.cmd spring-boot:run"``` in the services/api directory.
 
 - Also created validation and exception handling mechanisms for better error responses like:
-i. Registering with a duplicate email
-ii. Resgistering with invalid email format
-iii. Logging in with incorrect password 
-iv. Logging in with non-existent email
+  1. Registering with a duplicate email
+  2. Resgistering with invalid email format
+  3. Logging in with incorrect password 
+  4. Logging in with non-existent email
 
 ### 2.3: JWT Implementation:
 
@@ -160,21 +161,26 @@ iv. Logging in with non-existent email
 - Role Hierarchy allows roles to inherit permissions from other roles. Ex: "ROLE_ADMIN" > "ROLE_USER" and "ROLE_USER" > "ROLE_GUEST" and super admin has all roles, etc.
 
 - Listing all users:
-docker exec -it emconnect-postgres psql -U emconnect -d emconnect -c "SELECT id, email, name, role FROM users;"
-
+```
+docker exec -it emconnect-postgres psql -U emconnect -d emconnect -c "SELECT id, email, name, role FROM users;
+```
 - Adding an admin user:
-  i. Create a user who will become admin
+  1. Create a user who will become admin
+  ```
   $newAdmin = Invoke-RestMethod -Uri "http://localhost:8080/api/auth/register" `
     -Method POST `
     -ContentType "application/json" `
     -Body '{"email":"testadmin@test.com","password":"admin123","name":"Test Admin No. x"}'
 
-  Write-Host "Created user with ID: $($newAdmin.user.id)"
+  Write-Host "Created user with ID: $($newAdmin.user.id) and email: $($newAdmin.user.email)"
+  ```
 
-  ii. Promote to admin in database
+  2. Promote to admin in database
+  ```
   docker exec -it emconnect-postgres psql -U emconnect -d emconnect -c "UPDATE users SET role = 'ADMIN' WHERE email = 'testadmin@test.com';"
-
-  iii. Login (get fresh token with ADMIN role)
+  ```
+  3. Login (get fresh token with ADMIN role)
+  ```
   $adminLogin = Invoke-RestMethod -Uri "http://localhost:8080/api/auth/login" `
     -Method POST `
     -ContentType "application/json" `
@@ -183,17 +189,19 @@ docker exec -it emconnect-postgres psql -U emconnect -d emconnect -c "SELECT id,
   $adminToken = $adminLogin.token
   Write-Host "Role: $($adminLogin.user.role)"
   Write-Host "Token obtained: $($adminToken.Substring(0, 50))..."
-
-  iv. Test admin dashboard
+  ```
+  4. Test admin dashboard
+  ```
   Write-Host "`nTesting Admin Dashboard:"
   Invoke-RestMethod -Uri "http://localhost:8080/api/admin/dashboard" `
     -Headers @{ Authorization = "Bearer $adminToken" }
-
-  v. Test get all users
+  ```
+  5. Test get all users
+  ```
   Write-Host "`nTesting Get All Users:"
   Invoke-RestMethod -Uri "http://localhost:8080/api/admin/users" `
     -Headers @{ Authorization = "Bearer $adminToken" }
-
+  ```
 
 ## Phase 3 Notes
 
@@ -214,10 +222,12 @@ and a page object will be returned with the requested page of events, total page
 To test crud ops, follow below steps:
 
 Step 1: Restart Application:
+```
 cd c:\Users\rohit\Downloads\EM-Connect\services\api
 .\mvnw.cmd spring-boot:run
-
+```
 Step 2: Login to Get Token:
+```
 $login = Invoke-RestMethod -Uri "http://localhost:8080/api/auth/login" `
   -Method POST `
   -ContentType "application/json" `
@@ -225,8 +235,9 @@ $login = Invoke-RestMethod -Uri "http://localhost:8080/api/auth/login" `
 
 $token = $login.token
 Write-Host "Token: $token"
-
+```
 Step 3: Create an Event:
+```
 $event = Invoke-RestMethod -Uri "http://localhost:8080/api/events" `
   -Method POST `
   -ContentType "application/json" `
@@ -241,29 +252,35 @@ $event = Invoke-RestMethod -Uri "http://localhost:8080/api/events" `
   }'
 
 $event
-
+```
 Step 4: Publish the event:
+```
 $eventId = $event.id
 Invoke-RestMethod -Uri "http://localhost:8080/api/events/$eventId/publish" `
   -Method POST `
   -Headers @{ Authorization = "Bearer $token" }
-
+```
 Step 5: Get all published events(NO AUTH REQUIRED!!!):
+```
 Invoke-RestMethod -Uri "http://localhost:8080/api/events"
-
+```
 Step 6: Get MY Events:
+```
 Invoke-RestMethod -Uri "http://localhost:8080/api/events/my-events" `
   -Headers @{ Authorization = "Bearer $token" }
-
+```
 Step 7: Update Events:
+```
 Invoke-RestMethod -Uri "http://localhost:8080/api/events/$eventId" `
   -Method PUT `
   -ContentType "application/json" `
   -Headers @{ Authorization = "Bearer $token" } `
   -Body '{"title": "Advanced Spring Boot Workshop", "capacity": 100}'
-
+```
 Step 8: Search Events:
+```
 Invoke-RestMethod -Uri "http://localhost:8080/api/events/search?keyword=spring"
+```
 
 p.s. THIS IS SO EFFING COOOOOOL
 
