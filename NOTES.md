@@ -272,15 +272,17 @@ p.s. THIS IS SO EFFING COOOOOOL
 - State machine defines the possible states of an entity and the allowed transitions between those states. For example, an Event can be in states like DRAFT, PUBLISHED, CANCELLED, and there are specific rules for how it can transition between these states.
 
 - Valid Transitions table:
-| From State | To State    | Action        | Who Can Do It                 |
-|------------|-------------|---------------|-------------------------------|
-| (new)      | DRAFT       | Create event  | Any authenticated user        |
-| DRAFT      | PUBLISHED   | Publish       | Organizer only                |
-| DRAFT      | (deleted)   | Delete        | Organizer only                |
-| PUBLISHED  | CANCELLED   | Cancel        | Organizer only                |
-| PUBLISHED  | COMPLETED   | Complete      | System (auto) or Organizer    |
-| CANCELLED  | -           | None          | Terminal state                |
-| COMPLETED  | -           | None          | Terminal state                |
+
+| From State | To State    | Action        | Who Can Do It              |
+|------------|-------------|---------------|----------------------------|
+| (new)      | DRAFT       | Create event  | Any authenticated user     |
+| DRAFT      | PUBLISHED   | Publish       | Organizer only             |
+| DRAFT      | (deleted)   | Delete        | Organizer only             |
+| PUBLISHED  | CANCELLED   | Cancel        | Organizer only             |
+| PUBLISHED  | COMPLETED   | Complete      | System (auto) or Organizer |
+| CANCELLED  | -           | None          | Terminal state             |
+| COMPLETED  | -           | None          | Terminal state             |
+
 
 
 - Business rules for state transitions are enforced in the service layer. For example, only the organizer can publish or cancel an event, and once an event is published, it cannot be deleted, only cancelled.
