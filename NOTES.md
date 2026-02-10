@@ -310,7 +310,7 @@ $login = Invoke-RestMethod -Uri "http://localhost:8080/api/auth/login" `
 
 $token = $login.token
 ```
-4. create an event (it will be in DRAFT state):
+  4. create an event (it will be in DRAFT state):
 ```
 $event = Invoke-RestMethod -Uri "http://localhost:8080/api/events" `
   -Method POST `
@@ -328,7 +328,7 @@ $event = Invoke-RestMethod -Uri "http://localhost:8080/api/events" `
 Write-Host "Event ID: $($event.id), Status: $($event.status)"
 $eventId = $event.id
 ```
-5. try invalid transtion: draft to complete (should fail):
+  5. try invalid transtion: draft to complete (should fail):
 ```
 try {
     Invoke-RestMethod -Uri "http://localhost:8080/api/events/$eventId/complete" `
@@ -339,7 +339,7 @@ try {
     Write-Host "Status: $($_.Exception.Response.StatusCode.value__)"
 }
 ```
-6. publish the event (valid transition):
+  6. publish the event (valid transition):
 ```
 $published = Invoke-RestMethod -Uri "http://localhost:8080/api/events/$eventId/publish" `
   -Method POST `
@@ -347,7 +347,7 @@ $published = Invoke-RestMethod -Uri "http://localhost:8080/api/events/$eventId/p
 
 Write-Host "Status after publish: $($published.status)"
 ```
-7. valid transition: publish to complete:
+  7. valid transition: publish to complete:
 ```
 $completed = Invoke-RestMethod -Uri "http://localhost:8080/api/events/$eventId/complete" `
   -Method POST `
@@ -355,7 +355,7 @@ $completed = Invoke-RestMethod -Uri "http://localhost:8080/api/events/$eventId/c
 
 Write-Host "Status after complete: $($completed.status)"
 ```
-8. invalid transition: complete to any (should fail):
+  8. invalid transition: complete to any (should fail):
 ```
 try {
     Invoke-RestMethod -Uri "http://localhost:8080/api/events/$eventId/cancel" `
@@ -366,7 +366,7 @@ try {
 }
 ```
 
-9. finally verify that only published events are visible in the public listing (This should NOT include DRAFT, CANCELLED, or COMPLETED events):
+  9. finally verify that only published events are visible in the public listing (This should NOT include DRAFT, CANCELLED, or COMPLETED events):
 ```
 Invoke-RestMethod -Uri "http://localhost:8080/api/events"
 ```
