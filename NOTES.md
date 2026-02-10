@@ -389,6 +389,7 @@ p.s. THIS IS SO EFFING COOOOOOL
   ```
   Invoke-RestMethod -Uri "http://localhost:8080/api/events"
   ```
+
 ## Phase 4 Notes
 
 ### 4.1: Reg Entity & Basic Flow:
@@ -746,8 +747,64 @@ Ex: If a message has a routing key "event.*", it will be routed to any queue tha
 11. Go WebSocket Hub consumes messages from `websocket.q`  
     - Pushes real-time updates to connected clients  
 
+- After starting RabbitMQ using `docker-compose up`, we can verify the setup by:
+1. Accessing the RabbitMQ Management UI at `http://localhost:15672` (default credentials: guest/guest)
+2. Checking that the `em.events` exchange is created
 
+- I created exchanges, queues and bindings using the RabbitMQ Management UI for simplicity, but in a production application, we would typically automate this setup using configuration code or infrastructure as code tools to ensure consistency across environments.
 
+- What all i did:
+  1. Started RabbitMQ using `docker-compose up`
+  2. Accessed RabbitMQ Management UI at `http://localhost:15672`
+  3. Created a topic exchange named `em.events`
+  4. Created queues: `notification.queue`, `ticket.queue`, `websocket.queue`
+  5. Created bindings with appropriate routing keys:
+      - `registration.confirmed` -> `notification.queue`, `ticket.queue`
+      - `registration.cancelled` -> `notification.queue`
+      - `event.published` -> `notification.queue`, `websocket.queue`
+      - `event.cancelled` -> `notification.queue`, `websocket.queue`
+  6. Created DLE & DLQ: `em.events.dlx` and `em.events.dlq`
+  7. Configured queues to use the DLX for failed messages
+
+- Tested these by publishing test messages to the exchange with different routing keys and verifying that they are delivered to the correct queues in the RabbitMQ Management UI.
+
+```powershell
+# Check RabbitMQ is running
+Invoke-RestMethod -Uri "http://localhost:15672/api/overview" `
+  -Headers @{ Authorization = "Basic " + [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("emconnect:emconnect")) }
+
+# List exchanges
+Invoke-RestMethod -Uri "http://localhost:15672/api/exchanges" `
+  -Headers @{ Authorization = "Basic " + [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("emconnect:emconnect")) } | 
+  Where-Object { $_.name -like "em.*" } | 
+  Format-Table name, type, durable
+
+# List queues
+Invoke-RestMethod -Uri "http://localhost:15672/api/queues" `
+  -Headers @{ Authorization = "Basic " + [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("emconnect:emconnect")) } | 
+  Where-Object { $_.name -like "*queue*" -or $_.name -like "*dlq*" } | 
+  Format-Table name, messages, consumers
+
+# Publish a test message via API
+$body = @{
+    properties = @{ content_type = "application/json" }
+    routing_key = "registration.confirmed"
+    payload = '{"eventType":"REGISTRATION_CONFIRMED","registrationId":99,"userEmail":"test@test.com","eventTitle":"API Test","ticketCode":"TKT-API-TEST","timestamp":"2026-02-10T12:00:00"}'
+    payload_encoding = "string"
+} | ConvertTo-Json
+
+Invoke-RestMethod -Uri "http://localhost:15672/api/exchanges/%2F/em.events/publish" `
+  -Method POST `
+  -ContentType "application/json" `
+  -Headers @{ Authorization = "Basic " + [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("emconnect:emconnect")) } `
+  -Body $body
+
+# Check queue depths after publishing
+Invoke-RestMethod -Uri "http://localhost:15672/api/queues" `
+  -Headers @{ Authorization = "Basic " + [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("emconnect:emconnect")) } | 
+  Where-Object { $_.name -like "*queue*" -or $_.name -like "*dlq*" } | 
+  Format-Table name, messages
+```
 
 
 

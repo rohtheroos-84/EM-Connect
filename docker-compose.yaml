@@ -1,14 +1,11 @@
-version: '3.8'
-
 services:
-  # PostgreSQL Database
   postgres:
-    image: postgres:15-alpine
+    image: postgres:16
     container_name: emconnect-postgres
     environment:
-      POSTGRES_USER: emconnect
-      POSTGRES_PASSWORD: emconnect123
       POSTGRES_DB: emconnect
+      POSTGRES_USER: emconnect
+      POSTGRES_PASSWORD: emconnect
     ports:
       - "5432:5432"
     volumes:
@@ -19,5 +16,31 @@ services:
       timeout: 5s
       retries: 5
 
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: emconnect-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: emconnect
+      RABBITMQ_DEFAULT_PASS: emconnect
+      # Define our topology via environment variables
+      RABBITMQ_SERVER_ADDITIONAL_ERL_CONFIG: |
+        [
+          {rabbit, [
+            {default_vhost, <<"/">>},
+            {default_permissions, [<<".*">>, <<".*">>, <<".*">>]}
+          ]}
+        ].
+    ports:
+      - "5672:5672"     # AMQP protocol (applications connect here)
+      - "15672:15672"   # Management UI (browser dashboard)
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 volumes:
   postgres_data:
+  rabbitmq_data:
