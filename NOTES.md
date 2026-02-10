@@ -302,74 +302,74 @@ p.s. THIS IS SO EFFING COOOOOOL
   1. start docker desktop and run "docker-compose up" in the root directory to start all services
   2. start the api service using ".\mvnw.cmd spring-boot:run" in the services/api directory
   3. login to get token:
-```
-$login = Invoke-RestMethod -Uri "http://localhost:8080/api/auth/login" `
-  -Method POST `
-  -ContentType "application/json" `
-  -Body '{"email":"regularuser@example.com","password":"password123"}'
+  ```
+  $login = Invoke-RestMethod -Uri "http://localhost:8080/api/auth/login" `
+    -Method POST `
+    -ContentType "application/json" `
+    -Body '{"email":"regularuser@example.com","password":"password123"}'
 
-$token = $login.token
-```
+  $token = $login.token
+  ```
   4. create an event (it will be in DRAFT state):
-```
-$event = Invoke-RestMethod -Uri "http://localhost:8080/api/events" `
-  -Method POST `
-  -ContentType "application/json" `
-  -Headers @{ Authorization = "Bearer $token" } `
-  -Body '{
-    "title": "State Machine Test Event",
-    "description": "Testing state transitions",
-    "location": "Test Location",
-    "startDate": "2026-04-01T10:00:00",
-    "endDate": "2026-04-01T18:00:00",
-    "capacity": 100
-  }'
+  ```
+  $event = Invoke-RestMethod -Uri "http://localhost:8080/api/events" `
+    -Method POST `
+    -ContentType "application/json" `
+    -Headers @{ Authorization = "Bearer $token" } `
+    -Body '{
+      "title": "State Machine Test Event",
+      "description": "Testing state transitions",
+      "location": "Test Location",
+      "startDate": "2026-04-01T10:00:00",
+      "endDate": "2026-04-01T18:00:00",
+      "capacity": 100
+    }'
 
-Write-Host "Event ID: $($event.id), Status: $($event.status)"
-$eventId = $event.id
-```
+  Write-Host "Event ID: $($event.id), Status: $($event.status)"
+  $eventId = $event.id
+  ```
   5. try invalid transtion: draft to complete (should fail):
-```
-try {
-    Invoke-RestMethod -Uri "http://localhost:8080/api/events/$eventId/complete" `
-      -Method POST `
-      -Headers @{ Authorization = "Bearer $token" }
-} catch {
-    Write-Host "Expected error: Cannot transition DRAFT to COMPLETED"
-    Write-Host "Status: $($_.Exception.Response.StatusCode.value__)"
-}
-```
+  ```
+  try {
+      Invoke-RestMethod -Uri "http://localhost:8080/api/events/$eventId/complete" `
+        -Method POST `
+        -Headers @{ Authorization = "Bearer $token" }
+  } catch {
+      Write-Host "Expected error: Cannot transition DRAFT to COMPLETED"
+      Write-Host "Status: $($_.Exception.Response.StatusCode.value__)"
+  }
+  ```
   6. publish the event (valid transition):
-```
-$published = Invoke-RestMethod -Uri "http://localhost:8080/api/events/$eventId/publish" `
-  -Method POST `
-  -Headers @{ Authorization = "Bearer $token" }
+  ```
+  $published = Invoke-RestMethod -Uri "http://localhost:8080/api/events/$eventId/publish" `
+    -Method POST `
+    -Headers @{ Authorization = "Bearer $token" }
 
-Write-Host "Status after publish: $($published.status)"
-```
+  Write-Host "Status after publish: $($published.status)"
+  ```
   7. valid transition: publish to complete:
-```
-$completed = Invoke-RestMethod -Uri "http://localhost:8080/api/events/$eventId/complete" `
-  -Method POST `
-  -Headers @{ Authorization = "Bearer $token" }
+  ```
+  $completed = Invoke-RestMethod -Uri "http://localhost:8080/api/events/$eventId/complete" `
+    -Method POST `
+    -Headers @{ Authorization = "Bearer $token" }
 
-Write-Host "Status after complete: $($completed.status)"
-```
+  Write-Host "Status after complete: $($completed.status)"
+  ```
   8. invalid transition: complete to any (should fail):
-```
-try {
-    Invoke-RestMethod -Uri "http://localhost:8080/api/events/$eventId/cancel" `
-      -Method POST `
-      -Headers @{ Authorization = "Bearer $token" }
-} catch {
-    Write-Host "Expected error: Cannot transition from COMPLETED"
-}
-```
+  ```
+  try {
+      Invoke-RestMethod -Uri "http://localhost:8080/api/events/$eventId/cancel" `
+        -Method POST `
+        -Headers @{ Authorization = "Bearer $token" }
+  } catch {
+      Write-Host "Expected error: Cannot transition from COMPLETED"
+  }
+  ```
 
   9. finally verify that only published events are visible in the public listing (This should NOT include DRAFT, CANCELLED, or COMPLETED events):
-```
-Invoke-RestMethod -Uri "http://localhost:8080/api/events"
-```
+  ```
+  Invoke-RestMethod -Uri "http://localhost:8080/api/events"
+  ```
 ## Phase 4 Notes
 
 ### 4.1: Reg Entity & Basic Flow:
