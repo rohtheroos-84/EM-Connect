@@ -1,6 +1,8 @@
 package com.emconnect.api.service;
 
 import com.emconnect.api.entity.*;
+import com.emconnect.api.event.RegistrationCancelledEvent;
+import com.emconnect.api.event.RegistrationConfirmedEvent;
 import com.emconnect.api.exception.*;
 import com.emconnect.api.repository.EventRepository;
 import com.emconnect.api.repository.RegistrationRepository;
@@ -24,45 +26,34 @@ public class RegistrationService {
     private final RegistrationRepository registrationRepository;
     private final EventRepository eventRepository;
     private final UserRepository userRepository;
+    private final EventPublisher eventPublisher;
 
     public RegistrationService(RegistrationRepository registrationRepository,
                                EventRepository eventRepository,
-                               UserRepository userRepository) {
+                               UserRepository userRepository,
+                               EventPublisher eventPublisher) {
         this.registrationRepository = registrationRepository;
         this.eventRepository = eventRepository;
         this.userRepository = userRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     /**
      * Register a user for an event (with pessimistic locking for capacity safety).
-     * 
-     * The flow:
-     * 1. Find the user
-     * 2. Lock the event row (SELECT ... FOR UPDATE)
-     * 3. Validate all business rules
-     * 4. Create or reactivate registration
-     * 5. Commit → lock released
-     * 
-     * If two users try to register at the same time for the last seat:
-     * - User A locks the event row
-     * - User B waits (blocked by the lock)
-     * - User A completes registration, commits, lock released
-     * - User B now reads the updated count and sees event is full
      */
     @Transactional
     public Registration registerForEvent(Long eventId, String userEmail) {
-        // Step 1: Find the user (no lock needed, user row isn't contended)
+        // Step 1: Find the user
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        // Step 2: Lock the event row — this is the critical section
-        // Other transactions trying to register for the SAME event will WAIT here
+        // Step 2: Lock the event row
         Event event = eventRepository.findByIdWithLock(eventId)
                 .orElseThrow(() -> new ResourceNotFoundException("Event not found with id: " + eventId));
 
         logger.info("Locked event {} for registration by user {}", eventId, userEmail);
 
-        // Step 3: Validate business rules (while we hold the lock)
+        // Step 3: Validate business rules
         validateRegistration(event, user);
 
         // Step 4: Check if user has a cancelled registration (reactivate it)
@@ -86,8 +77,19 @@ public class RegistrationService {
             logger.info("Created new registration for user {} on event {}", userEmail, eventId);
         }
 
-        // Step 5: Save — on commit, the lock is released
-        return registrationRepository.save(registration);
+        // Step 5: Save
+        registration = registrationRepository.save(registration);
+
+        // Step 6: Publish domain event (after successful save)
+        try {
+            RegistrationConfirmedEvent domainEvent = RegistrationConfirmedEvent.fromRegistration(registration);
+            eventPublisher.publishRegistrationConfirmed(domainEvent);
+        } catch (Exception e) {
+            // Log but don't fail — the registration was successful
+            logger.error("Failed to publish registration confirmed event: {}", e.getMessage());
+        }
+
+        return registration;
     }
 
     /**
@@ -121,7 +123,17 @@ public class RegistrationService {
         registration.cancel();
         logger.info("Cancelled registration {} for user {}", registrationId, userEmail);
 
-        return registrationRepository.save(registration);
+        registration = registrationRepository.save(registration);
+
+        // Publish domain event
+        try {
+            RegistrationCancelledEvent domainEvent = RegistrationCancelledEvent.fromRegistration(registration);
+            eventPublisher.publishRegistrationCancelled(domainEvent);
+        } catch (Exception e) {
+            logger.error("Failed to publish registration cancelled event: {}", e.getMessage());
+        }
+
+        return registration;
     }
 
     /**
@@ -202,12 +214,7 @@ public class RegistrationService {
 
     // ==================== Private Helper Methods ====================
 
-    /**
-     * Validate that registration is allowed.
-     * This is called WHILE holding the pessimistic lock on the event row.
-     */
     private void validateRegistration(Event event, User user) {
-        // Rule 1: Event must be published
         if (!event.getStatus().acceptsRegistrations()) {
             throw new EventNotAvailableException(
                 "Cannot register for this event",
@@ -215,7 +222,6 @@ public class RegistrationService {
             );
         }
 
-        // Rule 2: Event must not have started
         if (event.getStartDate().isBefore(LocalDateTime.now())) {
             throw new EventNotAvailableException(
                 "Cannot register for this event",
@@ -223,7 +229,6 @@ public class RegistrationService {
             );
         }
 
-        // Rule 3: Check capacity (this count is accurate because we hold the lock)
         long currentRegistrations = registrationRepository.countByEventIdAndStatus(
             event.getId(), 
             RegistrationStatus.CONFIRMED
@@ -238,7 +243,6 @@ public class RegistrationService {
             );
         }
 
-        // Rule 4: User must not already be actively registered
         if (registrationRepository.existsByUserIdAndEventIdAndStatus(
                 user.getId(), 
                 event.getId(), 

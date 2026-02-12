@@ -4,41 +4,55 @@ import com.emconnect.api.dto.CreateEventRequest;
 import com.emconnect.api.dto.UpdateEventRequest;
 import com.emconnect.api.entity.Event;
 import com.emconnect.api.entity.EventStatus;
+import com.emconnect.api.entity.RegistrationStatus;
 import com.emconnect.api.entity.User;
+import com.emconnect.api.event.EventCancelledEvent;
+import com.emconnect.api.event.EventPublishedEvent;
 import com.emconnect.api.exception.InvalidStateTransitionException;
 import com.emconnect.api.exception.ResourceNotFoundException;
 import com.emconnect.api.repository.EventRepository;
+import com.emconnect.api.repository.RegistrationRepository;
 import com.emconnect.api.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+//import java.util.List;
 
 @Service
 public class EventService {
 
+    private static final Logger logger = LoggerFactory.getLogger(EventService.class);
+
     private final EventRepository eventRepository;
     private final UserRepository userRepository;
+    private final RegistrationRepository registrationRepository;
+    private final EventPublisher eventPublisher;
 
-    public EventService(EventRepository eventRepository, UserRepository userRepository) {
+    public EventService(EventRepository eventRepository, 
+                        UserRepository userRepository,
+                        RegistrationRepository registrationRepository,
+                        EventPublisher eventPublisher) {
         this.eventRepository = eventRepository;
         this.userRepository = userRepository;
+        this.registrationRepository = registrationRepository;
+        this.eventPublisher = eventPublisher;
     }
 
-    // Create a new event
+    /**
+     * Create a new event (draft status by default)
+     */
     @Transactional
     public Event createEvent(CreateEventRequest request, String organizerEmail) {
-        // Business rule: end date must be after start date
-        validateEventDates(request.getStartDate(), request.getEndDate());
-
-        // Find the organizer
         User organizer = userRepository.findByEmail(organizerEmail)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        // Create the event (always starts as DRAFT)
         Event event = new Event();
         event.setTitle(request.getTitle());
         event.setDescription(request.getDescription());
@@ -46,55 +60,25 @@ public class EventService {
         event.setStartDate(request.getStartDate());
         event.setEndDate(request.getEndDate());
         event.setCapacity(request.getCapacity());
-        event.setStatus(EventStatus.DRAFT);
         event.setOrganizer(organizer);
+        event.setStatus(EventStatus.DRAFT);
 
         return eventRepository.save(event);
     }
 
-    // Get event by ID
-    public Event getEventById(Long id) {
-        return eventRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Event not found with id: " + id));
-    }
-
-    // Get all published events with pagination (public)
-    public Page<Event> getPublishedEvents(int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("startDate").ascending());
-        return eventRepository.findByStatus(EventStatus.PUBLISHED, pageable);
-    }
-
-    // Get events by organizer (includes all statuses for the owner)
-    public Page<Event> getEventsByOrganizer(String organizerEmail, int page, int size) {
-        User organizer = userRepository.findByEmail(organizerEmail)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-
-        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        return eventRepository.findByOrganizerId(organizer.getId(), pageable);
-    }
-
-    // Search events by keyword (only published)
-    public Page<Event> searchEvents(String keyword, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("startDate").ascending());
-        return eventRepository.searchByTitle(EventStatus.PUBLISHED, keyword, pageable);
-    }
-
-    // Update event
+    /**
+     * Update an event
+     */
     @Transactional
-    public Event updateEvent(Long id, UpdateEventRequest request, String userEmail) {
-        Event event = getEventById(id);
+    public Event updateEvent(Long eventId, UpdateEventRequest request, String userEmail) {
+        Event event = getEventForOrganizer(eventId, userEmail);
 
-        // Authorization: only organizer can edit
-        verifyOrganizer(event, userEmail);
-
-        // State rule: can only edit events in editable states
-        if (!event.getStatus().isEditable()) {
+        // Only allow updates if event is in DRAFT status
+        if (event.getStatus() != EventStatus.DRAFT) {
             throw new InvalidStateTransitionException(
-                "Cannot edit event in " + event.getStatus() + " state"
-            );
+                    "Cannot update event in " + event.getStatus() + " status. Only DRAFT events can be updated.");
         }
 
-        // Update fields if provided (partial update)
         if (request.getTitle() != null) {
             event.setTitle(request.getTitle());
         }
@@ -114,113 +98,157 @@ public class EventService {
             event.setCapacity(request.getCapacity());
         }
 
-        // Business rule: validate dates after update
-        validateEventDates(event.getStartDate(), event.getEndDate());
-
         return eventRepository.save(event);
     }
 
-    // Delete event (only DRAFT events can be deleted)
+    /**
+     * Publish an event (DRAFT → PUBLISHED)
+     */
     @Transactional
-    public void deleteEvent(Long id, String userEmail) {
-        Event event = getEventById(id);
+    public Event publishEvent(Long eventId, String userEmail) {
+        Event event = getEventForOrganizer(eventId, userEmail);
 
-        // Authorization: only organizer can delete
-        verifyOrganizer(event, userEmail);
-
-        // State rule: only DRAFT events can be deleted
-        if (event.getStatus() != EventStatus.DRAFT) {
+        if (!event.getStatus().canTransitionTo(EventStatus.PUBLISHED)) {
             throw new InvalidStateTransitionException(
-                "Can only delete draft events. Use cancel for published events."
-            );
+                    "Cannot publish event from " + event.getStatus() + " status");
+        }
+
+        // Validate event is in the future
+        if (event.getStartDate().isBefore(LocalDateTime.now())) {
+            throw new InvalidStateTransitionException("Cannot publish an event that has already started");
+        }
+
+        event.setStatus(EventStatus.PUBLISHED);
+        event = eventRepository.save(event);
+
+        // Publish domain event
+        try {
+            EventPublishedEvent domainEvent = EventPublishedEvent.fromEvent(event);
+            eventPublisher.publishEventPublished(domainEvent);
+        } catch (Exception e) {
+            logger.error("Failed to publish event published event: {}", e.getMessage());
+        }
+
+        return event;
+    }
+
+    /**
+     * Cancel an event (any status → CANCELLED)
+     */
+    @Transactional
+    public Event cancelEvent(Long eventId, String userEmail) {
+        Event event = getEventForOrganizer(eventId, userEmail);
+
+        if (!event.getStatus().canTransitionTo(EventStatus.CANCELLED)) {
+            throw new InvalidStateTransitionException(
+                    "Cannot cancel event from " + event.getStatus() + " status");
+        }
+
+        // Count affected registrations before cancelling
+        int affectedRegistrations = (int) registrationRepository.countByEventIdAndStatus(
+            eventId, RegistrationStatus.CONFIRMED
+        );
+
+        event.setStatus(EventStatus.CANCELLED);
+        event = eventRepository.save(event);
+
+        // Publish domain event
+        try {
+            EventCancelledEvent domainEvent = EventCancelledEvent.fromEvent(event, affectedRegistrations);
+            eventPublisher.publishEventCancelled(domainEvent);
+        } catch (Exception e) {
+            logger.error("Failed to publish event cancelled event: {}", e.getMessage());
+        }
+
+        return event;
+    }
+
+    /**
+     * Get a single event by ID (public access for published events)
+     */
+    public Event getEventById(Long eventId) {
+        return eventRepository.findById(eventId)
+                .orElseThrow(() -> new ResourceNotFoundException("Event not found with id: " + eventId));
+    }
+
+    /**
+     * Get published events (public listing)
+     */
+    public Page<Event> getPublishedEvents(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("startDate").ascending());
+        return eventRepository.findByStatus(EventStatus.PUBLISHED, pageable);
+    }
+
+    /**
+     * Get upcoming published events
+     */
+    public Page<Event> getUpcomingEvents(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("startDate").ascending());
+        return eventRepository.findUpcomingPublishedEvents(LocalDateTime.now(), pageable);
+    }
+
+    /**
+     * Get events organized by a specific user
+     */
+    public Page<Event> getEventsByOrganizer(String organizerEmail, int page, int size) {
+        User organizer = userRepository.findByEmail(organizerEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        return eventRepository.findByOrganizerId(organizer.getId(), pageable);
+    }
+
+    /**
+     * Search events by title
+     */
+    public Page<Event> searchEvents(String query, int page, int size) {
+        if (query == null || query.trim().isEmpty()) {
+            return getPublishedEvents(page, size);
+        }
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("startDate").ascending());
+        return eventRepository.searchByTitle(EventStatus.PUBLISHED, query.trim(), pageable);
+    }
+
+    /**
+     * Delete an event (only DRAFT or CANCELLED)
+     */
+    @Transactional
+    public void deleteEvent(Long eventId, String userEmail) {
+        Event event = getEventForOrganizer(eventId, userEmail);
+
+        if (event.getStatus() == EventStatus.PUBLISHED) {
+            throw new InvalidStateTransitionException(
+                    "Cannot delete a published event. Cancel it first.");
         }
 
         eventRepository.delete(event);
     }
 
-    // Publish event (DRAFT → PUBLISHED)
     @Transactional
-    public Event publishEvent(Long id, String userEmail) {
-        Event event = getEventById(id);
+    public Event completeEvent(Long eventId, String userEmail) {
+        Event event = getEventForOrganizer(eventId, userEmail);
 
-        // Authorization: only organizer can publish
-        verifyOrganizer(event, userEmail);
-
-        // State transition validation
-        transitionState(event, EventStatus.PUBLISHED);
-
-        return eventRepository.save(event);
-    }
-
-    // Cancel event (DRAFT/PUBLISHED → CANCELLED)
-    @Transactional
-    public Event cancelEvent(Long id, String userEmail) {
-        Event event = getEventById(id);
-
-        // Authorization: only organizer can cancel
-        verifyOrganizer(event, userEmail);
-
-        // DRAFT events can be cancelled too (they skip to CANCELLED)
-        if (event.getStatus() == EventStatus.DRAFT) {
-            event.setStatus(EventStatus.CANCELLED);
-        } else {
-            // State transition validation for non-draft
-            transitionState(event, EventStatus.CANCELLED);
-        }
-
-        return eventRepository.save(event);
-    }
-
-    // Complete event (PUBLISHED → COMPLETED)
-    @Transactional
-    public Event completeEvent(Long id, String userEmail) {
-        Event event = getEventById(id);
-
-        // Authorization: only organizer can complete
-        verifyOrganizer(event, userEmail);
-
-        // State transition validation
-        transitionState(event, EventStatus.COMPLETED);
-
-        return eventRepository.save(event);
-    }
-
-    // ==================== Helper Methods ====================
-
-    /**
-     * Verify that the user is the organizer of the event
-     */
-    private void verifyOrganizer(Event event, String userEmail) {
-        if (!event.getOrganizer().getEmail().equals(userEmail)) {
-            throw new AccessDeniedException("You can only manage your own events");
-        }
-    }
-
-    /**
-     * Validate event dates
-     */
-    private void validateEventDates(java.time.LocalDateTime startDate, java.time.LocalDateTime endDate) {
-        if (endDate.isBefore(startDate)) {
-            throw new IllegalArgumentException("End date must be after start date");
-        }
-        if (endDate.equals(startDate)) {
-            throw new IllegalArgumentException("End date must be different from start date");
-        }
-    }
-
-    /**
-     * Transition event to a new state with validation
-     */
-    private void transitionState(Event event, EventStatus newStatus) {
-        EventStatus currentStatus = event.getStatus();
-        
-        if (!currentStatus.canTransitionTo(newStatus)) {
+        if (!event.getStatus().canTransitionTo(EventStatus.COMPLETED)) {
             throw new InvalidStateTransitionException(
-                currentStatus.name(), 
-                newStatus.name()
-            );
+                    "Cannot complete event from " + event.getStatus() + " status");
         }
-        
-        event.setStatus(newStatus);
+
+        event.setStatus(EventStatus.COMPLETED);
+        return eventRepository.save(event);
+    }
+
+    // ==================== Private Helper Methods ====================
+
+    private Event getEventForOrganizer(Long eventId, String userEmail) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new ResourceNotFoundException("Event not found with id: " + eventId));
+
+        if (!event.getOrganizer().getEmail().equals(userEmail)) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "You are not the organizer of this event");
+        }
+
+        return event;
     }
 }
