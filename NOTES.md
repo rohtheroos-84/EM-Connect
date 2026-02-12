@@ -843,6 +843,63 @@ Invoke-RestMethod -Uri "http://localhost:15672/api/queues" `
 }
 ```
 
+#### Files Created/Modified:
+- `RabbitMQConfig.java` - Configures exchanges, queues, bindings, and message converter
+- `EventPublisher.java` - Service that publishes domain events to RabbitMQ
+- `BaseEvent.java` - Abstract base class for all events
+- `RegistrationConfirmedEvent.java`, `RegistrationCancelledEvent.java` - Registration events
+- `EventPublishedEvent.java`, `EventCancelledEvent.java` - Event lifecycle events
+- `RegistrationService.java` & `EventService.java` - Updated to publish events after DB operations
+
+#### Issues Encountered & Fixes:
+1. **Password mismatch**: `application.yml` had `emconnect123` but Docker used `emconnect` - fixed by syncing passwords
+2. **Timezone error**: PostgreSQL 16 rejected "Asia/Calcutta" (deprecated) - fixed with JVM flag `-Duser.timezone=Asia/Kolkata`
+3. **Flyway checksum mismatch**: Modified V3 migration after it was applied - fixed by updating checksum in `flyway_schema_history` table
+
+#### Testing Performed:
+```powershell
+# 1. Login as admin
+$admin = Invoke-RestMethod -Uri "http://localhost:8080/api/auth/login" -Method POST -ContentType "application/json" -Body '{"email":"admin@emconnect.com","password":"password123"}'
+$headers = @{ Authorization = "Bearer $($admin.token)" }
+
+# 2. Create an event
+$event = Invoke-RestMethod -Uri "http://localhost:8080/api/events" -Method POST -Headers $headers -ContentType "application/json" -Body '{"title":"RabbitMQ Test","description":"Test","location":"Online","startDate":"2026-03-01T10:00:00","endDate":"2026-03-01T12:00:00","capacity":50}'
+
+# 3. Publish the event (triggers EventPublishedEvent → RabbitMQ)
+Invoke-RestMethod -Uri "http://localhost:8080/api/events/$($event.id)/publish" -Method POST -Headers $headers
+
+# 4. Register for the event (triggers RegistrationConfirmedEvent → RabbitMQ)
+Invoke-RestMethod -Uri "http://localhost:8080/api/events/$($event.id)/register" -Method POST -Headers $headers
+
+# 5. Check RabbitMQ queues via Management API
+$creds = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("emconnect:emconnect"))
+$rabbitHeaders = @{ Authorization = "Basic $creds" }
+$queues = Invoke-RestMethod -Uri "http://localhost:15672/api/queues" -Headers $rabbitHeaders
+$queues | ForEach-Object { "$($_.name): $($_.messages) messages" }
+```
+
+#### Test Results:
+| Queue | Messages | Events Routed |
+|-------|----------|---------------|
+| notification.queue | 2 | EventPublished + RegistrationConfirmed |
+| ticket.queue | 1 | RegistrationConfirmed |
+| websocket.queue | 2 | EventPublished + RegistrationConfirmed |
+
+#### Running Spring Boot (Updated Command):
+Due to Windows timezone "Asia/Calcutta" being deprecated in PostgreSQL 16, use:
+```powershell
+# Start Docker containers first
+docker-compose up -d
+
+# Then run Spring Boot with timezone fix
+cd services\api
+$env:JAVA_TOOL_OPTIONS="-Duser.timezone=Asia/Kolkata"; .\mvnw.cmd spring-boot:run
+```
+
+#### Admin Credentials:
+- Email: `admin@emconnect.com`
+- Password: `password123`
+
 
 ## Phase 6 Notes
 

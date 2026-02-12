@@ -201,9 +201,9 @@
 - [x] Transactional outbox pattern (conceptually)
 
 **Tasks:**
-- [ ] Configure RabbitMQ in Spring Boot
-- [ ] Publish event when registration is confirmed
-- [ ] Verify messages appear in RabbitMQ
+- [x] Configure RabbitMQ in Spring Boot
+- [x] Publish event when registration is confirmed
+- [x] Verify messages appear in RabbitMQ
 
 ---
 
