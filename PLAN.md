@@ -195,10 +195,10 @@
 **Goal:** Emit domain events when things happen.
 
 **Learn:**
-- [ ] Domain events pattern
-- [ ] Spring AMQP
-- [ ] Event payload design
-- [ ] Transactional outbox pattern (conceptually)
+- [x] Domain events pattern
+- [x] Spring AMQP
+- [x] Event payload design
+- [x] Transactional outbox pattern (conceptually)
 
 **Tasks:**
 - [ ] Configure RabbitMQ in Spring Boot

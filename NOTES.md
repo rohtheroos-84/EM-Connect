@@ -678,21 +678,21 @@ Invoke-RestMethod -Uri "http://localhost:8080/api/events/$eventId/registration-s
 - RabbitMQ is a popular open-source message broker that implements the Advanced Message Queuing Protocol (AMQP). It provides features like message queuing, routing, and delivery guarantees, making it a great choice for building scalable and resilient applications.
 
 - its architecture consists of:
-1. Producer: The component that creates and sends messages to the broker.
-2. Exchange: The component that receives messages from producers and routes them to the appropriate queues based on routing rules.
-3. Queue: The component that stores messages until they are consumed by a consumer.
-4. Consumer: The component that receives messages from the queue and processes them.
-5. Binding: The relationship between an exchange and a queue that defines how messages are routed.
+  1. Producer: The component that creates and sends messages to the broker.
+  2. Exchange: The component that receives messages from producers and routes them to the appropriate queues based on routing rules.
+  3. Queue: The component that stores messages until they are consumed by a consumer.
+  4. Consumer: The component that receives messages from the queue and processes them.
+  5. Binding: The relationship between an exchange and a queue that defines how messages are routed.
 
 - exchange types:
-1. Direct Exchange: Routes messages to queues based on an exact match between the routing key and the queue binding key.
-Ex: If a message has a routing key "event.registration", it will be routed to a queue that is bound with the same key.
+  1. Direct Exchange: Routes messages to queues based on an exact match between the routing key and the queue binding key.
+  Ex: If a message has a routing key "event.registration", it will be routed to a queue that is bound with the same key.
 
-2. Fanout Exchange: Routes messages to all queues that are bound to it, regardless of the routing key.
-Ex: If a message is sent to a fanout exchange, it will be delivered to all queues bound to that exchange.
+  2. Fanout Exchange: Routes messages to all queues that are bound to it, regardless of the routing key.
+  Ex: If a message is sent to a fanout exchange, it will be delivered to all queues bound to that exchange.
 
-3. Topic Exchange: Routes messages to queues based on pattern matching between the routing key and the queue binding key, allowing for more flexible routing.
-Ex: If a message has a routing key "event.*", it will be routed to any queue that is bound with a matching pattern like "event.registration" or "event.cancellation".
+  3. Topic Exchange: Routes messages to queues based on pattern matching between the routing key and the queue binding key, allowing for more flexible routing.
+  Ex: If a message has a routing key "event.*", it will be routed to any queue that is bound with a matching pattern like "event.registration" or "event.cancellation".
 
 - We are going to use TOPIC exchange for our event-driven architecture because it allows us to route messages based on patterns, which is useful for handling different types of events (e.g., registration, cancellation) without needing a separate queue for each event type.
 
@@ -704,48 +704,48 @@ Ex: If a message has a routing key "event.*", it will be routed to any queue tha
 - Message durability ensures that messages are not lost in case of broker failure. Acknowledgments allow consumers to confirm that they have successfully processed a message, which helps the broker know when it can safely remove the message from the queue.
 
 - Message acknowledgments work like this:
-1. Producer sends message to exchange
-2. Exchange routes message to queue
-3. Consumer receives message and processes it
-4. If processing is successful, consumer sends an acknowledgment back to the broker indicating that the message has been handled and can be removed from the queue. If the consumer fails to acknowledge (e.g., due to an error or crash), the broker can re-deliver the message to another consumer, ensuring that it is eventually processed.
+  1. Producer sends message to exchange
+  2. Exchange routes message to queue
+  3. Consumer receives message and processes it
+  4. If processing is successful, consumer sends an acknowledgment back to the broker indicating that the message has been handled and can be removed from the queue. If the consumer fails to acknowledge (e.g., due to an error or crash), the broker can re-deliver the message to another consumer, ensuring that it is eventually processed.
 
 - EM Connect Message Flow:
 
-1. A user or admin triggers an action in the Spring Boot API  
-   - Registration confirmed or cancelled  
-   - Event published or cancelled  
+  1. A user or admin triggers an action in the Spring Boot API  
+    - Registration confirmed or cancelled  
+    - Event published or cancelled  
 
-2. The Spring Boot API publishes a message to the topic exchange  
-   - Exchange name: `em.events`  
-   - Message includes a routing key describing the action  
+  2. The Spring Boot API publishes a message to the topic exchange  
+    - Exchange name: `em.events`  
+    - Message includes a routing key describing the action  
 
-3. The topic exchange evaluates the routing key  
+  3. The topic exchange evaluates the routing key  
 
-4. Based on the routing key, the message is routed to one or more queues  
+  4. Based on the routing key, the message is routed to one or more queues  
 
-5. If the routing key is `registration.confirmed`  
-   - Message goes to `notification.q`  
-   - Message goes to `ticket.q`  
+  5. If the routing key is `registration.confirmed`  
+    - Message goes to `notification.q`  
+    - Message goes to `ticket.q`  
 
-6. If the routing key is `registration.cancelled`  
-   - Message goes to `notification.q`  
+  6. If the routing key is `registration.cancelled`  
+    - Message goes to `notification.q`  
 
-7. If the routing key is `event.published`  
-   - Message goes to `notification.q`  
-   - Message goes to `websocket.q`  
+  7. If the routing key is `event.published`  
+    - Message goes to `notification.q`  
+    - Message goes to `websocket.q`  
 
-8. If the routing key is `event.cancelled`  
-   - Message goes to `notification.q`  
-   - Message goes to `websocket.q`  
+  8. If the routing key is `event.cancelled`  
+    - Message goes to `notification.q`  
+    - Message goes to `websocket.q`  
 
-9. Go Notifier Worker consumes messages from `notification.q`  
-   - Sends user notifications  
+  9. Go Notifier Worker consumes messages from `notification.q`  
+    - Sends user notifications  
 
-10. Go Ticket Worker consumes messages from `ticket.q`  
-    - Generates or manages tickets  
+  10. Go Ticket Worker consumes messages from `ticket.q`  
+      - Generates or manages tickets  
 
-11. Go WebSocket Hub consumes messages from `websocket.q`  
-    - Pushes real-time updates to connected clients  
+  11. Go WebSocket Hub consumes messages from `websocket.q`  
+      - Pushes real-time updates to connected clients  
 
 - After starting RabbitMQ using `docker-compose up`, we can verify the setup by:
 1. Accessing the RabbitMQ Management UI at `http://localhost:15672` (default credentials: guest/guest)
@@ -806,6 +806,42 @@ Invoke-RestMethod -Uri "http://localhost:15672/api/queues" `
   Format-Table name, messages
 ```
 
+### 5.2: Publishing Events from Spring Boot:
+
+- domain events are a way to represent significant occurrences or changes in the state of our application. For example, when a user registers for an event, that can be represented as a "RegistrationConfirmed" event. These events can then be published to a message broker like RabbitMQ, allowing other parts of the system to react to them asynchronously. 
+
+- spring AMQP in simple terms is a library that provides support for working with RabbitMQ in Spring applications. It allows us to easily publish and consume messages, manage connections, and handle message serialization/deserialization. 
+
+- AMQP stands for Advanced Message Queuing Protocol, it provides these components:
+  1. Connection Factory: Manages connections to the RabbitMQ broker.
+  2. RabbitTemplate: A helper class for sending messages to the broker.
+  3. MessageListenerContainer(`@RabbitListener`): A component that listens for messages from a queue and processes them.
+  4. MessageConverter: Handles serialization and deserialization of messages.
+
+- event payload design is crucial for ensuring that the messages we publish contain all the necessary information for consumers to process them effectively. A well-designed payload should include:
+
+  1. Event Type: A string that identifies the type of event (e.g., "REGISTRATION_CONFIRMED").
+  2. Event Data: A structured object that contains the relevant data for the event (e.g., registrationId, userEmail, eventTitle, ticketCode).
+  3. Timestamp: The time when the event occurred, which can be useful for ordering and debugging
+  4. Unique Event ID: A unique identifier for the event instance, which can help with tracking and idempotency.
+  5. And all relevant Entity IDs (e.g., userId, eventId) to allow consumers to correlate the event with their own data.
+
+- Example RegistrationConfirmed event payload:
+```json
+{
+  "eventId": "uuid-123",
+  "eventType": "REGISTRATION_CONFIRMED",
+  "timestamp": "2026-02-10T10:00:00Z",
+  "registrationId": 42,
+  "userId": 6,
+  "userEmail": "user@example.com",
+  "userName": "John Doe",
+  "registeredEventId": 3,
+  "eventTitle": "Spring Workshop",
+  "eventDate": "2026-05-01T10:00:00Z",
+  "ticketCode": "TKT-ABC123"
+}
+```
 
 
 ## Phase 6 Notes
