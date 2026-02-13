@@ -1076,11 +1076,105 @@ type EmailData struct {
 - Monitor DLQ growth.
 - Worker must be idempotent and resilient.
 
+#### Testing & Working: 
+- Basically Same as before but now we see actual email sending logs in the Go worker console, and we can verify receipt of emails in the inbox of the registered user, currently sends to Mailhogun's test inbox since we're using Mailhog for local development.
 
+- Testing Commands:
+```powershell
+# 1. Start Docker containers (includes Mailhog)
+docker-compose up -d
 
+# 2. Run Spring Boot API
+cd services\api
+$env:JAVA_TOOL_OPTIONS="-Duser.timezone=Asia/Kolkata"; .\mvnw.cmd spring-boot:run
 
+# 3. BUILD & Run Go Notification Worker
+cd c:\Users\rohit\Downloads\EM-Connect\services\notification-worker
+go build -o notification-worker.exe .
+.\notification-worker.exe
 
+# 4. Trigger events from API (e.g., register for an event, publish an event) and observe Go worker logs for email sending:
 
+# Login
+$login = Invoke-RestMethod -Uri "http://localhost:8080/api/auth/login" `
+  -Method POST -ContentType "application/json" `
+  -Body '{"email":"admin@emconnect.com","password":"password123"}'
+$token = $login.token
+
+# Create event
+$event = Invoke-RestMethod -Uri "http://localhost:8080/api/events" `
+  -Method POST -ContentType "application/json" `
+  -Headers @{ Authorization = "Bearer $token" } `
+  -Body '{
+    "title": "Email Test Event",
+    "description": "Testing email notifications!",
+    "location": "Conference Room A",
+    "startDate": "2026-08-15T14:00:00",
+    "endDate": "2026-08-15T17:00:00",
+    "capacity": 100
+  }'
+Write-Host "Created event: $($event.id)"
+
+# Publish event (sends email to organizer)
+Invoke-RestMethod -Uri "http://localhost:8080/api/events/$($event.id)/publish" `
+  -Method POST -Headers @{ Authorization = "Bearer $token" }
+Write-Host "Event published!"
+
+# Register (sends confirmation email)
+Invoke-RestMethod -Uri "http://localhost:8080/api/events/$($event.id)/register" `
+  -Method POST -Headers @{ Authorization = "Bearer $token" }
+Write-Host "Registered for event!"
+
+# 5. Check Go worker logs for email sending output
+# 6. Verify receipt of emails in Mailhog's test inbox at http://localhost:8025 in your browser:
+'''
+You should see 2 emails:
+
+"📢 Your Event is Live: Email Test Event" - Sent when event was published
+"🎉 Registration Confirmed: Email Test Event" - Sent when you registered
+
+Click on an email to see the beautiful HTML template!
+'''
+
+# 7. DLQ Testing:
+
+docker-compose stop mailhog
+
+# Create and publish another event
+$event2 = Invoke-RestMethod -Uri "http://localhost:8080/api/events" `
+  -Method POST -ContentType "application/json" `
+  -Headers @{ Authorization = "Bearer $token" } `
+  -Body '{
+    "title": "DLQ Test Event",
+    "description": "Testing DLQ",
+    "location": "Test",
+    "startDate": "2026-09-01T10:00:00",
+    "endDate": "2026-09-01T12:00:00",
+    "capacity": 50
+  }'
+
+Invoke-RestMethod -Uri "http://localhost:8080/api/events/$($event2.id)/publish" `
+  -Method POST -Headers @{ Authorization = "Bearer $token" }
+
+# Check Notification Worker logs for retry attempts and DLQ routing:
+'''
+2026/02/13 20:29:41 consumer.go:135: ─────────────────────────────────────────
+2026/02/13 20:29:41 consumer.go:136: 📬 Message received (routing key: event.published)
+2026/02/13 20:29:41 handler.go:32: 📨 Received event: EVENT_PUBLISHED (eventId: 6)
+2026/02/13 20:29:41 handler.go:131: 📢 EVENT PUBLISHED
+2026/02/13 20:29:41 handler.go:132:    🎫 Event: DLQ Test Event   
+2026/02/13 20:29:41 handler.go:133:    📍 Location: Test
+2026/02/13 20:29:41 handler.go:134:    👤 Organizer: Admin User (admin@emconnect.com)
+2026/02/13 20:29:41 email.go:229: ⚠️ Email send failed (attempt 1//3): SMTP error: dial tcp [::1]:1025: connectex: No connection could be made because the target machine actively refused it.
+2026/02/13 20:29:41 email.go:233: ⏳ Waiting 1s before retry...   
+2026/02/13 20:29:42 email.go:229: ⚠️ Email send failed (attempt 2//3): SMTP error: dial tcp [::1]:1025: connectex: No connection could be made because the target machine actively refused it.
+2026/02/13 20:29:42 email.go:233: ⏳ Waiting 2s before retry...
+2026/02/13 20:29:44 email.go:229: ⚠️ Email send failed (attempt 3//3): SMTP error: dial tcp [::1]:1025: connectex: No connection could be made because the target machine actively refused it.
+2026/02/13 20:29:44 consumer.go:142: ❌ Error processing message: failed to send email: failed to send email after 3 attempts: SMTP error: dial tcp [::1]:1025: connectex: No connection could be made because the target machine actively refused it.
+2026/02/13 20:29:44 consumer.go:184: 📭 Message sent to Dead Letter Queue
+2026/02/13 20:31:07 consumer.go:135: ─────────────────────────────────────────
+'''
+```
 
 
 ## Phase 6 Notes

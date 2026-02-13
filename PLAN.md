@@ -234,10 +234,10 @@
 - [x] Dead letter queues
 
 **Tasks:**
-- [ ] Integrate with an email service (Mailgun, SendGrid, or local SMTP)
-- [ ] Send registration confirmation emails
-- [ ] Implement retry logic for failures
-- [ ] Handle permanent failures gracefully
+- [x] Integrate with an email service (Mailgun, SendGrid, or local SMTP)
+- [x] Send registration confirmation emails
+- [x] Implement retry logic for failures
+- [x] Handle permanent failures gracefully
 
 ---
 
