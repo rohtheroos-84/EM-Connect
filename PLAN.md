@@ -174,7 +174,7 @@
 
 ---
 
-## Phase 5: Event-Driven Architecture (Introduction to Golang)
+## Phase 5: Event Architecture (with Golang)
 
 ### Step 5.1: Message Broker Setup
 **Goal:** Add RabbitMQ and understand messaging.
