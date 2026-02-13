@@ -5,17 +5,20 @@ import (
     "fmt"
     "log"
 
+    "github.com/emconnect/notification-worker/email"
     "github.com/emconnect/notification-worker/model"
 )
 
 // MessageHandler processes incoming messages
 type MessageHandler struct {
-    // In the future, we'll add email service here
+    emailService *email.Service
 }
 
 // NewMessageHandler creates a new handler
-func NewMessageHandler() *MessageHandler {
-    return &MessageHandler{}
+func NewMessageHandler(emailService *email.Service) *MessageHandler {
+    return &MessageHandler{
+        emailService: emailService,
+    }
 }
 
 // HandleMessage processes a message based on its type
@@ -55,10 +58,31 @@ func (h *MessageHandler) handleRegistrationConfirmed(body []byte) error {
     log.Printf("   🎫 Event: %s", event.EventTitle)
     log.Printf("   📍 Location: %s", event.EventLocation)
     log.Printf("   🎟️  Ticket: %s", event.TicketCode)
-    log.Printf("   📅 Date: %s", event.EventStartDate.Format("Jan 2, 2006 at 3:04 PM"))
 
-    // TODO: In Step 5.4, we'll actually send an email here
-    log.Printf("   📮 [SIMULATION] Would send confirmation email to %s", event.UserEmail)
+    // Prepare template data
+    data := map[string]interface{}{
+        "UserName":      event.UserName,
+        "EventTitle":    event.EventTitle,
+        "EventLocation": event.EventLocation,
+        "EventDate":     event.EventStartDate.Format("Monday, January 2, 2006 at 3:04 PM"),
+        "TicketCode":    event.TicketCode,
+    }
+
+    // Render email template
+    htmlBody, err := h.emailService.RenderTemplate("registration_confirmed", data)
+    if err != nil {
+        return fmt.Errorf("failed to render template: %w", err)
+    }
+
+    // Send email
+    err = h.emailService.SendWithRetry(email.Email{
+        To:       event.UserEmail,
+        Subject:  fmt.Sprintf("🎉 Registration Confirmed: %s", event.EventTitle),
+        HTMLBody: htmlBody,
+    })
+    if err != nil {
+        return fmt.Errorf("failed to send email: %w", err)
+    }
 
     return nil
 }
@@ -72,7 +96,28 @@ func (h *MessageHandler) handleRegistrationCancelled(body []byte) error {
     log.Printf("❌ REGISTRATION CANCELLED")
     log.Printf("   📧 To: %s (%s)", event.UserEmail, event.UserName)
     log.Printf("   🎫 Event: %s", event.EventTitle)
-    log.Printf("   📮 [SIMULATION] Would send cancellation email to %s", event.UserEmail)
+
+    // Prepare template data
+    data := map[string]interface{}{
+        "UserName":   event.UserName,
+        "EventTitle": event.EventTitle,
+    }
+
+    // Render email template
+    htmlBody, err := h.emailService.RenderTemplate("registration_cancelled", data)
+    if err != nil {
+        return fmt.Errorf("failed to render template: %w", err)
+    }
+
+    // Send email
+    err = h.emailService.SendWithRetry(email.Email{
+        To:       event.UserEmail,
+        Subject:  fmt.Sprintf("Registration Cancelled: %s", event.EventTitle),
+        HTMLBody: htmlBody,
+    })
+    if err != nil {
+        return fmt.Errorf("failed to send email: %w", err)
+    }
 
     return nil
 }
@@ -86,9 +131,32 @@ func (h *MessageHandler) handleEventPublished(body []byte) error {
     log.Printf("📢 EVENT PUBLISHED")
     log.Printf("   🎫 Event: %s", event.EventTitle)
     log.Printf("   📍 Location: %s", event.EventLocation)
-    log.Printf("   📅 Date: %s", event.StartDate.Format("Jan 2, 2006 at 3:04 PM"))
     log.Printf("   👤 Organizer: %s (%s)", event.OrganizerName, event.OrganizerEmail)
-    log.Printf("   📮 [SIMULATION] Would notify subscribers about new event")
+
+    // Prepare template data
+    data := map[string]interface{}{
+        "EventTitle":       event.EventTitle,
+        "EventDescription": event.EventDescription,
+        "EventLocation":    event.EventLocation,
+        "EventDate":        event.StartDate.Format("Monday, January 2, 2006 at 3:04 PM"),
+        "Capacity":         event.Capacity,
+    }
+
+    // Render email template
+    htmlBody, err := h.emailService.RenderTemplate("event_published", data)
+    if err != nil {
+        return fmt.Errorf("failed to render template: %w", err)
+    }
+
+    // Send notification to organizer (in production, you'd notify subscribers)
+    err = h.emailService.SendWithRetry(email.Email{
+        To:       event.OrganizerEmail,
+        Subject:  fmt.Sprintf("📢 Your Event is Live: %s", event.EventTitle),
+        HTMLBody: htmlBody,
+    })
+    if err != nil {
+        return fmt.Errorf("failed to send email: %w", err)
+    }
 
     return nil
 }
@@ -102,7 +170,28 @@ func (h *MessageHandler) handleEventCancelled(body []byte) error {
     log.Printf("🚫 EVENT CANCELLED")
     log.Printf("   🎫 Event: %s", event.EventTitle)
     log.Printf("   👥 Affected Registrations: %d", event.AffectedRegistrations)
-    log.Printf("   📮 [SIMULATION] Would notify %d registered users", event.AffectedRegistrations)
+
+    // Prepare template data
+    data := map[string]interface{}{
+        "EventTitle":   event.EventTitle,
+        "OriginalDate": event.OriginalStartDate.Format("Monday, January 2, 2006 at 3:04 PM"),
+    }
+
+    // Render email template
+    htmlBody, err := h.emailService.RenderTemplate("event_cancelled", data)
+    if err != nil {
+        return fmt.Errorf("failed to render template: %w", err)
+    }
+
+    // Send notification to organizer
+    err = h.emailService.SendWithRetry(email.Email{
+        To:       event.OrganizerEmail,
+        Subject:  fmt.Sprintf("⚠️ Event Cancelled: %s", event.EventTitle),
+        HTMLBody: htmlBody,
+    })
+    if err != nil {
+        return fmt.Errorf("failed to send email: %w", err)
+    }
 
     return nil
 }

@@ -41,17 +41,67 @@ func (c *Consumer) Connect() error {
         return fmt.Errorf("failed to open channel: %w", err)
     }
 
-    // Set QoS (prefetch count) - how many messages to fetch at once
+    // Set QoS (prefetch count)
     err = c.channel.Qos(
-        c.config.RabbitMQ.PrefetchCount, // prefetch count
-        0,                                // prefetch size
-        false,                            // global
+        c.config.RabbitMQ.PrefetchCount,
+        0,
+        false,
     )
     if err != nil {
         return fmt.Errorf("failed to set QoS: %w", err)
     }
 
+    // Setup Dead Letter Queue
+    if err := c.setupDLQ(); err != nil {
+        return fmt.Errorf("failed to setup DLQ: %w", err)
+    }
+
     log.Printf("✅ Connected to RabbitMQ successfully!")
+    return nil
+}
+
+// setupDLQ creates the Dead Letter Queue infrastructure
+func (c *Consumer) setupDLQ() error {
+    // Declare DLQ exchange
+    err := c.channel.ExchangeDeclare(
+        c.config.RabbitMQ.DLQExchange,
+        "direct",
+        true,  // durable
+        false, // auto-delete
+        false, // internal
+        false, // no-wait
+        nil,
+    )
+    if err != nil {
+        return fmt.Errorf("failed to declare DLQ exchange: %w", err)
+    }
+
+    // Declare DLQ queue
+    _, err = c.channel.QueueDeclare(
+        c.config.RabbitMQ.DLQQueue,
+        true,  // durable
+        false, // auto-delete
+        false, // exclusive
+        false, // no-wait
+        nil,
+    )
+    if err != nil {
+        return fmt.Errorf("failed to declare DLQ queue: %w", err)
+    }
+
+    // Bind DLQ queue to DLQ exchange
+    err = c.channel.QueueBind(
+        c.config.RabbitMQ.DLQQueue,
+        "notification.failed", // routing key
+        c.config.RabbitMQ.DLQExchange,
+        false,
+        nil,
+    )
+    if err != nil {
+        return fmt.Errorf("failed to bind DLQ queue: %w", err)
+    }
+
+    log.Printf("📭 Dead Letter Queue configured: %s", c.config.RabbitMQ.DLQQueue)
     return nil
 }
 
@@ -59,15 +109,14 @@ func (c *Consumer) Connect() error {
 func (c *Consumer) Start() error {
     log.Printf("📥 Starting to consume from queue: %s", c.config.RabbitMQ.Queue)
 
-    // Start consuming
     messages, err := c.channel.Consume(
-        c.config.RabbitMQ.Queue,      // queue
-        c.config.RabbitMQ.ConsumerTag, // consumer tag
-        false,                         // auto-ack (false = manual ack)
-        false,                         // exclusive
-        false,                         // no-local
-        false,                         // no-wait
-        nil,                           // args
+        c.config.RabbitMQ.Queue,
+        c.config.RabbitMQ.ConsumerTag,
+        false, // auto-ack (false = manual ack)
+        false, // exclusive
+        false, // no-local
+        false, // no-wait
+        nil,
     )
     if err != nil {
         return fmt.Errorf("failed to start consuming: %w", err)
@@ -75,7 +124,6 @@ func (c *Consumer) Start() error {
 
     log.Printf("👂 Waiting for messages. To exit press CTRL+C")
 
-    // Process messages in a loop
     for msg := range messages {
         c.processMessage(msg)
     }
@@ -87,18 +135,18 @@ func (c *Consumer) processMessage(msg amqp.Delivery) {
     log.Printf("─────────────────────────────────────────")
     log.Printf("📬 Message received (routing key: %s)", msg.RoutingKey)
 
-	// DEBUG: Print the raw message body
-    log.Printf("📄 Raw message: %s", string(msg.Body))
-	
     // Process the message
     err := c.handler.HandleMessage(msg.Body)
 
     if err != nil {
         log.Printf("❌ Error processing message: %v", err)
-        // Negative acknowledge - requeue the message
-        // In production, you might want to limit retries or send to DLQ
-        if nackErr := msg.Nack(false, true); nackErr != nil {
-            log.Printf("❌ Error NACKing message: %v", nackErr)
+        
+        // Send to Dead Letter Queue
+        c.sendToDLQ(msg, err.Error())
+        
+        // Acknowledge the original message (don't requeue)
+        if ackErr := msg.Ack(false); ackErr != nil {
+            log.Printf("❌ Error ACKing failed message: %v", ackErr)
         }
         return
     }
@@ -108,6 +156,32 @@ func (c *Consumer) processMessage(msg amqp.Delivery) {
         log.Printf("❌ Error ACKing message: %v", ackErr)
     } else {
         log.Printf("✅ Message processed and acknowledged")
+    }
+}
+
+// sendToDLQ publishes failed message to Dead Letter Queue
+func (c *Consumer) sendToDLQ(msg amqp.Delivery, errorMsg string) {
+    headers := amqp.Table{
+        "x-original-routing-key": msg.RoutingKey,
+        "x-error-message":        errorMsg,
+        "x-original-exchange":    msg.Exchange,
+    }
+
+    err := c.channel.Publish(
+        c.config.RabbitMQ.DLQExchange,
+        "notification.failed",
+        false,
+        false,
+        amqp.Publishing{
+            ContentType: msg.ContentType,
+            Body:        msg.Body,
+            Headers:     headers,
+        },
+    )
+    if err != nil {
+        log.Printf("❌ Failed to send to DLQ: %v", err)
+    } else {
+        log.Printf("📭 Message sent to Dead Letter Queue")
     }
 }
 

@@ -40,6 +40,17 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: emconnect-mailhog
+    ports:
+      - "1025:1025"   # SMTP server
+      - "8025:8025"   # Web UI
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "1025"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
 volumes:
   postgres_data:
