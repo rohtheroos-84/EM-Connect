@@ -217,10 +217,10 @@
 - [x] Goroutines and channels basics
 
 **Tasks:**
-- [ ] Set up Go project
-- [ ] Consume messages from the queue
-- [ ] Log the received events
-- [ ] Understand Go's error handling
+- [x] Set up Go project
+- [x] Consume messages from the queue
+- [x] Log the received events
+- [x] Understand Go's error handling
 
 ---
 

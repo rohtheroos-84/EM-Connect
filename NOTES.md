@@ -946,6 +946,66 @@ services/
 └── events.go # Event structs (DTOs)
 ```
 
+#### Testing done:
+1. Start RabbitMQ and Spring Boot API:
+```powershell
+docker-compose up -d
+cd services\api
+$env:JAVA_TOOL_OPTIONS="-Duser.timezone=Asia/Kolkata"; .\mvnw.cmd spring-boot:run
+```
+
+2. Run the Go Notification Worker:
+```powershell
+cd c:\Users\rohit\Downloads\EM-Connect\services\notification-worker
+go build -o notification-worker.exe .
+.\notification-worker.exe
+```
+
+3. Trigger events from the API (e.g., register for an event, publish an event) and observe the worker logs to see that messages are being consumed and processed correctly:
+
+```powershell
+# 1. Login and get token
+$login = Invoke-RestMethod -Uri "http://localhost:8080/api/auth/login" -Method POST -ContentType "application/json" -Body '{"email":"admin@emconnect.com","password":"password123"}'
+$token = $login.token
+
+# 2. Create and publish an event
+$event = Invoke-RestMethod -Uri "http://localhost:8080/api/events" -Method POST -ContentType "application/json" -Headers @{ Authorization = "Bearer $token" } -Body '{"title":"Fixed Test Event","description":"Testing fixed Go worker","location":"Success Land","startDate":"2026-08-01T10:00:00","endDate":"2026-08-01T18:00:00","capacity":50}'
+
+Invoke-RestMethod -Uri "http://localhost:8080/api/events/$($event.id)/publish" -Method POST -Headers @{ Authorization = "Bearer $token" }
+
+# Output in Go worker logs should show the EventPublishedEvent being consumed and processed successfully:
+'''
+─────────────────────────────────────────
+📬 Message received (routing key: event.published)
+📨 Received event: EVENT_PUBLISHED (eventId: 2)
+📢 EVENT PUBLISHED
+   🎫 Event: Fixed Test Event
+   📍 Location: Success Land
+   📅 Date: Aug 1, 2026 at 10:00 AM
+   👤 Organizer: Admin User (admin@emconnect.com)
+   📮 [SIMULATION] Would notify subscribers about new event
+✅ Message processed and acknowledged
+─────────────────────────────────────────
+'''
+# 3. Register for the event to trigger RegistrationConfirmedEvent and see it processed by the worker:
+Invoke-RestMethod -Uri "http://localhost:8080/api/events/$($event.id)/register" -Method POST -Headers @{ Authorization = "Bearer $token" }
+
+# Output in Go worker logs should show the RegistrationConfirmedEvent being consumed and processed successfully:
+'''
+─────────────────────────────────────────
+📬 Message received (routing key: registration.confirmed)
+📨 Received event: REGISTRATION_CONFIRMED (eventId: 2)
+✅ REGISTRATION CONFIRMED
+   📧 To: admin@emconnect.com (Admin User)
+   🎫 Event: Fixed Test Event
+   📍 Location: Success Land
+   🎟️  Ticket: TKT-XXXXXXXX
+   📅 Date: Aug 1, 2026 at 10:00 AM
+   📮 [SIMULATION] Would send confirmation email to admin@emconnect.com
+✅ Message processed and acknowledged
+─────────────────────────────────────────
+'''
+```
 
 
 ## Phase 6 Notes
