@@ -900,6 +900,53 @@ $env:JAVA_TOOL_OPTIONS="-Duser.timezone=Asia/Kolkata"; .\mvnw.cmd spring-boot:ru
 - Email: `admin@emconnect.com`
 - Password: `password123`
 
+### 5.3: First GOLANG service - Notification Worker:
+
+- we use Go for background workers coz of a lot of reasons:
+  1. fast startup: java/spring takes 3 to 10 seconds while Go takes 10-50 ms, making it great for scaling up/down workers
+  2. low memory footprint: Go's memory usage(10-50 MB per instance) is much lower than Java(200-500 MB per instance), allowing us to run more worker instances on the same hardware
+  3. built-in concurrency: Go's goroutines and channels make it easy to handle multiple tasks concurrently without complex thread management, which is ideal for processing messages from a queue
+  4. simple deployment: Go compiles to a single binary with no external dependencies, making it easy to deploy and run in various environments without worrying about JVM versions or libraries
+  5. strong standard library: Go has excellent built-in support for networking, HTTP, and working with RabbitMQ through libraries like `streadway/amqp`, which simplifies development of message-driven workers
+  6. good performance: Go's performance is often comparable to Java, and in some cases better for I/O-bound tasks, making it a solid choice for background processing
+
+#### Go vs Java Syntax Comparison
+
+| Java                              | Go                              |
+|-----------------------------------|----------------------------------|
+| `class User { }`                  | `type User struct { }`          |
+| `private String name;`            | `Name string` (exported)        |
+| `public String getName()`         | `name string` (unexported)      |
+| `UserService userService;`        | `var userService UserService`   |
+| `@Autowired`                     | No DI framework needed          |
+| `try { } catch { }`              | `if err != nil { return err }`  |
+| `new Thread().start()`           | `go doSomething()`              |
+| `interface Runnable { }`         | `type Runnable interface { }`   |
+| `implements Runnable`            | Implicit implementation         |
+| `List<String>`                   | `[]string`                      |
+| `Map<String, User>`              | `map[string]User`               |
+| `null`                           | `nil`                           |
+| `NullPointerException`           | Compiler catches most issues    |
+
+
+#### Our Notification Worker Structure:
+```
+services/
+└── notification-worker/
+├── go.mod # Module definition (like pom.xml)
+├── go.sum # Dependency checksums
+├── main.go # Entry point
+├── config/
+│ └── config.go # Configuration loading
+├── consumer/
+│ └── consumer.go # RabbitMQ consumer
+├── handler/
+│ └── handler.go # Message processing logic
+└── model/
+└── events.go # Event structs (DTOs)
+```
+
+
 
 ## Phase 6 Notes
 

@@ -211,10 +211,10 @@
 **Goal:** Build your first Go service that consumes messages.
 
 **Learn:**
-- [ ] Go project structure
-- [ ] Go modules and dependencies
-- [ ] Connecting to RabbitMQ from Go
-- [ ] Goroutines and channels basics
+- [x] Go project structure
+- [x] Go modules and dependencies
+- [x] Connecting to RabbitMQ from Go
+- [x] Goroutines and channels basics
 
 **Tasks:**
 - [ ] Set up Go project
