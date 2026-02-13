@@ -228,10 +228,10 @@
 **Goal:** Actually send emails.
 
 **Learn:**
-- [ ] SMTP basics
-- [ ] Email templating
-- [ ] Retry mechanisms
-- [ ] Dead letter queues
+- [x] SMTP basics
+- [x] Email templating
+- [x] Retry mechanisms
+- [x] Dead letter queues
 
 **Tasks:**
 - [ ] Integrate with an email service (Mailgun, SendGrid, or local SMTP)

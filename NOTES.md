@@ -1007,6 +1007,81 @@ Invoke-RestMethod -Uri "http://localhost:8080/api/events/$($event.id)/register" 
 '''
 ```
 
+### 5.4: Email Notifications(ACTUAL):
+
+#### 1. SMTP Basics
+- SMTP is used to send emails via a mail server (not directly to users).
+- Typical flow:
+  1. Connect to SMTP server (port 587 or 465)
+  2. TLS handshake
+  3. Authenticate
+  4. Send sender, recipient, headers, body
+- Always use a trusted provider (Mailgun, SendGrid, SES).
+- Never hardcode credentials in code. Use environment variables.
+
+---
+
+#### 2. Email Templating
+- Never hardcode email text.
+- Use `html/template` in Go for safe HTML rendering.
+- Templates allow:
+  - Personalization
+  - Reusability
+  - Cleaner separation of logic and content
+- Keep templates version-controlled.
+- Pass structured data object to template (DTO style).
+
+Example data struct:
+```go
+type EmailData struct {
+    UserName   string
+    EventTitle string
+    TicketCode string
+}
+```
+
+---
+
+#### 3. Retry Mechanism
+
+- Email sending can fail due to:
+  - Network issues
+  - Rate limits
+  - Temporary SMTP errors
+- Use exponential backoff:
+  - 1s → 2s → 4s → 8s → stop
+- Set a max retry limit (e.g., 3–5 attempts).
+- Retry only temporary failures.
+- Do NOT retry permanent failures (invalid email, 550 errors).
+
+---
+
+#### 4. Dead Letter Queue (DLQ)
+
+- If max retries fail → do NOT requeue.
+- Nack without requeue → message goes to DLX.
+- DLQ prevents infinite failure loops.
+- Use DLQ to:
+  - Debug poison messages
+  - Inspect malformed payloads
+  - Monitor failure rates
+
+---
+
+#### Production Principles:
+
+- Never drop messages silently.
+- Always log structured errors.
+- Separate permanent vs transient failures.
+- Monitor DLQ growth.
+- Worker must be idempotent and resilient.
+
+
+
+
+
+
+
 
 ## Phase 6 Notes
 
