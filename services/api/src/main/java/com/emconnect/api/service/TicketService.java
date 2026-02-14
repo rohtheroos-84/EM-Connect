@@ -10,6 +10,7 @@ import com.emconnect.api.repository.RegistrationRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,7 +38,8 @@ public class TicketService {
      * Get all tickets for the current user
      */
     public List<TicketResponse> getMyTickets(User userid) {
-        List<Registration> registrations = registrationRepository.findByUserId(userid.getId(), null).getContent();
+        List<Registration> registrations = registrationRepository
+                .findByUserId(userid.getId(), Pageable.unpaged()).getContent();
         return registrations.stream()
                 .map(this::toTicketResponse)
                 .collect(Collectors.toList());

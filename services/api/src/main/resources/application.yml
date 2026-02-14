@@ -54,3 +54,8 @@ management:
 jwt:
   secret: myVerySecureSecretKeyThatIsAtLeast256BitsLongForHS256Algorithm2024!
   expiration: 86400000  # 24 hours in milliseconds
+
+# Ticket Configuration
+ticket:
+  qr:
+    storage-path: ../ticket-worker/tickets/qr
