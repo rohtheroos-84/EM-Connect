@@ -40,6 +40,9 @@ public class Registration {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    @Column(name = "checked_in_at")
+    private LocalDateTime checkedInAt;
+
     // Default constructor (required by JPA)
     public Registration() {
     }
@@ -144,6 +147,9 @@ public class Registration {
     public void setCancelledAt(LocalDateTime cancelledAt) {
         this.cancelledAt = cancelledAt;
     }
+
+    public LocalDateTime getCheckedInAt() { return checkedInAt; }
+    public void setCheckedInAt(LocalDateTime checkedInAt) { this.checkedInAt = checkedInAt; }
 
     public LocalDateTime getCreatedAt() {
         return createdAt;

@@ -19,3 +19,6 @@ CREATE INDEX idx_registrations_user ON registrations(user_id);
 CREATE INDEX idx_registrations_event ON registrations(event_id);
 CREATE INDEX idx_registrations_status ON registrations(status);
 CREATE INDEX idx_registrations_ticket_code ON registrations(ticket_code);
+
+-- Add checked_in timestamp to track when tickets are scanned/validated
+ALTER TABLE registrations ADD COLUMN checked_in_at TIMESTAMP;

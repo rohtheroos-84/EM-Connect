@@ -37,8 +37,22 @@ func NewService(secretKey string, qrGenerator *qr.Generator, metadataDir string)
 }
 
 // GenerateTicket creates a QR code and metadata for a registration
+// THIS IS IDEMPOTENT: if the QR already exists, it skips generation
 func (s *Service) GenerateTicket(event model.RegistrationConfirmedEvent) error {
     log.Printf("🎫 Generating ticket for: %s", event.TicketCode)
+
+    // IDEMPOTENCY CHECK: If QR already exists, skip
+    if s.qrGenerator.Exists(event.TicketCode) {
+        log.Printf("   ⏭️  QR code already exists for %s — skipping (idempotent)", event.TicketCode)
+        return nil
+    }
+
+    // Also check if metadata already exists
+    metadataPath := filepath.Join(s.metadataDir, fmt.Sprintf("%s.json", event.TicketCode))
+    if _, err := os.Stat(metadataPath); err == nil {
+        log.Printf("   ⏭️  Metadata already exists for %s — skipping (idempotent)", event.TicketCode)
+        return nil
+    }
 
     // Step 1: Create the payload to encode in QR
     payload := s.createPayload(event)
@@ -111,9 +125,7 @@ func (s *Service) sign(payload model.TicketPayload) string {
     // Create HMAC-SHA256
     mac := hmac.New(sha256.New, []byte(s.secretKey))
     mac.Write([]byte(data))
-    signature := hex.EncodeToString(mac.Sum(nil))
-
-    return signature
+    return hex.EncodeToString(mac.Sum(nil))
 }
 
 // VerifySignature checks if a ticket payload has a valid signature
