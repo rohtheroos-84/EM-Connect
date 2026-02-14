@@ -1278,12 +1278,153 @@ Write-Host "Registered! Ticket: $($reg.ticketCode)"
 
 - The tickets are generated successfully, QR codes are created and saved to disk(currently to /tickets/qr/ directory) along with metadata(in tickets/metadata). In a real application, we would typically store the QR code in a cloud storage service and save the URL in the database instead of saving to local disk.
 
+### 6.2: Ticket Validation & Retrieval:
 
+- Now that the ticket-worker generates QR codes and saves them to disk, the Spring Boot API needs to:
+  1. **Serve** those QR codes to users (retrieve the file from the shared filesystem)
+  2. **Validate** tickets at the event entrance (scan the QR code and mark it as used)
+  3. **List** a user's tickets with their status and QR readiness
 
+- Shared Filesystem is the simplest approach for local development: Go worker writes QR images to `services/ticket-worker/tickets/qr/`, and Spring Boot reads from the same path using `@Value("${ticket.qr.storage-path}")`. In production, we'd use cloud storage (S3, GCS) instead.
 
+- Spring's `Resource` and `UrlResource` are used to serve files as HTTP responses. `UrlResource` wraps a `Path` on disk and allows Spring to stream the file bytes directly to the client with the right `Content-Type` (e.g., `image/png`).
 
+- Idempotency in ticket validation means scanning the SAME ticket twice doesn't cause an error or double check-in. Instead:
+  - First scan → `valid: true`, "Welcome!" (sets `checkedInAt` timestamp)
+  - Second scan → `valid: false`, "Already used at: {time}" (reads existing `checkedInAt`)
+  - This is critical for real-world check-in systems where staff might accidentally scan a ticket twice, or a user might try to re-enter.
 
+- Validation states as a decision tree:
+  1. Ticket not found → INVALID ("Ticket not found")
+  2. Registration cancelled → INVALID ("Registration cancelled")
+  3. Already checked in (`checkedInAt != null`) → ALREADY USED (idempotent, no error)
+  4. Event cancelled → INVALID ("Event cancelled")
+  5. All checks pass → SUCCESS (set `checkedInAt = now()`, save to DB)
 
+- Authorization for ticket endpoints:
+  - `GET /api/tickets/my` → Any authenticated user (sees only their own tickets)
+  - `GET /api/tickets/{code}` → Owner, ADMIN, or event Organizer
+  - `GET /api/tickets/{code}/qr` → Owner or ADMIN
+  - `POST /api/tickets/{code}/validate` → ADMIN or ORGANIZER only (`@PreAuthorize`)
+
+- The `@Transactional` annotation on `validateTicket()` ensures that the check-in timestamp is written atomically — if anything fails mid-validation, the transaction rolls back and the ticket remains unscanned.
+
+#### Issues Encountered & Fixes:
+
+1. **`NOT_FOUND - no queue 'ticket.queue'`** — Go consumer called `channel.Consume()` without declaring the queue first. If Spring Boot hadn't started yet (or queues were deleted), the queue didn't exist. Fixed by adding `setupQueue()` that declares the exchange, queue, and bindings before consuming. Now Go workers are self-sufficient — no dependency on Spring Boot startup order.
+
+2. **DLQ exchange name mismatch** — Go workers used `em.events.dlq` as the DLQ exchange name, but Spring Boot's `RabbitMQConfig.java` uses `em.events.dlx`. When Go declared the queue with `x-dead-letter-exchange: em.events.dlq`, RabbitMQ rejected Spring Boot's attempt to re-declare it with `em.events.dlx`, silently preventing bindings from being created. Fixed both Go configs to use `em.events.dlx`.
+
+3. **DLQ exchange type mismatch** — Go workers declared the DLQ exchange as `direct`, but Spring Boot declares it as `topic`. RabbitMQ threw `PRECONDITION_FAILED - inequivalent arg 'type'`. Fixed both Go workers to use `topic` type.
+
+4. **Missing queue-to-exchange bindings** — Even after queues existed, messages weren't routing because Go workers only declared queues, not the bindings to `em.events` exchange. Added explicit `QueueBind()` calls: ticket-worker binds to `registration.confirmed`, notification-worker binds to `registration.*` and `event.*`.
+
+5. **Null Pageable in `getMyTickets()`** — `findByUserId(id, null)` could throw NPE. Fixed to use `Pageable.unpaged()`.
+
+- **Key Lesson**: When multiple services declare the same RabbitMQ resources, ALL properties must match exactly (exchange name, exchange type, queue args like `x-dead-letter-exchange`). RabbitMQ treats mismatches as errors and silently prevents topology creation, leading to hard-to-debug "messages not arriving" issues.
+
+#### Testing:
+
+```powershell
+# 1. Start Docker containers, Spring Boot API, and both Go workers
+docker-compose up -d
+
+cd services\api
+$env:JAVA_TOOL_OPTIONS="-Duser.timezone=Asia/Kolkata"; .\mvnw.cmd spring-boot:run
+
+cd c:\Users\rohit\Downloads\EM-Connect\services\ticket-worker
+go build -o ticket-worker.exe .
+.\ticket-worker.exe
+
+cd c:\Users\rohit\Downloads\EM-Connect\services\notification-worker
+go build -o notification-worker.exe .
+.\notification-worker.exe
+
+# 2. Login as admin
+$login = Invoke-RestMethod -Uri "http://localhost:8080/api/auth/login" `
+  -Method POST -ContentType "application/json" `
+  -Body '{"email":"admin@emconnect.com","password":"password123"}'
+$token = $login.token
+
+# 3. Create, publish, and register for an event
+$event = Invoke-RestMethod -Uri "http://localhost:8080/api/events" `
+  -Method POST -ContentType "application/json" `
+  -Headers @{ Authorization = "Bearer $token" } `
+  -Body '{
+    "title": "Go Microservices Workshop",
+    "description": "Building event-driven services with Go and RabbitMQ",
+    "location": "Bangalore Tech Park",
+    "startDate": "2026-04-15T09:00:00",
+    "endDate": "2026-04-15T17:00:00",
+    "capacity": 50
+  }'
+
+Invoke-RestMethod -Uri "http://localhost:8080/api/events/$($event.id)/publish" `
+  -Method POST -Headers @{ Authorization = "Bearer $token" }
+
+$reg = Invoke-RestMethod -Uri "http://localhost:8080/api/events/$($event.id)/register" `
+  -Method POST -Headers @{ Authorization = "Bearer $token" }
+Write-Host "Ticket Code: $($reg.ticketCode)"
+# RESULT: TKT-174B170F
+
+# Wait a few seconds for ticket-worker to generate QR code
+Start-Sleep -Seconds 3
+
+# 4. Test GET /api/tickets/my — list all tickets for current user
+Invoke-RestMethod -Uri "http://localhost:8080/api/tickets/my" `
+  -Headers @{ Authorization = "Bearer $token" }
+# RESULT: Array of tickets with qrReady: true/false for each
+
+# 5. Test GET /api/tickets/{code} — single ticket details
+Invoke-RestMethod -Uri "http://localhost:8080/api/tickets/$($reg.ticketCode)" `
+  -Headers @{ Authorization = "Bearer $token" }
+# RESULT: Full ticket with event summary, user summary, qrReady: true
+
+# 6. Test GET /api/tickets/{code}/qr — download QR code image
+Invoke-WebRequest -Uri "http://localhost:8080/api/tickets/$($reg.ticketCode)/qr" `
+  -Headers @{ Authorization = "Bearer $token" } `
+  -OutFile "ticket-qr.png"
+# RESULT: HTTP 200, Content-Type: image/png, 1678 bytes saved to disk
+
+# 7. Test POST /api/tickets/{code}/validate — first scan (should succeed)
+$v1 = Invoke-RestMethod -Uri "http://localhost:8080/api/tickets/$($reg.ticketCode)/validate" `
+  -Method POST -Headers @{ Authorization = "Bearer $token" }
+Write-Host "First scan - Valid: $($v1.valid), Message: $($v1.message)"
+# RESULT: valid: true, "Ticket validated successfully. Welcome!"
+
+# 8. Test second scan — idempotent (should show already used, NOT error)
+$v2 = Invoke-RestMethod -Uri "http://localhost:8080/api/tickets/$($reg.ticketCode)/validate" `
+  -Method POST -Headers @{ Authorization = "Bearer $token" }
+Write-Host "Second scan - Valid: $($v2.valid), Message: $($v2.message)"
+# RESULT: valid: false, "Ticket already used. Checked in at: 2026-02-14T16:35:24"
+
+# 9. Test invalid ticket code
+try {
+    $v3 = Invoke-RestMethod -Uri "http://localhost:8080/api/tickets/INVALID-CODE/validate" `
+      -Method POST -Headers @{ Authorization = "Bearer $token" }
+    Write-Host "Invalid ticket - Valid: $($v3.valid), Message: $($v3.message)"
+} catch {
+    Write-Host "Error caught (expected)"
+}
+# RESULT: valid: false, "Ticket not found. Invalid ticket code."
+
+# 10. Verify checkedInAt persisted
+$ticket = Invoke-RestMethod -Uri "http://localhost:8080/api/tickets/$($reg.ticketCode)" `
+  -Headers @{ Authorization = "Bearer $token" }
+Write-Host "CheckedInAt: $($ticket.checkedInAt)"
+# RESULT: checkedInAt: "2026-02-14T16:35:24.009233" (persisted in DB)
+```
+
+#### Test Results:
+
+| Endpoint | Test | HTTP Status | Result |
+|---|---|---|---|
+| `GET /api/tickets/my` | List user's tickets | 200 | 2 tickets returned, qrReady correctly reflects QR file existence |
+| `GET /api/tickets/TKT-174B170F` | Single ticket details | 200 | Full ticket with event & user summary |
+| `GET /api/tickets/TKT-174B170F/qr` | Download QR image | 200 | PNG image, 1678 bytes, Content-Type: image/png |
+| `POST /api/tickets/TKT-174B170F/validate` (1st) | First scan | 200 | `valid: true`, "Welcome!", checkedInAt set |
+| `POST /api/tickets/TKT-174B170F/validate` (2nd) | Second scan | 200 | `valid: false`, "Already used" (idempotent!) |
+| `POST /api/tickets/INVALID-CODE/validate` | Invalid code | 200 | `valid: false`, "Ticket not found" |
 
 ## Phase 7 Notes
 

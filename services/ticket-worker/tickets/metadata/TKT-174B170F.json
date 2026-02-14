@@ -1,0 +1,13 @@
+{
+  "ticketCode": "TKT-174B170F",
+  "eventId": 2,
+  "userId": 1,
+  "userName": "Admin User",
+  "userEmail": "admin@emconnect.com",
+  "eventTitle": "Go Microservices Workshop",
+  "eventLocation": "Bangalore Tech Park",
+  "eventStartDate": "2026-04-15T09:00:00",
+  "qrImagePath": "tickets\\qr\\TKT-174B170F.png",
+  "generatedAt": "2026-02-14T16:33:49.919399+05:30",
+  "status": "VALID"
+}

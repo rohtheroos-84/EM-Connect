@@ -263,14 +263,14 @@
 **Goal:** Complete the ticket flow.
 
 **Learn:**
-- [ ] File serving from Spring Boot
-- [ ] Ticket validation logic
-- [ ] Idempotency in async systems
+- [x] File serving from Spring Boot
+- [x] Ticket validation logic
+- [x] Idempotency in async systems
 
 **Tasks:**
-- [ ] Endpoint to retrieve user's tickets
-- [ ] Endpoint to validate a ticket code
-- [ ] Handle edge cases (cancelled registration, used ticket)
+- [x] Endpoint to retrieve user's tickets
+- [x] Endpoint to validate a ticket code
+- [x] Handle edge cases (cancelled registration, used ticket)
 
 ---
 
@@ -421,8 +421,8 @@
 | 3 | Event Management | ✅ Completed |
 | 4 | Registration System | ✅ Completed |
 | 5 | Event-Driven Architecture | ✅ Completed |
-| 6 | Ticket Generation | 🔄 IN PROGRESS |
-| 7 | Real-Time Features | ⬜ Not Started |
+| 6 | Ticket Generation | ✅ Completed |
+| 7 | Real-Time Features | 🔄 IN PROGRESS |
 | 8 | Frontend Integration | ⬜ Not Started |
 | 9 | Caching & Performance | ⬜ Not Started |
 | 10 | Observability & Production Readiness | ⬜ Not Started |
