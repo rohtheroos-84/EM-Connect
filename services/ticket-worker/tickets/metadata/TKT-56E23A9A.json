@@ -1,0 +1,13 @@
+{
+  "ticketCode": "TKT-56E23A9A",
+  "eventId": 7,
+  "userId": 1,
+  "userName": "Admin User",
+  "userEmail": "admin@emconnect.com",
+  "eventTitle": "QR Ticket Test",
+  "eventLocation": "Main Hall",
+  "eventStartDate": "2026-09-10T09:00:00",
+  "qrImagePath": "tickets\\qr\\TKT-56E23A9A.png",
+  "generatedAt": "2026-02-14T15:21:03.0148245+05:30",
+  "status": "VALID"
+}

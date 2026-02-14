@@ -1212,7 +1212,71 @@ Invoke-RestMethod -Uri "http://localhost:8080/api/events/$($event2.id)/publish" 
   2. Allows for asynchronous processing, so users can receive confirmation immediately while QR code is generated in the background.
   3. Enables better scalability, as we can run multiple worker instances to handle high registration volumes without impacting API performance.
 
+- Testing:
+```powershell
+# 1. Start Docker containers and Spring Boot API
+docker-compose up -d
+cd services\api
+$env:JAVA_TOOL_OPTIONS="-Duser.timezone=Asia/Kolkata"; .\mvnw.cmd spring-boot:run 
 
+# 2. Run Go Ticket Worker
+cd c:\Users\rohit\Downloads\EM-Connect\services\ticket-worker
+go build -o ticket-worker.exe .
+.\ticket-worker.exe
+
+# 3. Trigger a registration to generate a ticket and QR code
+
+# Login and get token
+$login = Invoke-RestMethod -Uri "http://localhost:8080/api/auth/login" `
+  -Method POST -ContentType "application/json" `
+  -Body '{"email":"admin@emconnect.com","password":"password123"}'
+$token = $login.token
+
+# Create event
+$event = Invoke-RestMethod -Uri "http://localhost:8080/api/events" `
+  -Method POST -ContentType "application/json" `
+  -Headers @{ Authorization = "Bearer $token" } `
+  -Body '{
+    "title": "QR Ticket Test",
+    "description": "Testing QR code generation!",
+    "location": "Main Hall",
+    "startDate": "2026-09-10T09:00:00",
+    "endDate": "2026-09-10T17:00:00",
+    "capacity": 200
+  }'
+Write-Host "Created event: $($event.id)"
+
+# Publish
+Invoke-RestMethod -Uri "http://localhost:8080/api/events/$($event.id)/publish" `
+  -Method POST -Headers @{ Authorization = "Bearer $token" }
+Write-Host "Event published!"
+
+# Register (this triggers ticket generation!)
+$reg = Invoke-RestMethod -Uri "http://localhost:8080/api/events/$($event.id)/register" `
+  -Method POST -Headers @{ Authorization = "Bearer $token" }
+Write-Host "Registered! Ticket: $($reg.ticketCode)"
+```
+
+- **Output** in Ticket Worker logs:
+2026/02/14 15:21:03 consumer.go:106: ─────────────────────────────────────────
+2026/02/14 15:21:03 consumer.go:107: 📬 Message received (routing key: registration.confirmed)
+2026/02/14 15:21:03 handler.go:31: 📨 Received event: REGISTRATION_CONFIRMED (eventId: 7)
+2026/02/14 15:21:03 handler.go:48: 🎫 Processing ticket for registration:
+2026/02/14 15:21:03 handler.go:49:    👤 User: Admin User (admin@emconnect.com)
+2026/02/14 15:21:03 handler.go:50:    📅 Event: QR Ticket Test        
+2026/02/14 15:21:03 handler.go:51:    🎟️  Ticket Code: TKT-56E23A9A   
+2026/02/14 15:21:03 service.go:41: 🎫 Generating ticket for: TKT-56E23A9A
+2026/02/14 15:21:03 service.go:48:    🔏 Payload signed
+2026/02/14 15:21:03 generator.go:37: 🎨 Generating QR code for ticket: TKT-56E23A9A
+2026/02/14 15:21:03 generator.go:38:    📦 Payload size: 242 bytes    
+2026/02/14 15:21:03 generator.go:50:    💾 QR image saved: tickets\qr\TKT-56E23A9A.png (1731 bytes)
+2026/02/14 15:21:03 service.go:81:    ✅ Ticket generated successfully!
+2026/02/14 15:21:03 service.go:82:    📁 QR Image: tickets\qr\TKT-56E23A9A.png
+2026/02/14 15:21:03 service.go:83:    📋 Metadata saved for: TKT-56E23A9A
+2026/02/14 15:21:03 consumer.go:123: ✅ Message processed and acknowledged
+2026/02/14 15:21:03 consumer.go:106: ─────────────────────────────────────────
+
+- The tickets are generated successfully, QR codes are created and saved to disk(currently to /tickets/qr/ directory) along with metadata(in tickets/metadata). In a real application, we would typically store the QR code in a cloud storage service and save the URL in the database instead of saving to local disk.
 
 
 
