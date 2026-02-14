@@ -1176,8 +1176,49 @@ Invoke-RestMethod -Uri "http://localhost:8080/api/events/$($event2.id)/publish" 
 '''
 ```
 
-
 ## Phase 6 Notes
+
+### 6.1: Ticket Worker Service:
+
+- The Ticket Worker is responsible for generating and managing tickets when a user registers for an event. It listens to the `registration.confirmed` messages from RabbitMQ, creates a unique ticket code, and updates the registration record in the database with this ticket information.
+
+- QR stands for Quick Response code, which is a type of 2D barcode that can store information such as text, URLs, or other data. In our case, we can generate a QR code that encodes the ticket information (e.g., event name, date, ticket code) and include it in the confirmation email sent to the user. This allows users to easily access their ticket details by scanning the QR code with their smartphone.
+
+- Parts of a QR code:
+  1. Finder Pattern: The three large squares at the corners that help scanners locate and orient the code.
+  2. Alignment Pattern: Smaller square(s) that help correct for distortion when the code is scanned from an angle.
+  3. Timing Pattern: The alternating black and white modules that help determine the size of the data matrix.
+  4. Data Area: The area where the actual data (e.g., ticket information) is encoded in a pattern of black and white modules.
+
+- In EM Connect, each QR Code encodes:
+  - Ticket Code (e.g., TKT-ABC123)
+  - Event ID
+  - User ID
+  - Verification Signature (for security)
+
+- Example:
+``` powershell
+# QR Code Data:
+{
+  "ticketCode": "TKT-ABC123",
+  "eventId": 5,
+  "userId": 10,
+  "signature": "HMAC-SHA256(userId + eventId + secretKey)"
+}
+```
+
+- Why we do QR generation in the worker instead of API:
+  1. Offloads CPU-intensive task from API, improving response times for users.
+  2. Allows for asynchronous processing, so users can receive confirmation immediately while QR code is generated in the background.
+  3. Enables better scalability, as we can run multiple worker instances to handle high registration volumes without impacting API performance.
+
+
+
+
+
+
+
+
 
 
 ## Phase 7 Notes

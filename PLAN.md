@@ -247,9 +247,9 @@
 **Goal:** Generate tickets asynchronously.
 
 **Learn:**
-- [ ] QR code generation
-- [ ] File/image generation in Go
-- [ ] Storing generated assets
+- [x] QR code generation
+- [x] File/image generation in Go
+- [x] Storing generated assets
 
 **Tasks:**
 - [ ] Create ticket worker Go service
