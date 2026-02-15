@@ -1461,9 +1461,76 @@ Write-Host "CheckedInAt: $($ticket.checkedInAt)"
 
 - This WebSocket HUB will be on **PORT 8081**, being the 3rd GO Worker alongside Notification and Ticket workers. It will consume messages from RabbitMQ and broadcast to clients.
 
+#### Testing:
+```powershell
+# 1. Start Docker containers, Spring Boot API, and WebSocket Hub
+docker-compose up -d
+cd services\api
+$env:JAVA_TOOL_OPTIONS="-Duser.timezone=Asia/Kolkata"; 
+.\mvnw.cmd spring-boot:run
+cd c:\Users\rohit\Downloads\EM-Connect\services\websocket-hub
+go build -o websocket-hub.exe .
+.\websocket-hub.exe
 
+# 2. Made a simple HTML client(`test.html`) to connect to the WebSocket Hub and log messages.
 
+# 3. Open `test.html` in the browser (http://localhost:8081/test.html) and observe the console logs for messages received from the WebSocket Hub.
 
+# 4. Trigger events from the API (e.g., publish an event, register for an event) and see real-time updates in the browser console:
+
+# Login and get token
+$login = Invoke-RestMethod -Uri "http://localhost:8080/api/auth/login" `
+  -Method POST -ContentType "application/json" `
+  -Body '{"email":"admin@emconnect.com","password":"password123"}'
+$token = $login.token
+
+# Create and publish an event
+$event = Invoke-RestMethod -Uri "http://localhost:8080/api/events" `
+  -Method POST -ContentType "application/json" `
+  -Headers @{ Authorization = "Bearer $token" } `
+  -Body '{
+    "title": "WebSocket Live Test",
+    "description": "Testing real-time updates!",
+    "location": "Virtual Room",
+    "startDate": "2026-11-01T10:00:00",
+    "endDate": "2026-11-01T17:00:00",
+    "capacity": 50
+  }'
+Write-Host "Created event: $($event.id)"
+
+# Publish → ALL connected browser clients should see "event.published"!
+Invoke-RestMethod -Uri "http://localhost:8080/api/events/$($event.id)/publish" `
+  -Method POST -Headers @{ Authorization = "Bearer $token" }
+Write-Host "Published! Check the browser!"
+
+# Now subscribe to this event ID in the browser test page, then:
+# Register → clients subscribed to this event ID should see "participant.count"
+Invoke-RestMethod -Uri "http://localhost:8080/api/events/$($event.id)/register" `
+  -Method POST -Headers @{ Authorization = "Bearer $token" }
+Write-Host "Registered! Check the browser for participant update!"
+
+# Check stats
+Invoke-RestMethod -Uri "http://localhost:8081/stats"
+
+# 5. Observe the WebSocket Hub logs for connection management and message broadcasting:
+'''
+2026/02/15 14:37:08 hub.go:60: ✅ Client connected (total: 1)
+2026/02/15 14:37:23 hub.go:145: 📌 Client subscribed to 'event:1' (topic subscribers: 1)
+2026/02/15 14:38:16 consumer.go:147: ─────────────────────────────────────────
+2026/02/15 14:38:16 consumer.go:148: 📬 Message received (routing key: event.published)
+2026/02/15 14:38:16 handler.go:29: 📨 Received event: EVENT_PUBLISHED (eventId: 3)
+2026/02/15 14:38:16 handler.go:52: 📢 EVENT PUBLISHED → Broadcasting to all clients
+2026/02/15 14:38:16 handler.go:53:    🎫 WebSocket Live Test at Virtual Room
+2026/02/15 14:38:16 hub.go:98: 📢 Broadcasting to ALL clients (1)     
+2026/02/15 14:38:16 consumer.go:164: ✅ Message processed and acknowledged
+2026/02/15 14:38:46 consumer.go:147: ─────────────────────────────────────────
+2026/02/15 14:40:33 consumer.go:148: 📬 Message received (routing key: registration.confirmed)
+2026/02/15 14:40:33 handler.go:29: 📨 Received event: REGISTRATION_CONFIRMED (eventId: 4)
+2026/02/15 14:40:33 handler.go:121: ✅ REGISTRATION CONFIRMED → Broadcasting to topic 'event:4'
+2026/02/15 14:40:33 handler.go:122:    👤 Admin User registered for WebSocket Live Test 2
+2026/02/15 14:40:33 consumer.go:164: ✅ Message processed and acknowledged
+2026/02/15 14:40:33 hub.go:116: 📢 Broadcasting to topic "event:4" (1 subscribers)
+```
 
 
 

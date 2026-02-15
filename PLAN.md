@@ -286,9 +286,9 @@
 - [x] Go concurrency for connection handling
 
 **Tasks:**
-- [ ] Create WebSocket hub in Go
-- [ ] Handle client connections
-- [ ] Broadcast test messages
+- [x] Create WebSocket hub in Go
+- [x] Handle client connections
+- [x] Broadcast test messages
 
 ---
 
