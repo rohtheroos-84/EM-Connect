@@ -38,6 +38,15 @@ This document provides a description of every source code file in the EM-Connect
   - [QR Code Generation](#qr-code-generation)
   - [Ticket Service](#ticket-service)
   - [Dependencies](#dependencies-1)
+- [Services / WebSocket Hub (Go)](#services--websocket-hub-go)
+  - [Entry Point](#entry-point-3)
+  - [Config](#config-2)
+  - [Consumer](#consumer-2)
+  - [Hub](#hub)
+  - [Handler](#handler-2)
+  - [Model](#model-2)
+  - [Test Dashboard](#test-dashboard)
+  - [Dependencies](#dependencies-2)
 
 ---
 
@@ -103,7 +112,7 @@ The API service is a Spring Boot 3.2.2 application that provides RESTful endpoin
 |------|-------------|
 | `src/main/java/com/emconnect/api/controller/AuthController.java` | Handles authentication endpoints: `POST /api/auth/register` (creates a new user account) and `POST /api/auth/login` (authenticates and returns a JWT token). Validates request bodies. |
 | `src/main/java/com/emconnect/api/controller/HealthController.java` | Provides health check endpoints: `GET /api/health` (returns service status, timestamp, and version) and `GET /api/ping` (simple liveness check returning "pong"). |
-| `src/main/java/com/emconnect/api/controller/EventController.java` | Full CRUD for events. Endpoints: create (`POST /api/events`), get by ID (`GET /api/events/{id}`), list all published (`GET /api/events`), update (`PUT /api/events/{id}`), delete (`DELETE /api/events/{id}`), publish (`POST /api/events/{id}/publish`), cancel (`POST /api/events/{id}/cancel`), complete (`POST /api/events/{id}/complete`), get organizer's events (`GET /api/events/my-events`), and search (`GET /api/events/search`). Supports pagination. |
+| `src/main/java/com/emconnect/api/controller/EventController.java` | Full CRUD for events. Endpoints: create (`POST /api/events`), get by ID (`GET /api/events/{id}`), list all published (`GET /api/events`), update (`PUT /api/events/{id}`), delete (`DELETE /api/events/{id}`), publish (`POST /api/events/{id}/publish`), cancel (`POST /api/events/{id}/cancel`), complete (`POST /api/events/{id}/complete`), get organizer's events (`GET /api/events/my-events`), search (`GET /api/events/search`), and get participant count (`GET /api/events/{id}/participants/count` — returns JSON with `eventId`, `eventTitle`, `participantCount`, `capacity`). Supports pagination. |
 | `src/main/java/com/emconnect/api/controller/UserController.java` | Exposes `GET /api/users/me` to return the currently authenticated user's profile information. |
 | `src/main/java/com/emconnect/api/controller/RegistrationController.java` | Manages event registrations. Endpoints: register for an event (`POST /api/registrations/events/{eventId}`), cancel registration (`POST /api/registrations/{id}/cancel`), get current user's registrations (`GET /api/registrations/my-registrations`), get registrations for an event (`GET /api/registrations/events/{eventId}`), check registration status (`GET /api/registrations/events/{eventId}/status`), and validate a ticket (`GET /api/registrations/tickets/{ticketCode}/validate`). |
 | `src/main/java/com/emconnect/api/controller/TicketController.java` | Ticket retrieval and validation endpoints at `/api/tickets`. Endpoints: get all tickets for the authenticated user (`GET /api/tickets/my`), get a single ticket by code (`GET /api/tickets/{code}`), download QR code image as PNG (`GET /api/tickets/{code}/qr`), and validate a ticket for check-in (`POST /api/tickets/{code}/validate`, restricted to ADMIN/ORGANIZER via `@PreAuthorize`). |
@@ -118,8 +127,8 @@ The API service is a Spring Boot 3.2.2 application that provides RESTful endpoin
 | `src/main/java/com/emconnect/api/service/AuthService.java` | Business logic for authentication. `register()` checks for duplicate emails, hashes the password with BCrypt, saves the user, and generates a JWT. `login()` validates credentials and returns a JWT. |
 | `src/main/java/com/emconnect/api/service/JwtService.java` | Handles JWT lifecycle. Generates tokens containing user ID, email, and role claims using HMAC-SHA signing. Provides methods to validate tokens and extract individual claims (user ID, email, role). |
 | `src/main/java/com/emconnect/api/service/CustomUserDetailsService.java` | Implements Spring Security's `UserDetailsService`. Loads user details by email (username) or by user ID. Converts the application `Role` enum into Spring Security `GrantedAuthority` objects. |
-| `src/main/java/com/emconnect/api/service/EventService.java` | Core event management logic. Creates events in DRAFT status, publishes events (validates future start date), cancels and completes events using the `EventStatus` state machine. Supports search by title and filtering by status. Uses pessimistic locking on event reads. Publishes domain events to RabbitMQ on publish and cancel actions. |
-| `src/main/java/com/emconnect/api/service/RegistrationService.java` | Manages user-to-event registrations. Uses pessimistic locking on the event row to enforce capacity constraints under concurrent access. Validates that the event is published and has available capacity. Generates UUID-based ticket codes. Supports cancellation and re-registration (reactivation of a cancelled registration). Publishes registration domain events to RabbitMQ. |
+| `src/main/java/com/emconnect/api/service/EventService.java` | Core event management logic. Creates events in DRAFT status, publishes events (validates future start date), cancels and completes events using the `EventStatus` state machine. Supports search by title and filtering by status. Uses pessimistic locking on event reads. Publishes domain events to RabbitMQ on publish and cancel actions. Provides `getParticipantCount(Long eventId)` to query confirmed registration count for live updates. |
+| `src/main/java/com/emconnect/api/service/RegistrationService.java` | Manages user-to-event registrations. Uses pessimistic locking on the event row to enforce capacity constraints under concurrent access. Validates that the event is published and has available capacity. Generates UUID-based ticket codes. Supports cancellation and re-registration (reactivation of a cancelled registration). Publishes registration domain events to RabbitMQ with `currentParticipants` count for real-time WebSocket broadcasts. |
 | `src/main/java/com/emconnect/api/service/EventPublisher.java` | Publishes domain events to the RabbitMQ `em.events` exchange using routing keys: `registration.confirmed`, `registration.cancelled`, `event.published`, and `event.cancelled`. Serializes events as JSON. |
 | `src/main/java/com/emconnect/api/service/TicketService.java` | Ticket business logic. `getMyTickets()` retrieves all registrations for a user with `Pageable.unpaged()` and maps them to `TicketResponse` DTOs (including a `qrReady` flag based on QR file existence on disk). `getTicketByCode()` enforces ownership/admin/organizer access. `getQRCodeImage()` serves QR PNG files from the configured `ticket.qr.storage-path` via `UrlResource`. `validateTicket()` performs idempotent check-in: sets `checkedInAt` timestamp on first scan, returns `alreadyUsed` on subsequent scans. Uses `@Transactional` for check-in. |
 
@@ -162,8 +171,8 @@ The API service is a Spring Boot 3.2.2 application that provides RESTful endpoin
 | File | Description |
 |------|-------------|
 | `src/main/java/com/emconnect/api/event/BaseEvent.java` | Abstract base class for all domain events. Contains `eventId` (UUID string), `eventType` (string), and `timestamp` (epoch seconds). Provides static factory methods for creating child event instances. |
-| `src/main/java/com/emconnect/api/event/RegistrationConfirmedEvent.java` | Domain event fired when a user successfully registers for an event. Carries: `registrationId`, `userId`, `userEmail`, `userName`, `eventId`, `eventTitle`, `eventLocation`, `eventStartDate`, `eventEndDate`, `ticketCode`. |
-| `src/main/java/com/emconnect/api/event/RegistrationCancelledEvent.java` | Domain event fired when a registration is cancelled. Carries: `registrationId`, `userId`, `userEmail`, `userName`, `eventId`, `eventTitle`, `cancelledAt`. |
+| `src/main/java/com/emconnect/api/event/RegistrationConfirmedEvent.java` | Domain event fired when a user successfully registers for an event. Carries: `registrationId`, `userId`, `userEmail`, `userName`, `eventId`, `eventTitle`, `eventLocation`, `eventStartDate`, `eventEndDate`, `ticketCode`, `currentParticipants` (live confirmed count for WebSocket broadcasts). Provides overloaded `fromRegistration(Registration, long)` factory method. |
+| `src/main/java/com/emconnect/api/event/RegistrationCancelledEvent.java` | Domain event fired when a registration is cancelled. Carries: `registrationId`, `userId`, `userEmail`, `userName`, `eventId`, `eventTitle`, `cancelledAt`, `currentParticipants` (live confirmed count for WebSocket broadcasts). Provides overloaded `fromRegistration(Registration, long)` factory method. |
 | `src/main/java/com/emconnect/api/event/EventPublishedEvent.java` | Domain event fired when an event transitions to PUBLISHED status. Carries: `eventId`, `title`, `description`, `location`, `startDate`, `endDate`, `capacity`, `organizerId`, `organizerName`, `organizerEmail`. |
 | `src/main/java/com/emconnect/api/event/EventCancelledEvent.java` | Domain event fired when an event is cancelled. Carries: `eventId`, `title`, `originalStartDate`, `organizerId`, `organizerEmail`, `affectedRegistrations` (count of impacted registrations). |
 
@@ -310,3 +319,61 @@ The ticket worker is a Go service that consumes `REGISTRATION_CONFIRMED` events 
 | File | Description |
 |------|-------------|
 | `go.mod` | Go module definition. Declares module path `github.com/emconnect/ticket-worker`, requires Go 1.25.0, and depends on `github.com/rabbitmq/amqp091-go v1.10.0` for RabbitMQ AMQP support and `github.com/skip2/go-qrcode` for QR code generation. |
+
+---
+
+## Services / WebSocket Hub (Go)
+
+**Path:** `services/websocket-hub/`
+
+The WebSocket Hub is a Go service that provides real-time communication between the backend and browser clients. It consumes domain events from RabbitMQ (event published/cancelled, registration confirmed/cancelled) and broadcasts them to connected WebSocket clients based on topic subscriptions. Uses the Hub pattern with per-client read/write goroutine pumps, topic-based routing, and supports live participant count updates.
+
+### Entry Point
+
+| File | Description |
+|------|-------------|
+| `main.go` | Application entry point. Initializes structured logging, loads configuration, creates the Hub and starts it in a goroutine. Creates the message handler and RabbitMQ consumer, connects with exponential backoff retry logic (5 attempts with 2× delays). Registers HTTP routes: `/ws` (WebSocket upgrade), `/health` (JSON health check), `/stats` (live client/topic stats). Serves `test.html` as a static file. Listens for OS signals (`SIGINT`, `SIGTERM`) for graceful shutdown. Starts HTTP server on configured port. |
+
+### Config
+
+| File | Description |
+|------|-------------|
+| `config/config.go` | Loads all configuration from environment variables with sensible defaults. Three config sections: RabbitMQ (URL, exchange `em.events`, queue `websocket.queue`, routing keys for all 4 event types `event.published`, `event.cancelled`, `registration.confirmed`, `registration.cancelled`, consumer tag, prefetch count 10, DLQ exchange `em.events.dlx`, DLQ queue `websocket.dlq`), Server (port, default `8081`), and Service metadata (name, environment). Provides `getEnv()` and `getEnvInt()` helper functions. |
+
+### Consumer
+
+| File | Description |
+|------|-------------|
+| `consumer/consumer.go` | Manages the RabbitMQ consumer lifecycle. Connects to the AMQP broker, sets QoS prefetch count. Self-declares queue topology: declares the `em.events` topic exchange, declares `websocket.queue` with `x-dead-letter-exchange` argument pointing to `em.events.dlx`, and binds the queue to all 4 routing keys (`event.published`, `event.cancelled`, `registration.confirmed`, `registration.cancelled`). Declares Dead Letter Queue infrastructure (DLX topic exchange + `websocket.dlq` queue + binding with `websocket.failed` routing key). Consumes messages with manual acknowledgment; on failure, routes messages to the DLQ with error metadata headers (original routing key, error message, original exchange). Provides graceful connection and channel closure via `Close()`. |
+
+### Hub
+
+| File | Description |
+|------|-------------|
+| `hub/hub.go` | Core Hub implementation using Go channels for thread-safe client management. Maintains a map of active clients and a map of topic subscriptions (`topic -> set of clients`). The `Run()` loop handles three channel operations: `register` (adds client, sends welcome message with client count), `unregister` (removes client from all topics, closes send channel), and `broadcast` (routes messages). Broadcast routing: empty topic = all clients, non-empty topic = only subscribed clients. Handles slow clients by closing their connections when send buffer is full. Provides `Subscribe(client, eventID)` / `Unsubscribe(client, eventID)` with confirmation messages. `Stats()` returns current client count and per-topic subscriber counts. Uses `sync.RWMutex` for topic map access. WebSocket upgrader allows all origins for development. |
+| `hub/client.go` | Represents a single WebSocket connection. Each client has a `send` channel (buffered, 256 messages) and a `subscriptions` map tracking subscribed topics. `ReadPump()` goroutine reads client messages with a 1KB size limit and 60s pong timeout, dispatches to `handleClientMessage()` which routes by `type` field: `subscribe` (adds to topic), `unsubscribe` (removes from topic), `ping` (responds with `pong` + timestamp). `WritePump()` goroutine writes queued messages with 10s write deadline, batches multiple pending messages into a single WebSocket write frame, and sends periodic ping frames every 54s for keepalive. Constants: `writeWait=10s`, `pongWait=60s`, `pingPeriod=54s`, `maxMessageSize=1024`. |
+| `hub/message.go` | Defines all WebSocket message types. Client-to-server: `ClientMessage` (type + raw JSON payload), `SubscribePayload` (eventId). Server-to-client: `ServerMessage` (type + payload interface), `ParticipantCountPayload` (eventId, eventTitle, count, action `registered`/`cancelled`, userName), `EventUpdatePayload` (eventId, eventTitle, eventType `EVENT_PUBLISHED`/`EVENT_CANCELLED`, location, startDate, organizerName, capacity, affectedRegistrations). Internal: `BroadcastMessage` (Topic string + ServerMessage, empty topic = broadcast to all). |
+
+### Handler
+
+| File | Description |
+|------|-------------|
+| `handler/handler.go` | Routes incoming RabbitMQ messages to WebSocket broadcasts by `eventType` field. Supports four event types: `EVENT_PUBLISHED` (broadcasts `event.published` to ALL clients with title, location, start date, organizer name, and capacity), `EVENT_CANCELLED` (broadcasts `event.cancelled` to ALL clients AND topic subscribers with affected registrations count), `REGISTRATION_CONFIRMED` (broadcasts `participant.count` to topic `event:{id}` subscribers with current participant count, action `registered`, and user name), `REGISTRATION_CANCELLED` (broadcasts `participant.count` to topic subscribers with decremented count and action `cancelled`). Logs all operations with emoji indicators and participant counts. |
+
+### Model
+
+| File | Description |
+|------|-------------|
+| `model/events.go` | Defines Go structs for all domain events consumed from RabbitMQ. Includes custom JSON unmarshaling for two timestamp formats to handle Java-Go interoperability: `Timestamp` (handles both epoch seconds and RFC 3339 strings) and `LocalDateTime` (handles both Java `LocalDateTime` arrays `[year, month, day, hour, minute, second]` and ISO 8601 strings). Structs: `BaseEvent` (eventId, eventType, timestamp), `EventPublishedEvent` (title, description, location, dates, capacity, organizer details), `EventCancelledEvent` (title, originalStartDate, organizerEmail, affectedRegistrations), `RegistrationConfirmedEvent` (registration/user/event details, ticketCode, currentParticipants), `RegistrationCancelledEvent` (registration/user details, cancelledAt, currentParticipants). |
+
+### Test Dashboard
+
+| File | Description |
+|------|-------------|
+| `test.html` | Browser-based WebSocket test dashboard served at `http://localhost:8081/test.html`. Features: auto-connect on page load, connection status indicator (green/red/yellow dot with color-coded status bar), exponential backoff reconnection (1s → 2s → 4s → ... → 30s cap with ±20% jitter), automatic re-subscription to all topics after reconnect, topic subscription management (subscribe/unsubscribe with visual tags), live participant count cards (per-event counters that update in real-time showing count + last action), color-coded message log (green for event.published, red for event.cancelled, blue for participant.count, yellow for system messages), ping/pong support, and a 200-message log buffer limit. |
+
+### Dependencies
+
+| File | Description |
+|------|-------------|
+| `go.mod` | Go module definition. Declares module path `github.com/emconnect/websocket-hub`, requires Go 1.25.0, and depends on `github.com/gorilla/websocket v1.5.3` for WebSocket support and `github.com/rabbitmq/amqp091-go v1.10.0` for RabbitMQ AMQP support. |
