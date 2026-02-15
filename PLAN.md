@@ -280,10 +280,10 @@
 **Goal:** Build real-time communication.
 
 **Learn:**
-- [ ] WebSocket protocol basics
-- [ ] Connection management
-- [ ] Broadcasting patterns
-- [ ] Go concurrency for connection handling
+- [x] WebSocket protocol basics
+- [x] Connection management
+- [x] Broadcasting patterns
+- [x] Go concurrency for connection handling
 
 **Tasks:**
 - [ ] Create WebSocket hub in Go

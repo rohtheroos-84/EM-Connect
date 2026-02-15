@@ -1428,6 +1428,45 @@ Write-Host "CheckedInAt: $($ticket.checkedInAt)"
 
 ## Phase 7 Notes
 
+### 7.1: WebSocket Hub Service:
+
+- Right now, client always initiates WebSocket connection to Spring Boot API, which is fine for simple use cases. But in a real-world scenario, we might want a dedicated WebSocket Hub service that all clients connect to, and then the API can push messages to the Hub which broadcasts to clients. This decouples WebSocket management from the API and allows for better scalability and flexibility.
+
+- Via this, the connection always stays open and both sides can send messages independently. The API can push real-time updates to clients without waiting for them to poll. Also, there is very low overhead per message(2-14 bytes header).
+
+- **WebSocket Handshake**: It starts as a normal HTTP Request and then upgrades, then the server agrees and responds, then the COnnection is now websocket and the client and server communicate with websocket frames.
+
+- A hub is a central place that manages all WebSocket connections and broadcasts messages to connected clients. It allows for decoupling the WebSocket management from the main API logic, making it handle real-time communication more efficiently.
+
+- GO Approach: Channels to communicate and stay connected simultaneously, and a map to track active connections. When a message is received from RabbitMQ, the hub iterates over all active connections and sends the message to each client.
+
+- **Don't communicate by sharing memory; share memory by communicating.**
+
+- **BRODCASTING PATTERNS**:
+  1. **Direct Broadcast**: Hub sends the same message to all connected clients.
+  2. **Topic-Based Broadcast**: Clients subscribe to specific topics, and the hub only sends relevant messages to those subscribed.
+  3. **User-Specific Broadcast**: Hub sends messages to specific users based on their connection ID or user ID.
+
+- Message TYPES we'll be supporting:
+  - **From CLIENT to SERVER:**
+    - `subscribe`: Client wants to subscribe to a topic (e.g., event updates)
+    - `unsubscribe`: Client wants to unsubscribe from a topic
+    - `ping`: Keep-alive message to maintain connection
+
+  - **From SERVER to CLIENT:**
+    - `event.published`: Notify clients about a new event
+    - `registration.updated`: Notify clients about registration status changes
+    - `event.cancelled`: Notify clients about event cancellations
+    - `participant.count`: Real-time updates on participant count for an event
+
+- This WebSocket HUB will be on **PORT 8081**, being the 3rd GO Worker alongside Notification and Ticket workers. It will consume messages from RabbitMQ and broadcast to clients.
+
+
+
+
+
+
+
 
 ## Phase 8 Notes
 
