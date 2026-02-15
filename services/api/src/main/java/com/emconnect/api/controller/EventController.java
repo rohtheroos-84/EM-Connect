@@ -130,4 +130,18 @@ public class EventController {
         Event event = eventService.completeEvent(id, authentication.getName());
         return ResponseEntity.ok(new EventResponse(event));
     }
+
+    // Get participant count for an event
+    @GetMapping("/{id}/participants/count")
+    public ResponseEntity<Map<String, Object>> getParticipantCount(@PathVariable Long id) {
+        Event event = eventService.getEventById(id);
+        long count = eventService.getParticipantCount(id);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("eventId", id);
+        response.put("eventTitle", event.getTitle());
+        response.put("participantCount", count);
+        response.put("capacity", event.getCapacity());
+        return ResponseEntity.ok(response);
+    }
 }

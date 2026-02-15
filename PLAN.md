@@ -301,9 +301,9 @@
 - [x] Client reconnection handling
 
 **Tasks:**
-- [ ] Push participant count updates
-- [ ] Push event announcements
-- [ ] Handle disconnections gracefully
+- [x] Push participant count updates
+- [x] Push event announcements
+- [x] Handle disconnections gracefully
 
 ---
 

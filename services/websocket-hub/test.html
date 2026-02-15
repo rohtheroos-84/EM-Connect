@@ -1,96 +1,287 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>EM-Connect WebSocket Test</title>
+    <title>EM-Connect WebSocket Dashboard</title>
     <style>
-        body { font-family: monospace; background: #1a1a2e; color: #e94560; padding: 20px; }
-        #log { background: #16213e; padding: 15px; border-radius: 8px; height: 400px; overflow-y: auto; margin: 10px 0; }
-        .msg { margin: 4px 0; padding: 4px 8px; border-radius: 4px; }
-        .sent { color: #0f3460; background: #e94560; }
-        .received { color: #e94560; background: #0f3460; }
-        .system { color: #a8dadc; font-style: italic; }
-        button { background: #e94560; color: white; border: none; padding: 10px 20px; margin: 5px; border-radius: 5px; cursor: pointer; font-size: 14px; }
-        button:hover { background: #c73e54; }
-        button:disabled { background: #555; cursor: not-allowed; }
-        input { padding: 10px; margin: 5px; border-radius: 5px; border: 1px solid #e94560; background: #16213e; color: white; font-size: 14px; width: 80px; }
-        h1 { color: #e94560; }
-        h3 { color: #a8dadc; margin-top: 20px; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', monospace; background: #0f0f23; color: #ccc; padding: 20px; }
+        h1 { color: #e94560; margin-bottom: 10px; }
+
+        /* Connection status bar */
+        .status-bar { display: flex; align-items: center; gap: 10px; padding: 8px 16px; border-radius: 8px; margin-bottom: 15px; font-size: 14px; }
+        .status-bar.connected { background: #0a3d0a; border: 1px solid #1a7a1a; }
+        .status-bar.disconnected { background: #3d0a0a; border: 1px solid #7a1a1a; }
+        .status-bar.connecting { background: #3d3d0a; border: 1px solid #7a7a1a; }
+        .status-dot { width: 12px; height: 12px; border-radius: 50%; }
+        .status-dot.green { background: #00ff41; box-shadow: 0 0 6px #00ff41; }
+        .status-dot.red { background: #ff4141; box-shadow: 0 0 6px #ff4141; }
+        .status-dot.yellow { background: #ffff41; box-shadow: 0 0 6px #ffff41; animation: pulse 1s infinite; }
+        @keyframes pulse { 50% { opacity: 0.4; } }
+
+        /* Layout */
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+        .panel { background: #16213e; border-radius: 8px; padding: 15px; border: 1px solid #1a3a5c; }
+        .panel h3 { color: #e94560; margin-bottom: 10px; font-size: 14px; }
+
+        /* Subscriptions */
+        .sub-controls { display: flex; gap: 8px; margin-bottom: 10px; }
+        .sub-controls input { flex: 1; padding: 6px 10px; border-radius: 4px; border: 1px solid #1a3a5c; background: #0a1628; color: #ccc; font-size: 13px; }
+        .sub-controls button { padding: 6px 14px; border-radius: 4px; border: none; cursor: pointer; font-size: 13px; font-weight: bold; }
+        .btn-sub { background: #e94560; color: white; }
+        .btn-unsub { background: #555; color: white; }
+        .sub-list { display: flex; flex-wrap: wrap; gap: 6px; }
+        .sub-tag { background: #0a1628; padding: 4px 10px; border-radius: 12px; font-size: 12px; color: #00ff41; border: 1px solid #1a3a5c; }
+
+        /* Participant count cards */
+        .count-cards { display: flex; flex-wrap: wrap; gap: 10px; }
+        .count-card { background: #0a1628; padding: 10px 16px; border-radius: 8px; border: 1px solid #1a3a5c; min-width: 150px; }
+        .count-card .event-name { font-size: 12px; color: #888; margin-bottom: 4px; }
+        .count-card .count { font-size: 28px; font-weight: bold; color: #00ff41; }
+        .count-card .action { font-size: 11px; margin-top: 4px; }
+        .action.registered { color: #00ff41; }
+        .action.cancelled { color: #ff4141; }
+
+        /* Log */
+        #log { background: #0a1628; padding: 12px; border-radius: 8px; height: 350px; overflow-y: auto; font-size: 12px; line-height: 1.6; border: 1px solid #1a3a5c; }
+        .msg { margin: 2px 0; padding: 3px 8px; border-radius: 3px; }
+        .msg.sent { color: #0f3460; background: #e94560; }
+        .msg.received { color: #ccc; background: #1a3a5c; }
+        .msg.event-published { color: #0a1628; background: #00ff41; }
+        .msg.event-cancelled { color: white; background: #ff4141; }
+        .msg.participant { color: #0a1628; background: #41c7ff; }
+        .msg.system { color: #ffff41; background: transparent; font-style: italic; }
+        .msg.error { color: #ff4141; background: transparent; }
+        .controls { display: flex; gap: 8px; align-items: center; margin-bottom: 15px; }
+        .controls button { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-size: 13px; font-weight: bold; }
+        .btn-connect { background: #00ff41; color: #0a1628; }
+        .btn-disconnect { background: #ff4141; color: white; }
+        .btn-ping { background: #41c7ff; color: #0a1628; }
+        .btn-clear { background: #555; color: white; }
+        button:disabled { opacity: 0.4; cursor: not-allowed; }
     </style>
 </head>
 <body>
-    <h1>🔌 EM-Connect WebSocket Test</h1>
+    <h1>&#128268; EM-Connect WebSocket Dashboard</h1>
 
-    <div>
-        <button id="connectBtn" onclick="connect()">Connect</button>
-        <button id="disconnectBtn" onclick="disconnect()" disabled>Disconnect</button>
-        <span id="status" style="margin-left: 15px; font-size: 16px;">⚪ Disconnected</span>
+    <!-- Connection Status -->
+    <div id="statusBar" class="status-bar disconnected">
+        <div id="statusDot" class="status-dot red"></div>
+        <span id="statusText">Disconnected</span>
+        <span id="reconnectInfo" style="margin-left: auto; font-size: 12px; color: #888;"></span>
     </div>
 
-    <h3>Subscribe to Event Updates</h3>
-    <div>
-        <input type="number" id="eventId" placeholder="Event ID" value="1">
-        <button onclick="subscribe()">Subscribe</button>
-        <button onclick="unsubscribe()">Unsubscribe</button>
-        <button onclick="sendPing()">Ping</button>
+    <!-- Controls -->
+    <div class="controls">
+        <button id="connectBtn" class="btn-connect" onclick="connect()">Connect</button>
+        <button id="disconnectBtn" class="btn-disconnect" onclick="manualDisconnect()" disabled>Disconnect</button>
+        <button class="btn-ping" onclick="sendPing()">Ping</button>
+        <button class="btn-clear" onclick="clearLog()">Clear Log</button>
     </div>
 
-    <h3>Messages</h3>
-    <div id="log"></div>
-    <button onclick="clearLog()">Clear Log</button>
+    <div class="grid">
+        <!-- Subscriptions Panel -->
+        <div class="panel">
+            <h3>&#128204; Subscriptions</h3>
+            <div class="sub-controls">
+                <input type="number" id="eventId" placeholder="Event ID" value="1" min="1">
+                <button class="btn-sub" onclick="subscribe()">Subscribe</button>
+                <button class="btn-unsub" onclick="unsubscribe()">Unsub</button>
+            </div>
+            <div id="subList" class="sub-list"></div>
+        </div>
+
+        <!-- Live Participant Counts -->
+        <div class="panel">
+            <h3>&#128101; Live Participant Counts</h3>
+            <div id="countCards" class="count-cards">
+                <span style="color: #555; font-size: 12px;">Subscribe to events to see live counts...</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Message Log -->
+    <div class="panel">
+        <h3>&#128221; Message Log</h3>
+        <div id="log"></div>
+    </div>
 
     <script>
         let ws = null;
+        let reconnectAttempts = 0;
+        let reconnectTimer = null;
+        let intentionalClose = false;
+        const subscriptions = new Set();
+        const participantCounts = {};  // eventId -> { title, count, lastAction, lastUser }
+
+        const BASE_DELAY = 1000;
+        const MAX_DELAY = 30000;
+        const JITTER = 0.2;
+
+        function getReconnectDelay() {
+            const exp = Math.min(BASE_DELAY * Math.pow(2, reconnectAttempts), MAX_DELAY);
+            const jitter = exp * JITTER * (Math.random() * 2 - 1);
+            return Math.round(exp + jitter);
+        }
+
+        function setStatus(state, text) {
+            const bar = document.getElementById('statusBar');
+            const dot = document.getElementById('statusDot');
+            const txt = document.getElementById('statusText');
+            bar.className = 'status-bar ' + state;
+            dot.className = 'status-dot ' + (state === 'connected' ? 'green' : state === 'connecting' ? 'yellow' : 'red');
+            txt.textContent = text;
+        }
 
         function connect() {
+            if (ws && ws.readyState === WebSocket.OPEN) return;
+            intentionalClose = false;
+            setStatus('connecting', 'Connecting...');
+            document.getElementById('reconnectInfo').textContent = reconnectAttempts > 0 ? 'Attempt #' + (reconnectAttempts + 1) : '';
+
             ws = new WebSocket('ws://localhost:8081/ws');
 
             ws.onopen = () => {
-                logMsg('🟢 Connected to WebSocket Hub!', 'system');
-                document.getElementById('status').textContent = '🟢 Connected';
+                reconnectAttempts = 0;
+                setStatus('connected', 'Connected');
+                document.getElementById('reconnectInfo').textContent = '';
                 document.getElementById('connectBtn').disabled = true;
                 document.getElementById('disconnectBtn').disabled = false;
+                logMsg('Connected to WebSocket Hub', 'system');
+
+                // Re-subscribe to all topics
+                if (subscriptions.size > 0) {
+                    logMsg('Re-subscribing to ' + subscriptions.size + ' topics...', 'system');
+                    subscriptions.forEach(id => {
+                        ws.send(JSON.stringify({ type: 'subscribe', payload: { eventId: id } }));
+                    });
+                }
             };
 
             ws.onmessage = (event) => {
-                // Handle multiple messages concatenated with newlines
                 const messages = event.data.split('\n');
                 messages.forEach(msgStr => {
-                    if (msgStr.trim()) {
-                        try {
-                            const msg = JSON.parse(msgStr);
-                            logMsg('📨 ' + msg.type + ': ' + JSON.stringify(msg.payload, null, 2), 'received');
-                        } catch (e) {
-                            logMsg('📨 Raw: ' + msgStr, 'received');
-                        }
+                    if (!msgStr.trim()) return;
+                    try {
+                        const msg = JSON.parse(msgStr);
+                        handleMessage(msg);
+                    } catch (e) {
+                        logMsg('Raw: ' + msgStr, 'received');
                     }
                 });
             };
 
             ws.onclose = () => {
-                logMsg('🔴 Disconnected from WebSocket Hub', 'system');
-                document.getElementById('status').textContent = '🔴 Disconnected';
                 document.getElementById('connectBtn').disabled = false;
                 document.getElementById('disconnectBtn').disabled = true;
                 ws = null;
+
+                if (intentionalClose) {
+                    setStatus('disconnected', 'Disconnected');
+                    logMsg('Disconnected (manual)', 'system');
+                    return;
+                }
+
+                reconnectAttempts++;
+                const delay = getReconnectDelay();
+                setStatus('disconnected', 'Disconnected — reconnecting in ' + (delay / 1000).toFixed(1) + 's');
+                logMsg('Connection lost. Reconnecting in ' + (delay / 1000).toFixed(1) + 's (attempt #' + reconnectAttempts + ')', 'error');
+                reconnectTimer = setTimeout(connect, delay);
             };
 
-            ws.onerror = (error) => {
-                logMsg('❌ Error: ' + error.message, 'system');
+            ws.onerror = () => {
+                logMsg('WebSocket error', 'error');
             };
         }
 
-        function disconnect() {
+        function manualDisconnect() {
+            intentionalClose = true;
+            if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+            reconnectAttempts = 0;
             if (ws) ws.close();
+        }
+
+        function handleMessage(msg) {
+            switch (msg.type) {
+                case 'participant.count':
+                    handleParticipantCount(msg.payload);
+                    break;
+                case 'event.published':
+                    logMsg('NEW EVENT: "' + msg.payload.eventTitle + '" at ' + msg.payload.location +
+                        (msg.payload.capacity ? ' (capacity: ' + msg.payload.capacity + ')' : '') +
+                        ' by ' + msg.payload.organizerName, 'event-published');
+                    break;
+                case 'event.cancelled':
+                    logMsg('EVENT CANCELLED: "' + msg.payload.eventTitle + '"' +
+                        (msg.payload.affectedRegistrations ? ' (' + msg.payload.affectedRegistrations + ' registrations affected)' : ''),
+                        'event-cancelled');
+                    // Clear count card if we were tracking this event
+                    if (participantCounts[msg.payload.eventId]) {
+                        delete participantCounts[msg.payload.eventId];
+                        renderCountCards();
+                    }
+                    break;
+                case 'pong':
+                    logMsg('Pong received', 'received');
+                    break;
+                default:
+                    logMsg(msg.type + ': ' + JSON.stringify(msg.payload), 'received');
+            }
+        }
+
+        function handleParticipantCount(p) {
+            participantCounts[p.eventId] = {
+                title: p.eventTitle,
+                count: p.count,
+                lastAction: p.action,
+                lastUser: p.userName
+            };
+            renderCountCards();
+            const icon = p.action === 'registered' ? '+' : '-';
+            logMsg('[Event ' + p.eventId + '] ' + p.userName + ' ' + p.action + ' → count: ' + p.count, 'participant');
+        }
+
+        function renderCountCards() {
+            const container = document.getElementById('countCards');
+            const ids = Object.keys(participantCounts);
+            if (ids.length === 0) {
+                container.innerHTML = '<span style="color:#555;font-size:12px;">No activity yet...</span>';
+                return;
+            }
+            container.innerHTML = ids.map(id => {
+                const p = participantCounts[id];
+                return '<div class="count-card">' +
+                    '<div class="event-name">Event #' + id + ' — ' + p.title + '</div>' +
+                    '<div class="count">' + p.count + '</div>' +
+                    '<div class="action ' + p.lastAction + '">' +
+                    (p.lastAction === 'registered' ? '&#9650; ' : '&#9660; ') + p.lastUser + ' ' + p.lastAction +
+                    '</div></div>';
+            }).join('');
         }
 
         function subscribe() {
             const eventId = parseInt(document.getElementById('eventId').value);
+            if (isNaN(eventId) || eventId < 1) return;
+            subscriptions.add(eventId);
+            renderSubscriptions();
             send({ type: 'subscribe', payload: { eventId: eventId } });
         }
 
         function unsubscribe() {
             const eventId = parseInt(document.getElementById('eventId').value);
+            subscriptions.delete(eventId);
+            renderSubscriptions();
             send({ type: 'unsubscribe', payload: { eventId: eventId } });
+        }
+
+        function renderSubscriptions() {
+            const container = document.getElementById('subList');
+            if (subscriptions.size === 0) {
+                container.innerHTML = '';
+                return;
+            }
+            container.innerHTML = [...subscriptions].map(id =>
+                '<span class="sub-tag">Event #' + id + '</span>'
+            ).join('');
         }
 
         function sendPing() {
@@ -99,11 +290,11 @@
 
         function send(msg) {
             if (!ws || ws.readyState !== WebSocket.OPEN) {
-                logMsg('⚠️ Not connected!', 'system');
+                logMsg('Not connected!', 'error');
                 return;
             }
             ws.send(JSON.stringify(msg));
-            logMsg('📤 ' + msg.type + ': ' + JSON.stringify(msg.payload), 'sent');
+            logMsg(msg.type + ': ' + JSON.stringify(msg.payload), 'sent');
         }
 
         function logMsg(text, type) {
@@ -113,11 +304,16 @@
             div.textContent = new Date().toLocaleTimeString() + ' — ' + text;
             log.appendChild(div);
             log.scrollTop = log.scrollHeight;
+            // Keep log manageable
+            while (log.children.length > 200) log.removeChild(log.firstChild);
         }
 
         function clearLog() {
             document.getElementById('log').innerHTML = '';
         }
+
+        // Auto-connect on page load
+        connect();
     </script>
 </body>
 </html>

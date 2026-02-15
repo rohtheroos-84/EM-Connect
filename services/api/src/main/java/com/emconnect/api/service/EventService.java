@@ -240,6 +240,15 @@ public class EventService {
 
     // ==================== Private Helper Methods ====================
 
+    /**
+     * Get confirmed participant count for an event
+     */
+    public long getParticipantCount(Long eventId) {
+        // Verify event exists
+        getEventById(eventId);
+        return registrationRepository.countByEventIdAndStatus(eventId, RegistrationStatus.CONFIRMED);
+    }
+
     private Event getEventForOrganizer(Long eventId, String userEmail) {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new ResourceNotFoundException("Event not found with id: " + eventId));

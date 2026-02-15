@@ -20,6 +20,7 @@ public class RegistrationConfirmedEvent extends BaseEvent {
     private LocalDateTime eventStartDate;
     private LocalDateTime eventEndDate;
     private String ticketCode;
+    private long currentParticipants;
 
     // Default constructor for Jackson
     public RegistrationConfirmedEvent() {
@@ -28,6 +29,11 @@ public class RegistrationConfirmedEvent extends BaseEvent {
 
     // Factory method to create from Registration entity
     public static RegistrationConfirmedEvent fromRegistration(Registration registration) {
+        return fromRegistration(registration, 0);
+    }
+
+    // Factory method with participant count
+    public static RegistrationConfirmedEvent fromRegistration(Registration registration, long currentParticipants) {
         RegistrationConfirmedEvent event = new RegistrationConfirmedEvent();
         event.setRegistrationId(registration.getId());
         event.setUserId(registration.getUser().getId());
@@ -39,6 +45,7 @@ public class RegistrationConfirmedEvent extends BaseEvent {
         event.setEventStartDate(registration.getEvent().getStartDate());
         event.setEventEndDate(registration.getEvent().getEndDate());
         event.setTicketCode(registration.getTicketCode());
+        event.setCurrentParticipants(currentParticipants);
         return event;
     }
 
@@ -121,6 +128,14 @@ public class RegistrationConfirmedEvent extends BaseEvent {
 
     public void setTicketCode(String ticketCode) {
         this.ticketCode = ticketCode;
+    }
+
+    public long getCurrentParticipants() {
+        return currentParticipants;
+    }
+
+    public void setCurrentParticipants(long currentParticipants) {
+        this.currentParticipants = currentParticipants;
     }
 
     @Override

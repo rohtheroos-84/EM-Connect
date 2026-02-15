@@ -80,9 +80,14 @@ public class RegistrationService {
         // Step 5: Save
         registration = registrationRepository.save(registration);
 
-        // Step 6: Publish domain event (after successful save)
+        // Step 6: Get updated participant count (after this registration)
+        long currentParticipants = registrationRepository.countByEventIdAndStatus(
+                event.getId(), RegistrationStatus.CONFIRMED);
+
+        // Step 7: Publish domain event (after successful save)
         try {
-            RegistrationConfirmedEvent domainEvent = RegistrationConfirmedEvent.fromRegistration(registration);
+            RegistrationConfirmedEvent domainEvent = RegistrationConfirmedEvent.fromRegistration(
+                    registration, currentParticipants);
             eventPublisher.publishRegistrationConfirmed(domainEvent);
         } catch (Exception e) {
             // Log but don't fail — the registration was successful
@@ -125,9 +130,14 @@ public class RegistrationService {
 
         registration = registrationRepository.save(registration);
 
+        // Get updated participant count (after cancellation)
+        long currentParticipants = registrationRepository.countByEventIdAndStatus(
+                registration.getEvent().getId(), RegistrationStatus.CONFIRMED);
+
         // Publish domain event
         try {
-            RegistrationCancelledEvent domainEvent = RegistrationCancelledEvent.fromRegistration(registration);
+            RegistrationCancelledEvent domainEvent = RegistrationCancelledEvent.fromRegistration(
+                    registration, currentParticipants);
             eventPublisher.publishRegistrationCancelled(domainEvent);
         } catch (Exception e) {
             logger.error("Failed to publish registration cancelled event: {}", e.getMessage());

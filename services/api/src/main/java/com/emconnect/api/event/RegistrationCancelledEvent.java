@@ -17,12 +17,17 @@ public class RegistrationCancelledEvent extends BaseEvent {
     private Long eventId;
     private String eventTitle;
     private LocalDateTime cancelledAt;
+    private long currentParticipants;
 
     public RegistrationCancelledEvent() {
         super(TYPE);
     }
 
     public static RegistrationCancelledEvent fromRegistration(Registration registration) {
+        return fromRegistration(registration, 0);
+    }
+
+    public static RegistrationCancelledEvent fromRegistration(Registration registration, long currentParticipants) {
         RegistrationCancelledEvent event = new RegistrationCancelledEvent();
         event.setRegistrationId(registration.getId());
         event.setUserId(registration.getUser().getId());
@@ -31,6 +36,7 @@ public class RegistrationCancelledEvent extends BaseEvent {
         event.setEventId(registration.getEvent().getId());
         event.setEventTitle(registration.getEvent().getTitle());
         event.setCancelledAt(registration.getCancelledAt());
+        event.setCurrentParticipants(currentParticipants);
         return event;
     }
 
@@ -89,5 +95,13 @@ public class RegistrationCancelledEvent extends BaseEvent {
 
     public void setCancelledAt(LocalDateTime cancelledAt) {
         this.cancelledAt = cancelledAt;
+    }
+
+    public long getCurrentParticipants() {
+        return currentParticipants;
+    }
+
+    public void setCurrentParticipants(long currentParticipants) {
+        this.currentParticipants = currentParticipants;
     }
 }
