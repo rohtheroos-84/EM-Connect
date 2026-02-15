@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>EM-Connect WebSocket Test</title>
+    <style>
+        body { font-family: monospace; background: #1a1a2e; color: #e94560; padding: 20px; }
+        #log { background: #16213e; padding: 15px; border-radius: 8px; height: 400px; overflow-y: auto; margin: 10px 0; }
+        .msg { margin: 4px 0; padding: 4px 8px; border-radius: 4px; }
+        .sent { color: #0f3460; background: #e94560; }
+        .received { color: #e94560; background: #0f3460; }
+        .system { color: #a8dadc; font-style: italic; }
+        button { background: #e94560; color: white; border: none; padding: 10px 20px; margin: 5px; border-radius: 5px; cursor: pointer; font-size: 14px; }
+        button:hover { background: #c73e54; }
+        button:disabled { background: #555; cursor: not-allowed; }
+        input { padding: 10px; margin: 5px; border-radius: 5px; border: 1px solid #e94560; background: #16213e; color: white; font-size: 14px; width: 80px; }
+        h1 { color: #e94560; }
+        h3 { color: #a8dadc; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>🔌 EM-Connect WebSocket Test</h1>
+
+    <div>
+        <button id="connectBtn" onclick="connect()">Connect</button>
+        <button id="disconnectBtn" onclick="disconnect()" disabled>Disconnect</button>
+        <span id="status" style="margin-left: 15px; font-size: 16px;">⚪ Disconnected</span>
+    </div>
+
+    <h3>Subscribe to Event Updates</h3>
+    <div>
+        <input type="number" id="eventId" placeholder="Event ID" value="1">
+        <button onclick="subscribe()">Subscribe</button>
+        <button onclick="unsubscribe()">Unsubscribe</button>
+        <button onclick="sendPing()">Ping</button>
+    </div>
+
+    <h3>Messages</h3>
+    <div id="log"></div>
+    <button onclick="clearLog()">Clear Log</button>
+
+    <script>
+        let ws = null;
+
+        function connect() {
+            ws = new WebSocket('ws://localhost:8081/ws');
+
+            ws.onopen = () => {
+                logMsg('🟢 Connected to WebSocket Hub!', 'system');
+                document.getElementById('status').textContent = '🟢 Connected';
+                document.getElementById('connectBtn').disabled = true;
+                document.getElementById('disconnectBtn').disabled = false;
+            };
+
+            ws.onmessage = (event) => {
+                // Handle multiple messages concatenated with newlines
+                const messages = event.data.split('\n');
+                messages.forEach(msgStr => {
+                    if (msgStr.trim()) {
+                        try {
+                            const msg = JSON.parse(msgStr);
+                            logMsg('📨 ' + msg.type + ': ' + JSON.stringify(msg.payload, null, 2), 'received');
+                        } catch (e) {
+                            logMsg('📨 Raw: ' + msgStr, 'received');
+                        }
+                    }
+                });
+            };
+
+            ws.onclose = () => {
+                logMsg('🔴 Disconnected from WebSocket Hub', 'system');
+                document.getElementById('status').textContent = '🔴 Disconnected';
+                document.getElementById('connectBtn').disabled = false;
+                document.getElementById('disconnectBtn').disabled = true;
+                ws = null;
+            };
+
+            ws.onerror = (error) => {
+                logMsg('❌ Error: ' + error.message, 'system');
+            };
+        }
+
+        function disconnect() {
+            if (ws) ws.close();
+        }
+
+        function subscribe() {
+            const eventId = parseInt(document.getElementById('eventId').value);
+            send({ type: 'subscribe', payload: { eventId: eventId } });
+        }
+
+        function unsubscribe() {
+            const eventId = parseInt(document.getElementById('eventId').value);
+            send({ type: 'unsubscribe', payload: { eventId: eventId } });
+        }
+
+        function sendPing() {
+            send({ type: 'ping', payload: {} });
+        }
+
+        function send(msg) {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                logMsg('⚠️ Not connected!', 'system');
+                return;
+            }
+            ws.send(JSON.stringify(msg));
+            logMsg('📤 ' + msg.type + ': ' + JSON.stringify(msg.payload), 'sent');
+        }
+
+        function logMsg(text, type) {
+            const log = document.getElementById('log');
+            const div = document.createElement('div');
+            div.className = 'msg ' + type;
+            div.textContent = new Date().toLocaleTimeString() + ' — ' + text;
+            log.appendChild(div);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+    </script>
+</body>
+</html>
