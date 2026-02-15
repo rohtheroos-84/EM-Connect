@@ -1533,6 +1533,30 @@ Invoke-RestMethod -Uri "http://localhost:8081/stats"
 ```
 
 
+### 7.2: Live Updates Integration:
+
+- Whats missing in the current implementation:
+
+  1. Problem: Springboot currently only publishes registration.confirmed, but websocket hub listens to registration.cancelled, event.cancelled, and event.published as well. So we need to add RabbitMQ publishing for those events in the API.
+
+  2. Problem: Client Reconnection Logic is missing in the test.html client. If the WebSocket connection drops (e.g., server restarts, network issues, client sleeps or firewall timeout), the client won't automatically reconnect. We need to implement an exponential backoff reconnection strategy in the JavaScript client to ensure it can recover from temporary disconnections.
+
+  3. Participant Count Updates: The current implementation doesn't send real-time participant count updates when users register or cancel. We need to add logic in the API to publish participant count messages to RabbitMQ whenever a registration is confirmed or cancelled, and then have the WebSocket Hub broadcast those updates to subscribed clients.
+
+- Reconnection strategies:
+  1. Simple Retry — Try to reconnect immediately.
+  2. Fixed Interval — Try to reconnect every X seconds.
+  3. Exponential Backoff(WHAT WE'LL BE USING) — Increase the interval exponentially (1s → 2s → 4s → 8s → 16s → 30s (cap)) to reduce load during outages. 
+
+- NOTE: After reconnecting, the client must RE-SUBSCRIBE to the topics it was previously subscribed to, since the WebSocket Hub doesn't maintain any state about disconnected clients.
+
+- Also add jitter to the reconnection attempts to avoid thundering herd problem if many clients try to reconnect at the same time.
+
+
+
+
+
+
 
 
 ## Phase 8 Notes

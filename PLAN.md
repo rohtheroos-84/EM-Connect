@@ -296,9 +296,9 @@
 **Goal:** Push real-time updates to clients.
 
 **Learn:**
-- [ ] Connecting services via message broker
-- [ ] Fan-out patterns
-- [ ] Client reconnection handling
+- [x] Connecting services via message broker
+- [x] Fan-out patterns
+- [x] Client reconnection handling
 
 **Tasks:**
 - [ ] Push participant count updates
