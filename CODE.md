@@ -7,6 +7,7 @@ This document provides a description of every source code file in the EM-Connect
 ## Table of Contents
 
 - [Root Files](#root-files)
+- [Documentation](#documentation)
 - [Services / API (Java — Spring Boot)](#services--api-java--spring-boot)
   - [Entry Point](#entry-point)
   - [Configuration](#configuration)
@@ -28,6 +29,15 @@ This document provides a description of every source code file in the EM-Connect
   - [Handler](#handler)
   - [Model](#model)
   - [Dependencies](#dependencies)
+- [Services / Ticket Worker (Go)](#services--ticket-worker-go)
+  - [Entry Point](#entry-point-2)
+  - [Config](#config-1)
+  - [Consumer](#consumer-1)
+  - [Handler](#handler-1)
+  - [Model](#model-1)
+  - [QR Code Generation](#qr-code-generation)
+  - [Ticket Service](#ticket-service)
+  - [Dependencies](#dependencies-1)
 
 ---
 
@@ -36,6 +46,30 @@ This document provides a description of every source code file in the EM-Connect
 | File | Description |
 |------|-------------|
 | `docker-compose.yaml` | Defines the local development infrastructure: PostgreSQL 16 database, RabbitMQ 3.13 message broker (with management UI), and MailHog for local SMTP email testing. Includes health checks for all services. |
+| `README.md` | Project overview. Describes EM-Connect as a backend-first event management system built with Spring Boot and Golang, covering event creation, registration, ticket generation, and notifications via an event-driven architecture. |
+| `PLAN.md` | Phased learning plan for the project. Outlines milestones from Phase 1 (Foundation & Core Setup) through Phase 7+, detailing what to build, what concepts to learn, and acceptance criteria for each phase. |
+| `NOTES.md` | Development journal. Documents insights, challenges, debugging sessions, and solutions encountered during each phase — including theory explanations, error traces, and fix rationale. |
+| `CODE.md` | This file. Provides a description of every source code file in the EM-Connect repository, organized by service and package. |
+| `event.json` | Sample JSON payload for creating an event via `POST /api/events`. Used for manual API testing with cURL or REST clients. |
+| `login.json` | Sample JSON payload for authenticating via `POST /api/auth/login`. Used for manual API testing with cURL or REST clients. |
+
+---
+
+## Documentation
+
+**Path:** `docs/`
+
+Reference documentation covering the system's design, API surface, and infrastructure.
+
+| File | Description |
+|------|-------------|
+| `docs/OVERVIEW.md` | High-level project overview. Describes what EM-Connect is, its core features (event management, registration, ticketing, notifications), and the technologies used. |
+| `docs/ARCHITECTURE.md` | System architecture documentation. Illustrates the high-level request flow (Client → Spring Boot API → PostgreSQL / RabbitMQ → Go Workers → SMTP), component responsibilities, and how services communicate. |
+| `docs/API.md` | Complete API reference. Documents all REST endpoints grouped by resource (Auth, Events, Registrations, Tickets, Admin, Health), including request/response examples, HTTP methods, and required authentication. |
+| `docs/AUTHENTICATION.md` | Authentication and security deep dive. Explains the JWT flow (login → token generation → token validation), Spring Security filter chain, role-based access control (USER, ADMIN), and password hashing with BCrypt. |
+| `docs/DATABASE.md` | Database schema reference. Documents all tables (users, events, registrations), their columns, constraints, indexes, and foreign key relationships. Includes Flyway migration overview. |
+| `docs/EVENT_STATES.md` | Event state machine documentation. Describes the lifecycle states (DRAFT → PUBLISHED → CANCELLED / COMPLETED), valid transitions, and the business rules enforced at each state (e.g., only published events accept registrations). |
+| `docs/RABBITMQ_TOPOLOGY_DESIGN.md` | RabbitMQ topology specification. Defines the exchange (`em.events`, topic), dead-letter exchange (`em.events.dlx`, topic), queues (notification, ticket, websocket), routing keys, and binding patterns. |
 
 ---
 
@@ -72,6 +106,7 @@ The API service is a Spring Boot 3.2.2 application that provides RESTful endpoin
 | `src/main/java/com/emconnect/api/controller/EventController.java` | Full CRUD for events. Endpoints: create (`POST /api/events`), get by ID (`GET /api/events/{id}`), list all published (`GET /api/events`), update (`PUT /api/events/{id}`), delete (`DELETE /api/events/{id}`), publish (`POST /api/events/{id}/publish`), cancel (`POST /api/events/{id}/cancel`), complete (`POST /api/events/{id}/complete`), get organizer's events (`GET /api/events/my-events`), and search (`GET /api/events/search`). Supports pagination. |
 | `src/main/java/com/emconnect/api/controller/UserController.java` | Exposes `GET /api/users/me` to return the currently authenticated user's profile information. |
 | `src/main/java/com/emconnect/api/controller/RegistrationController.java` | Manages event registrations. Endpoints: register for an event (`POST /api/registrations/events/{eventId}`), cancel registration (`POST /api/registrations/{id}/cancel`), get current user's registrations (`GET /api/registrations/my-registrations`), get registrations for an event (`GET /api/registrations/events/{eventId}`), check registration status (`GET /api/registrations/events/{eventId}/status`), and validate a ticket (`GET /api/registrations/tickets/{ticketCode}/validate`). |
+| `src/main/java/com/emconnect/api/controller/TicketController.java` | Ticket retrieval and validation endpoints at `/api/tickets`. Endpoints: get all tickets for the authenticated user (`GET /api/tickets/my`), get a single ticket by code (`GET /api/tickets/{code}`), download QR code image as PNG (`GET /api/tickets/{code}/qr`), and validate a ticket for check-in (`POST /api/tickets/{code}/validate`, restricted to ADMIN/ORGANIZER via `@PreAuthorize`). |
 | `src/main/java/com/emconnect/api/controller/AdminController.java` | Admin-only endpoints (requires ADMIN role): `GET /api/admin/users` (list all users), `GET /api/admin/dashboard` (stats: total users, events, registrations), `POST /api/admin/users/{id}/promote` (promote user to ADMIN), and `POST /api/admin/users/{id}/demote` (demote admin to USER). |
 | `src/main/java/com/emconnect/api/controller/UserTestController.java` | Test-only controller at `/api/test/users`. Provides endpoints to create a hardcoded test user and list all users. Intended for development/testing, not production use. |
 | `src/main/java/com/emconnect/api/controller/TestConcurrencyController.java` | Test-only controller at `/api/test/concurrent-register`. Simulates concurrent registration attempts for a given event by firing multiple threads simultaneously. Used to verify pessimistic locking prevents overbooking. Not intended for production. |
@@ -86,6 +121,7 @@ The API service is a Spring Boot 3.2.2 application that provides RESTful endpoin
 | `src/main/java/com/emconnect/api/service/EventService.java` | Core event management logic. Creates events in DRAFT status, publishes events (validates future start date), cancels and completes events using the `EventStatus` state machine. Supports search by title and filtering by status. Uses pessimistic locking on event reads. Publishes domain events to RabbitMQ on publish and cancel actions. |
 | `src/main/java/com/emconnect/api/service/RegistrationService.java` | Manages user-to-event registrations. Uses pessimistic locking on the event row to enforce capacity constraints under concurrent access. Validates that the event is published and has available capacity. Generates UUID-based ticket codes. Supports cancellation and re-registration (reactivation of a cancelled registration). Publishes registration domain events to RabbitMQ. |
 | `src/main/java/com/emconnect/api/service/EventPublisher.java` | Publishes domain events to the RabbitMQ `em.events` exchange using routing keys: `registration.confirmed`, `registration.cancelled`, `event.published`, and `event.cancelled`. Serializes events as JSON. |
+| `src/main/java/com/emconnect/api/service/TicketService.java` | Ticket business logic. `getMyTickets()` retrieves all registrations for a user with `Pageable.unpaged()` and maps them to `TicketResponse` DTOs (including a `qrReady` flag based on QR file existence on disk). `getTicketByCode()` enforces ownership/admin/organizer access. `getQRCodeImage()` serves QR PNG files from the configured `ticket.qr.storage-path` via `UrlResource`. `validateTicket()` performs idempotent check-in: sets `checkedInAt` timestamp on first scan, returns `alreadyUsed` on subsequent scans. Uses `@Transactional` for check-in. |
 
 ### Entities
 
@@ -93,7 +129,7 @@ The API service is a Spring Boot 3.2.2 application that provides RESTful endpoin
 |------|-------------|
 | `src/main/java/com/emconnect/api/entity/User.java` | JPA entity mapped to the `users` table. Fields: `id` (auto-generated), `email` (unique), `password` (BCrypt-hashed), `name`, `role` (USER or ADMIN), `createdAt`, `updatedAt`. Timestamps are auto-set via `@PrePersist` / `@PreUpdate`. |
 | `src/main/java/com/emconnect/api/entity/Event.java` | JPA entity mapped to the `events` table. Fields: `title`, `description`, `location`, `startDate`, `endDate`, `capacity`, `status` (EventStatus enum), `organizer` (many-to-one FK to User), `createdAt`, `updatedAt`. |
-| `src/main/java/com/emconnect/api/entity/Registration.java` | JPA entity mapped to the `registrations` table. Has a unique constraint on `(user_id, event_id)`. Fields: `user` (FK), `event` (FK), `status` (RegistrationStatus), `ticketCode` (UUID-based, unique), `registeredAt`, `cancelledAt`, `createdAt`, `updatedAt`. Includes a `cancel()` method that sets the status and cancelled timestamp. |
+| `src/main/java/com/emconnect/api/entity/Registration.java` | JPA entity mapped to the `registrations` table. Has a unique constraint on `(user_id, event_id)`. Fields: `user` (FK), `event` (FK), `status` (RegistrationStatus), `ticketCode` (UUID-based, unique), `registeredAt`, `cancelledAt`, `checkedInAt` (set when ticket is validated/scanned), `createdAt`, `updatedAt`. Includes a `cancel()` method that sets the status and cancelled timestamp. |
 | `src/main/java/com/emconnect/api/entity/EventStatus.java` | Enum defining the event lifecycle state machine: `DRAFT` → `PUBLISHED` → `CANCELLED` or `COMPLETED`. Each state defines allowed transitions, whether it is terminal, publicly visible, editable, and whether it can accept registrations. |
 | `src/main/java/com/emconnect/api/entity/RegistrationStatus.java` | Enum with two values: `CONFIRMED` and `CANCELLED`. |
 | `src/main/java/com/emconnect/api/entity/Role.java` | Enum with two values: `USER` and `ADMIN`. |
@@ -110,6 +146,8 @@ The API service is a Spring Boot 3.2.2 application that provides RESTful endpoin
 | `src/main/java/com/emconnect/api/dto/UpdateEventRequest.java` | Request body for updating an event. All fields are optional to support partial updates. |
 | `src/main/java/com/emconnect/api/dto/EventResponse.java` | Event response DTO. Includes event details plus a nested `OrganizerSummary` (id, name, email) for the event organizer. |
 | `src/main/java/com/emconnect/api/dto/RegistrationResponse.java` | Registration response DTO. Includes registration details plus nested `EventSummary` and `UserSummary` objects. |
+| `src/main/java/com/emconnect/api/dto/TicketResponse.java` | Ticket response DTO. Fields: `id`, `ticketCode`, `status`, `registeredAt`, `checkedInAt`, `qrReady` (boolean indicating whether the QR PNG file exists on disk). Contains nested `EventSummary` (id, title, location, dates, status) and `UserSummary` (id, name, email) inner classes. |
+| `src/main/java/com/emconnect/api/dto/TicketValidationResponse.java` | Ticket validation result DTO. Fields: `valid` (boolean), `message`, `ticketCode`, `userName`, `userEmail`, `eventTitle`, `checkedInAt`. Provides static factory methods: `success()`, `alreadyUsed()`, and `invalid()` for clean construction of the three possible validation outcomes. |
 
 ### Repositories
 
@@ -117,7 +155,7 @@ The API service is a Spring Boot 3.2.2 application that provides RESTful endpoin
 |------|-------------|
 | `src/main/java/com/emconnect/api/repository/UserRepository.java` | Spring Data JPA repository for `User`. Custom queries: `findByEmail()`, `existsByEmail()`. |
 | `src/main/java/com/emconnect/api/repository/EventRepository.java` | Spring Data JPA repository for `Event`. Custom queries include: `findByStatus()`, `findByOrganizerId()`, `searchByTitle()` (case-insensitive LIKE), `countByOrganizerId()`, `findByIdWithLock()` (pessimistic write lock via `@Lock`), and `findUpcomingPublishedEvents()` (published events with future start dates, ordered by date). |
-| `src/main/java/com/emconnect/api/repository/RegistrationRepository.java` | Spring Data JPA repository for `Registration`. Custom queries: existence checks by user/event/status, lookups by user or event with pagination, ticket code validation, confirmed registration count per event, and filtering for upcoming registrations. |
+| `src/main/java/com/emconnect/api/repository/RegistrationRepository.java` | Spring Data JPA repository for `Registration`. Custom queries: existence checks by user/event/status, lookups by user or event with pagination, `findByTicketCode()` for ticket retrieval, ticket code validation, confirmed registration count per event, and filtering for upcoming registrations. |
 
 ### Domain Events
 
@@ -146,7 +184,7 @@ The API service is a Spring Boot 3.2.2 application that provides RESTful endpoin
 
 | File | Description |
 |------|-------------|
-| `src/main/resources/application.yml` | Main application configuration. Configures: PostgreSQL datasource connection, JPA/Hibernate settings (validate mode, SQL logging), Flyway migration paths, RabbitMQ connection details, server port (8080), Spring Actuator health endpoints, and JWT secret/expiration (24 hours). |
+| `src/main/resources/application.yml` | Main application configuration. Configures: PostgreSQL datasource connection (with `TimeZone=Asia/Kolkata`), JPA/Hibernate settings (validate mode, SQL logging), Flyway migration paths, RabbitMQ connection details (with publisher confirms), server port (8080), Spring Actuator health endpoints, JWT secret/expiration (24 hours), and ticket QR storage path (`ticket.qr.storage-path` pointing to the ticket-worker's QR output directory). |
 
 ### Database Migrations (Flyway)
 
@@ -156,7 +194,7 @@ The API service is a Spring Boot 3.2.2 application that provides RESTful endpoin
 | `src/main/resources/db/migration/V2__create_users_table.sql` | Creates the `users` table with columns: `id`, `email` (unique), `password`, `name`, `role` (default USER), `created_at`, `updated_at`. Adds an index on `email`. |
 | `src/main/resources/db/migration/V3__create_admin_user.sql` | Seeds a default admin user (`admin@emconnect.com`) with a BCrypt-hashed password. Uses `ON CONFLICT DO NOTHING` for idempotency. |
 | `src/main/resources/db/migration/V4__create_events_table.sql` | Creates the `events` table with columns: `id`, `title`, `description`, `location`, `start_date`, `end_date`, `capacity`, `status` (default DRAFT), `organizer_id` (FK to `users`), timestamps. Adds indexes on `organizer_id`, `status`, and `start_date`. |
-| `src/main/resources/db/migration/V5__create_registrations_table.sql` | Creates the `registrations` table with columns: `id`, `user_id` (FK), `event_id` (FK), `status` (default CONFIRMED), `ticket_code` (unique), `registered_at`, `cancelled_at`, timestamps. Adds a unique constraint on `(user_id, event_id)` and indexes on `user_id`, `event_id`, `status`, and `ticket_code`. |
+| `src/main/resources/db/migration/V5__create_registrations_table.sql` | Creates the `registrations` table with columns: `id`, `user_id` (FK), `event_id` (FK), `status` (default CONFIRMED), `ticket_code` (unique), `registered_at`, `cancelled_at`, timestamps. Adds a unique constraint on `(user_id, event_id)` and indexes on `user_id`, `event_id`, `status`, and `ticket_code`. Also adds a `checked_in_at` column via `ALTER TABLE` for tracking ticket validation timestamps. |
 
 ### Tests
 
@@ -164,6 +202,7 @@ The API service is a Spring Boot 3.2.2 application that provides RESTful endpoin
 |------|-------------|
 | `src/test/java/com/emconnect/api/ApiApplicationTests.java` | Empty test class placeholder for the Spring Boot application context load test. |
 | `src/test/java/com/emconnect/api/service/RegistrationConcurrencyTest.java` | Integration test that verifies pessimistic locking prevents event overbooking. Creates an event with limited capacity and fires 15 concurrent registration attempts across threads. Asserts that confirmed registrations never exceed the event capacity. Also tests concurrent cancel-and-re-register scenarios. Requires a running PostgreSQL instance. |
+| `src/test/java/com/emconnect/api/resources/application-test.properties` | Test profile configuration. Overrides datasource URL, enables Flyway with `ddl-auto=none`, configures a test JWT secret with shorter expiration, and enables DEBUG logging for `com.emconnect` and Hibernate SQL. |
 
 ---
 
@@ -183,13 +222,13 @@ The notification worker is a Go service that consumes domain events from RabbitM
 
 | File | Description |
 |------|-------------|
-| `config/config.go` | Loads all configuration from environment variables with sensible defaults. Settings include: RabbitMQ connection (URL, exchange, queue, routing keys, consumer tag, prefetch count, DLQ settings), email/SMTP settings (host, port, from address, max retries, retry backoff), and service metadata (name, environment). Provides `getEnv()` and `getEnvInt()` helper functions. |
+| `config/config.go` | Loads all configuration from environment variables with sensible defaults. Settings include: RabbitMQ connection (URL, exchange `em.events`, queue, routing keys `registration.*` and `event.*`, consumer tag, prefetch count, DLQ exchange `em.events.dlx`, DLQ queue `notification.dlq`), email/SMTP settings (host, port, from address, max retries, retry backoff), and service metadata (name, environment). Provides `getEnv()` and `getEnvInt()` helper functions. |
 
 ### Consumer
 
 | File | Description |
 |------|-------------|
-| `consumer/consumer.go` | Manages the RabbitMQ consumer lifecycle. Connects to the AMQP broker, sets QoS prefetch count, declares and binds the Dead Letter Queue, and consumes messages with manual acknowledgment. For each message, it delegates processing to the handler; on failure, it routes the message to the DLQ with error metadata (original routing key, error message, original exchange). Provides graceful connection and channel closure. |
+| `consumer/consumer.go` | Manages the RabbitMQ consumer lifecycle. Connects to the AMQP broker, sets QoS prefetch count. Self-declares queue topology: declares the `em.events` topic exchange, declares the consumption queue with `x-dead-letter-exchange` argument pointing to `em.events.dlx`, and binds the queue to `registration.*` and `event.*` routing keys. Declares the Dead Letter Queue infrastructure (DLX exchange + DLQ queue + binding). Consumes messages with manual acknowledgment; on failure, routes messages to the DLQ with error metadata headers (original routing key, error message, original exchange). Provides graceful connection and channel closure. |
 
 ### Email
 
@@ -215,3 +254,59 @@ The notification worker is a Go service that consumes domain events from RabbitM
 |------|-------------|
 | `go.mod` | Go module definition. Declares module path `github.com/emconnect/notification-worker`, requires Go 1.25.0, and depends on `github.com/rabbitmq/amqp091-go v1.10.0` for RabbitMQ AMQP support. |
 | `go.sum` | Go module checksum file. Contains cryptographic hashes for dependency verification (auto-generated, not manually edited). |
+
+---
+
+## Services / Ticket Worker (Go)
+
+**Path:** `services/ticket-worker/`
+
+The ticket worker is a Go service that consumes `REGISTRATION_CONFIRMED` events from RabbitMQ and generates signed QR code tickets. It creates HMAC-SHA256–signed payloads embedded in QR code PNG images and saves ticket metadata as JSON files. Includes idempotent ticket generation, retry logic, dead-letter queue support, and graceful shutdown handling.
+
+### Entry Point
+
+| File | Description |
+|------|-------------|
+| `main.go` | Application entry point. Initializes structured logging, loads configuration, creates the QR generator, ticket service, and message handler. Establishes a RabbitMQ connection with exponential backoff retry logic (5 attempts with 2×/4×/8×/16× delays). Listens for OS signals (`SIGINT`, `SIGTERM`) for graceful shutdown, and starts the message consumer. |
+
+### Config
+
+| File | Description |
+|------|-------------|
+| `config/config.go` | Loads all configuration from environment variables with sensible defaults. Three config sections: RabbitMQ (URL, queue `ticket.queue`, consumer tag, prefetch count, DLQ exchange `em.events.dlx`, DLQ queue `ticket.dlq`), Ticket (secret key for HMAC signing, QR output directory, metadata directory, QR image size defaulting to 512px), and Service metadata (name, environment). Provides `getEnv()` and `getEnvInt()` helper functions. |
+
+### Consumer
+
+| File | Description |
+|------|-------------|
+| `consumer/consumer.go` | Manages the RabbitMQ consumer lifecycle. Connects to the AMQP broker, sets QoS prefetch count. Self-declares queue topology: declares the `em.events` topic exchange, declares the `ticket.queue` with `x-dead-letter-exchange` argument pointing to `em.events.dlx`, and binds the queue to the `registration.confirmed` routing key. Declares the Dead Letter Queue infrastructure (DLX topic exchange + `ticket.dlq` queue + binding with `ticket.failed` routing key). Consumes messages with manual acknowledgment; on failure, routes messages to the DLQ with error metadata headers (original routing key, error message, original exchange). Provides graceful connection and channel closure via `Close()`. |
+
+### Handler
+
+| File | Description |
+|------|-------------|
+| `handler/handler.go` | Routes incoming RabbitMQ messages by `eventType` field. Only processes `REGISTRATION_CONFIRMED` events: unmarshals the JSON payload into `RegistrationConfirmedEvent`, logs the event details, and delegates to `ticketService.GenerateTicket()`. Gracefully ignores all other event types (logs and skips). |
+
+### Model
+
+| File | Description |
+|------|-------------|
+| `model/events.go` | Defines Go structs for domain events and ticket data. Includes custom JSON unmarshaling for two timestamp formats to handle Java-Go interoperability: `Timestamp` (handles both epoch seconds and RFC 3339 strings) and `LocalDateTime` (handles both Java `LocalDateTime` arrays `[year, month, day, hour, minute, second]` and ISO 8601 strings). Structs: `BaseEvent`, `RegistrationConfirmedEvent` (with event/user/ticket details), `TicketPayload` (data encoded into QR codes, including HMAC signature), and `TicketMetadata` (stored alongside QR images with ticket status tracking). |
+
+### QR Code Generation
+
+| File | Description |
+|------|-------------|
+| `qr/generator.go` | Handles QR code image generation using `github.com/skip2/go-qrcode`. Creates the output directory on initialization. `GenerateQR()` encodes a string payload into a PNG file with medium error correction (~15% damage recovery), named `{ticketCode}.png`. Also provides `GetQRPath()` for path resolution and `Exists()` for idempotency checks. |
+
+### Ticket Service
+
+| File | Description |
+|------|-------------|
+| `ticket/service.go` | Core ticket generation and signing logic. `GenerateTicket()` is idempotent — checks for existing QR image and metadata file before proceeding. Pipeline: (1) create payload from event data, (2) sign with HMAC-SHA256 using a deterministic string `ticketCode:eventId:userId:eventDate`, (3) marshal to JSON, (4) generate QR code PNG, (5) save ticket metadata as JSON. Also provides `VerifySignature()` for payload validation, `saveMetadata()` / `LoadMetadata()` for JSON file I/O. |
+
+### Dependencies
+
+| File | Description |
+|------|-------------|
+| `go.mod` | Go module definition. Declares module path `github.com/emconnect/ticket-worker`, requires Go 1.25.0, and depends on `github.com/rabbitmq/amqp091-go v1.10.0` for RabbitMQ AMQP support and `github.com/skip2/go-qrcode` for QR code generation. |
