@@ -1550,7 +1550,155 @@ Invoke-RestMethod -Uri "http://localhost:8081/stats"
 
 - Also add jitter to the reconnection attempts to avoid thundering herd problem if many clients try to reconnect at the same time.
 
+#### Testing:
 
+```powershell
+# ========== SETUP ==========
+# Ensure Docker containers are running
+docker-compose up -d
+
+# Terminal 1: Start Spring Boot API
+cd services\api
+$env:JAVA_TOOL_OPTIONS="-Duser.timezone=Asia/Kolkata"; .\mvnw.cmd spring-boot:run
+
+# Terminal 2: Build & Start WebSocket Hub
+cd services\websocket-hub
+go build -o websocket-hub.exe .
+.\websocket-hub.exe
+
+# Open test.html dashboard in browser: http://localhost:8081/test.html
+# Dashboard auto-connects with green status indicator
+
+# ========== TEST 1: Event Published Broadcast (with capacity) ==========
+# Login as admin
+$login = Invoke-RestMethod -Uri "http://localhost:8080/api/auth/login" `
+  -Method POST -ContentType "application/json" `
+  -Body '{"email":"admin@emconnect.com","password":"password123"}'
+$token = $login.token
+
+# Create & publish event
+$event = Invoke-RestMethod -Uri "http://localhost:8080/api/events" `
+  -Method POST -ContentType "application/json" `
+  -Headers @{Authorization="Bearer $token"} `
+  -Body '{"title":"Live Count Test","description":"Testing live participant counts via WebSocket","location":"Conference Hall A","startDate":"2026-12-01T10:00:00","endDate":"2026-12-01T18:00:00","capacity":100}'
+Write-Host "Created event: $($event.id)"
+# → Created event: 5
+
+Invoke-RestMethod -Uri "http://localhost:8080/api/events/$($event.id)/publish" `
+  -Method POST -Headers @{Authorization="Bearer $token"}
+# → Status: PUBLISHED, Capacity: 100
+
+# WebSocket Hub log:
+# 📨 Received event: EVENT_PUBLISHED (eventId: 5)
+# 📢 EVENT PUBLISHED → Broadcasting to all clients
+#    🎫 Live Count Test at Conference Hall A
+# 📢 Broadcasting to ALL clients (1)
+# Dashboard: Green "EVENT PUBLISHED" message with capacity ✅
+
+# ========== TEST 2: Registration → Participant Count Broadcast ==========
+# Subscribe to event 5 in the dashboard first!
+
+# Register a test user
+Invoke-RestMethod -Uri "http://localhost:8080/api/auth/register" `
+  -Method POST -ContentType "application/json" `
+  -Body '{"name":"WS Test User","email":"wstest@test.com","password":"password123"}'
+
+$userLogin = Invoke-RestMethod -Uri "http://localhost:8080/api/auth/login" `
+  -Method POST -ContentType "application/json" `
+  -Body '{"email":"wstest@test.com","password":"password123"}'
+$userToken = $userLogin.token
+
+# Register for the event
+$reg = Invoke-RestMethod -Uri "http://localhost:8080/api/events/$($event.id)/register" `
+  -Method POST -Headers @{Authorization="Bearer $userToken"}
+Write-Host "Registered: ID=$($reg.id), TicketCode=$($reg.ticketCode)"
+# → Registration: ID=5, Status=CONFIRMED, TicketCode=TKT-385FEB10
+
+# WebSocket Hub log:
+# 📨 Received event: REGISTRATION_CONFIRMED (eventId: 5)
+# ✅ REGISTRATION CONFIRMED → Broadcasting to topic 'event:5'
+#    👤 WS Test User registered for Live Count Test (participants: 1)
+# 📢 Broadcasting to topic 'event:5' (1 subscribers)
+# Dashboard: Blue "participant.count" message, count card shows 1 ✅
+
+# ========== TEST 3: Participant Count REST Endpoint ==========
+$count = Invoke-RestMethod -Uri "http://localhost:8080/api/events/$($event.id)/participants/count" `
+  -Headers @{Authorization="Bearer $token"}
+Write-Host "eventId=$($count.eventId), title=$($count.eventTitle), count=$($count.participantCount), capacity=$($count.capacity)"
+# → eventId=5, title=Live Count Test, count=1, capacity=100 ✅
+
+# ========== TEST 4: Registration Cancellation → Count Decrements ==========
+$myRegs = Invoke-RestMethod -Uri "http://localhost:8080/api/registrations/my-registrations?page=0&size=10" `
+  -Headers @{Authorization="Bearer $userToken"}
+$regId = $myRegs.content[0].id
+
+$cancelled = Invoke-RestMethod -Uri "http://localhost:8080/api/registrations/$regId/cancel" `
+  -Method POST -Headers @{Authorization="Bearer $userToken"}
+Write-Host "Cancelled: ID=$($cancelled.id), Status=$($cancelled.status)"
+# → Cancelled: ID=5, Status=CANCELLED
+
+# WebSocket Hub log:
+# 📨 Received event: REGISTRATION_CANCELLED (eventId: 5)
+# ❌ REGISTRATION CANCELLED → Broadcasting to topic 'event:5'
+#    👤 WS Test User cancelled from Live Count Test (participants: 0)
+# 📢 Broadcasting to topic 'event:5' (1 subscribers)
+# Dashboard: Count card drops to 0 ✅
+
+# Verify via REST:
+$count2 = Invoke-RestMethod -Uri "http://localhost:8080/api/events/$($event.id)/participants/count" `
+  -Headers @{Authorization="Bearer $token"}
+Write-Host "After cancel - count=$($count2.participantCount)"
+# → After cancel - count=0 ✅
+
+# ========== TEST 5: Event Cancellation Broadcast (with affectedRegistrations) ==========
+# Create new event, publish, register, then cancel event
+$ev2 = Invoke-RestMethod -Uri "http://localhost:8080/api/events" `
+  -Method POST -ContentType "application/json" `
+  -Headers @{Authorization="Bearer $token"} `
+  -Body '{"title":"Cancel Test Event","description":"Testing event cancellation","location":"Room B","startDate":"2026-12-05T09:00:00","endDate":"2026-12-05T17:00:00","capacity":50}'
+Invoke-RestMethod -Uri "http://localhost:8080/api/events/$($ev2.id)/publish" `
+  -Method POST -Headers @{Authorization="Bearer $token"} | Out-Null
+Invoke-RestMethod -Uri "http://localhost:8080/api/events/$($ev2.id)/register" `
+  -Method POST -Headers @{Authorization="Bearer $userToken"} | Out-Null
+
+# Cancel the event
+Invoke-RestMethod -Uri "http://localhost:8080/api/events/$($ev2.id)/cancel" `
+  -Method POST -Headers @{Authorization="Bearer $token"}
+# → Status=CANCELLED
+
+# WebSocket Hub log:
+# 📨 Received event: EVENT_CANCELLED (eventId: 6)
+# 🚫 EVENT CANCELLED → Broadcasting to all + topic subscribers
+#    🎫 Cancel Test Event
+# 📢 Broadcasting to ALL clients (1)
+# Dashboard: Red "EVENT CANCELLED" message ✅
+
+# ========== TEST 6: Stats Endpoint ==========
+Invoke-RestMethod -Uri "http://localhost:8081/stats" | ConvertTo-Json
+# → {"topics": {"event:5": 1}, "totalClients": 1} ✅
+
+# ========== TEST 7: Reconnection with Exponential Backoff ==========
+# 1. Stop websocket-hub.exe (Ctrl+C)
+# 2. Dashboard turns red: "Disconnected — reconnecting in 1.0s"
+# 3. Each failed attempt increases delay: 1s → 2s → 4s → 8s → ... → 30s cap (with ±20% jitter)
+# 4. Restart: .\websocket-hub.exe
+# 5. Dashboard auto-reconnects (green), auto re-subscribes to all topics ✅
+```
+
+**Summary of all tests:**
+
+| Test | Feature | Result |
+|------|---------|--------|
+| 1 | Event published broadcast includes `capacity` | ✅ Passed |
+| 2 | Registration → `participant.count` with live `currentParticipants` count | ✅ Passed |
+| 3 | `GET /api/events/{id}/participants/count` REST endpoint | ✅ Passed |
+| 4 | Registration cancel → count decrements to 0 | ✅ Passed |
+| 5 | Event cancelled broadcast includes `affectedRegistrations` | ✅ Passed |
+| 6 | WebSocket Hub `/stats` endpoint | ✅ Passed |
+| 7 | Dashboard reconnection with exponential backoff + auto re-subscribe | ✅ Passed |
+
+**What the dashboard looks like after tests:**
+![WebSocket Dashboard](services/websocket-hub/websocket-dashboard-7.2result.png)
 
 
 
