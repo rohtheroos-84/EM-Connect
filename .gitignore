@@ -76,3 +76,4 @@ services/ticket-worker/tickets/metadata/
 # =========================
 *.tmp
 *.swp
+node_modules/
