@@ -1812,6 +1812,38 @@ npx vite build
 
 **NOTE:** When using PowerShell with `Invoke-RestMethod`, always use `[System.Text.Encoding]::UTF8.GetBytes($body)` for the `-Body` parameter to avoid JSON encoding issues. The default PowerShell string encoding can corrupt JSON double-quotes.
 
+### 8.1.1: UI/UX Overhaul — Function-First Redesign
+
+**Problem:** Initial implementation prioritized decorative composition over usability:
+- Giant geometric shapes (circles, squares, grid lines) in decorative panels competed with forms and CTAs
+- Inputs felt cramped — thick dark borders + gray backgrounds + oversized icons overlapping text
+- No visible loading, error, focus, disabled, or validation states
+- Dashboard had clipped text (corner accent positioning caused `ml-10` text offset), empty space, and a floating unanchored role badge
+- No clear CTA hierarchy — "Sign In" and "Create Account" both styled as equal-weight buttons
+- TW4 `@theme` hex tokens don't support `/opacity` modifiers (e.g., `text-bauhaus-fg/50` fails silently)
+
+**Design Principles Applied:**
+1. **Function > Decoration**: Forms are the HERO element. Decorative shapes reduced to ghosted outlines (`opacity-[0.07]`) and small peripheral accents (`w-10 h-10`), NOT giant competing shapes
+2. **Generous Spacing**: `py-3.5` inputs, `p-8 sm:p-10` card padding, `space-y-5` form gaps, `mb-8` between header and form
+3. **Input Field Design**: Icons 18px (`w-[18px]`), gray (`text-[#9CA3AF]`), `pointer-events-none`, positioned at `left-4`. Text at `pl-12` — 14px gap between icon end and text start. White background. Focus: `focus:border-[#1040C0] focus:shadow-[0_0_0_3px_rgba(16,64,192,0.12)]`
+4. **CTA Hierarchy**: ONE primary button (full-width, colored, shadow-offset). Secondary action is inline text link with arrow icon
+5. **State Coverage**: Loading spinner in buttons, disabled inputs + button during load, error banners with `border-l-4` accent, inline validation on blur, password strength meter (4-bar indicator), confirm-password match icon (green check / red X)
+6. **Dashboard Layout**: `min-h-screen flex flex-col` with `flex-1` on `<main>`. Stats use top-border accent (no overlapping corners). Feature cards use `h-1` top accent bar + title + phase badge. Footer with color stripe fills remaining space
+7. **Accessibility**: `focus-visible` outlines on links/buttons, `htmlFor`/`id` on all inputs, `aria-label` on dismiss buttons, proper placeholder contrast (`#9CA3AF` vs input text `#121212`)
+
+**Files Changed:**
+- `index.css` — Removed unused `.bauhaus-corner`, `.bauhaus-stripe` classes. Fixed `.bauhaus-spinner` (was 40px, now 18px inline). Added `focus-visible` states, font smoothing, input line-height. Removed `input:focus` box-shadow rule (now handled per-component).
+- `Login.jsx` — Brand panel 40% width with ghosted outlines. Form card 480px max, `border-[3px]`. Inline email validation on blur. "Forgot password?" hint. Submit as sole CTA. "Create one →" text link.
+- `Register.jsx` — Same form-first layout. Password strength meter (Weak/Fair/Good/Strong with colored 4-bar display). Confirm password match indicator (✓/✗ icon). Inline validation for all fields. Terms notice. `getInputBorder()` helper for error vs normal border.
+- `Dashboard.jsx` — Navbar lighter (h-14). Welcome banner without decorative shapes. Role tag in banner. Stats with top-border accent bars. Feature cards with `phase` badge + "Coming Soon" muted. Footer with color stripe. No floating badge.
+
+**Key Learnings:**
+- In TW4, `@theme` color tokens defined as hex (`#121212`) CANNOT use opacity modifiers (`text-bauhaus-fg/50`). Use direct hex + separate opacity utilities, or use `oklch()` format tokens.
+- Corner accent decorations (`absolute top-0 left-0` + `ml-10` content offset) are fragile — text clips if card width is constrained. Use `h-1` top-border accents or `border-l-4` left accents instead.
+- For icon integration in inputs: icons should be MUTED color (`#9CA3AF`), slightly SMALLER than default (`18px` not `20px`), and `pointer-events-none`. This prevents visual competition with input text.
+- Always use `disabled:pointer-events-none` on buttons (not just `disabled:cursor-not-allowed`) to prevent hover transform effects during loading.
+- Build output: 21.7KB CSS, 261KB JS (vs previous 23KB CSS, 257KB JS). Slightly larger JS from password strength + validation logic.
+
 
 ## Phase 9 Notes
 

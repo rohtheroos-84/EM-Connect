@@ -8,13 +8,7 @@
   --color-bauhaus-blue: #1040C0;
   --color-bauhaus-yellow: #F0C020;
   --color-bauhaus-white: #FFFFFF;
-
   --font-family-outfit: 'Outfit', sans-serif;
-
-  --shadow-bauhaus-sm: 4px 4px 0px 0px #121212;
-  --shadow-bauhaus-md: 6px 6px 0px 0px #121212;
-  --shadow-bauhaus-lg: 8px 8px 0px 0px #121212;
-  --shadow-bauhaus-pressed: 2px 2px 0px 0px #121212;
 }
 
 /* ── Base Styles ── */
@@ -29,50 +23,43 @@ body {
   background-color: #F0F0F0;
   color: #121212;
   min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* ── Bauhaus Utility Classes ── */
-
-/* Geometric corner decoration */
-.bauhaus-corner::before {
-  content: '';
-  position: absolute;
-  top: -6px;
-  left: -6px;
-  width: 24px;
-  height: 24px;
-  background-color: #F0C020;
-  border: 3px solid #121212;
-  z-index: 1;
+/* ── Focus States (Accessibility) ── */
+a:focus-visible,
+button:focus-visible,
+[tabindex]:focus-visible {
+  outline: 3px solid #1040C0;
+  outline-offset: 2px;
 }
 
-.bauhaus-corner-red::before {
-  background-color: #D02020;
+/* ── Input Styling ── */
+input[type="text"],
+input[type="email"],
+input[type="password"] {
+  font-family: 'Outfit', sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
 }
 
-.bauhaus-corner-blue::before {
-  background-color: #1040C0;
-}
-
-/* Bauhaus diagonal stripe accent */
-.bauhaus-stripe {
-  background-image: repeating-linear-gradient(
-    -45deg,
-    transparent,
-    transparent 8px,
-    #121212 8px,
-    #121212 10px
-  );
-}
-
-/* Input focus ring - Bauhaus style */
 input:focus {
   outline: none;
-  box-shadow: 4px 4px 0px 0px #1040C0;
-  border-color: #1040C0;
 }
 
-/* Scrollbar styling */
+input::placeholder {
+  color: #9CA3AF;
+  font-weight: 400;
+  opacity: 1;
+}
+
+/* ── Button base ── */
+button {
+  font-family: 'Outfit', sans-serif;
+}
+
+/* ── Scrollbar ── */
 ::-webkit-scrollbar {
   width: 8px;
 }
@@ -83,20 +70,21 @@ input:focus {
 
 ::-webkit-scrollbar-thumb {
   background: #121212;
+  border-radius: 4px;
 }
 
-/* Loading spinner */
+/* ── Loading Spinner ── */
 @keyframes bauhaus-spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
 
 .bauhaus-spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid #F0F0F0;
-  border-top: 4px solid #D02020;
-  border-right: 4px solid #1040C0;
-  border-bottom: 4px solid #F0C020;
-  animation: bauhaus-spin 0.8s linear infinite;
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid rgba(255, 255, 255, 0.25);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: bauhaus-spin 0.6s linear infinite;
 }
