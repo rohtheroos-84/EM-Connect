@@ -28,12 +28,12 @@ export default function Login() {
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
   const inputCls =
-    'w-full px-4 h-[48px] bg-[#FAFAFA] border border-[#D1D5DB] text-[15px] text-[#121212] placeholder:text-[#BCBCBC] placeholder:italic focus:border-[#1040C0] focus:bg-white focus:shadow-[0_0_0_3px_rgba(16,64,192,0.08)] disabled:bg-[#F3F3F3] disabled:text-[#BCBCBC] disabled:cursor-not-allowed transition-all duration-150';
+    'w-full px-4 h-[48px] bg-[#FAFAFA] border border-[#D1D5DB] text-[15px] text-bauhaus-fg placeholder:text-[#BCBCBC] placeholder:italic focus:border-[#1040C0] focus:bg-white focus:shadow-[0_0_0_3px_rgba(16,64,192,0.08)] disabled:bg-[#F3F3F3] disabled:text-[#BCBCBC] disabled:cursor-not-allowed transition-all duration-150';
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row bg-[#F0F0F0]">
+    <div className="min-h-screen flex flex-col lg:flex-row bg-bauhaus-bg">
       {/* ── Brand side ── */}
-      <div className="hidden lg:flex lg:w-[36%] bg-[#1040C0] relative overflow-hidden items-center justify-center shrink-0">
+      <div className="hidden lg:flex lg:w-[36%] bg-bauhaus-blue relative overflow-hidden items-center justify-center shrink-0">
         {/* Background shapes — very faint */}
         <div className="absolute inset-0 opacity-[0.04]">
           <div className="absolute top-[10%] left-[8%] w-44 h-44 rounded-full border-2 border-white" />
@@ -43,7 +43,7 @@ export default function Login() {
           <h1 className="text-4xl font-black text-white tracking-tight uppercase">
             EM-Connect
           </h1>
-          <div className="mt-3 h-[3px] w-12 bg-[#F0C020] mx-auto" />
+          <div className="mt-3 h-0.75 w-12 bg-bauhaus-yellow mx-auto" />
           <p className="mt-4 text-xs font-semibold text-white/50 tracking-[0.2em] uppercase">
             Event Management Platform
           </p>
@@ -56,25 +56,25 @@ export default function Login() {
           {/* Mobile brand */}
           <div className="lg:hidden flex items-center gap-2.5 mb-8">
             <div className="flex gap-1">
-              <div className="w-2.5 h-2.5 bg-[#D02020]" />
-              <div className="w-2.5 h-2.5 bg-[#F0C020]" />
-              <div className="w-2.5 h-2.5 bg-[#1040C0]" />
+              <div className="w-2.5 h-2.5 bg-bauhaus-red" />
+              <div className="w-2.5 h-2.5 bg-bauhaus-yellow" />
+              <div className="w-2.5 h-2.5 bg-bauhaus-blue" />
             </div>
-            <span className="text-lg font-black text-[#121212] tracking-tight uppercase">
+            <span className="text-lg font-black text-bauhaus-fg tracking-tight uppercase">
               EM-Connect
             </span>
           </div>
 
           {/* ── Card ── */}
-          <div className="bg-white border-2 border-[#121212] shadow-[5px_5px_0px_0px_#121212]">
+          <div className="bg-white border-2 border-bauhaus-fg shadow-[5px_5px_0px_0px_#121212]">
             <div className="p-8 sm:p-10 lg:p-12">
               {/* Header */}
               <div className="flex items-center gap-3.5 mb-10">
-                <div className="w-11 h-11 bg-[#D02020] flex items-center justify-center shrink-0">
+                <div className="w-11 h-11 bg-bauhaus-red flex items-center justify-center shrink-0">
                   <LogIn className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-extrabold text-[#121212] tracking-tight uppercase leading-none">
+                  <h2 className="text-xl font-extrabold text-bauhaus-fg tracking-tight uppercase leading-none">
                     Sign In
                   </h2>
                   <p className="text-[13px] text-[#6B7280] mt-1">
@@ -85,17 +85,17 @@ export default function Login() {
 
               {/* Error banner */}
               {error && (
-                <div className="mb-8 flex items-start gap-3 bg-[#FEF2F2] border-l-[3px] border-[#D02020] px-4 py-3 rounded-sm">
-                  <AlertCircle className="w-4 h-4 text-[#D02020] shrink-0 mt-0.5" />
-                  <p className="flex-1 text-sm text-[#D02020]">{error}</p>
-                  <button onClick={clearError} className="text-[#D02020] font-bold leading-none p-0.5 hover:opacity-70" aria-label="Dismiss">×</button>
+                <div className="mb-8 flex items-start gap-3 bg-[#FEF2F2] border-l-[3px] border-bauhaus-red px-4 py-3 rounded-sm">
+                  <AlertCircle className="w-4 h-4 text-bauhaus-red shrink-0 mt-0.5" />
+                  <p className="flex-1 text-sm text-bauhaus-red">{error}</p>
+                  <button onClick={clearError} className="text-bauhaus-red font-bold leading-none p-0.5 hover:opacity-70" aria-label="Dismiss">×</button>
                 </div>
               )}
 
               <form onSubmit={handleSubmit}>
                 {/* Email */}
                 <div className="mb-7">
-                  <label htmlFor="login-email" className="block text-[12px] font-bold text-[#121212]/70 uppercase tracking-[0.08em] mb-3">
+                  <label htmlFor="login-email" className="block text-[12px] font-bold text-bauhaus-fg/70 uppercase tracking-[0.08em] mb-3">
                     Email Address
                   </label>
                   <input
@@ -110,14 +110,14 @@ export default function Login() {
                     className={inputCls}
                   />
                   {touched.email && email && !emailValid && (
-                    <p className="mt-2 text-xs text-[#D02020] font-medium">Enter a valid email address</p>
+                    <p className="mt-2 text-xs text-bauhaus-red font-medium">Enter a valid email address</p>
                   )}
                 </div>
 
                 {/* Password */}
                 <div className="mb-8">
                   <div className="flex items-baseline justify-between mb-3">
-                    <label htmlFor="login-password" className="text-[12px] font-bold text-[#121212]/70 uppercase tracking-[0.08em]">
+                    <label htmlFor="login-password" className="text-[12px] font-bold text-bauhaus-fg/70 uppercase tracking-[0.08em]">
                       Password
                     </label>
                     <span className="text-[11px] text-[#BCBCBC] select-none" title="Coming soon">
@@ -140,7 +140,7 @@ export default function Login() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full h-[50px] bg-[#D02020] border-2 border-[#121212] text-white font-bold text-[14px] uppercase tracking-[0.15em] shadow-[4px_4px_0px_0px_#121212] hover:shadow-[2px_2px_0px_0px_#121212] hover:translate-x-[2px] hover:translate-y-[2px] active:shadow-none active:translate-x-[4px] active:translate-y-[4px] disabled:opacity-40 disabled:pointer-events-none transition-all duration-150 cursor-pointer"
+                  className="w-full h-12.5 bg-bauhaus-red border-2 border-bauhaus-fg text-white font-bold text-[14px] uppercase tracking-[0.15em] shadow-[4px_4px_0px_0px_#121212] hover:shadow-[2px_2px_0px_0px_#121212] hover:translate-x-0.5 hover:translate-y-0.5 active:shadow-none active:translate-x-1 active:translate-y-1 disabled:opacity-40 disabled:pointer-events-none transition-all duration-150 cursor-pointer"
                 >
                   {loading ? (
                     <span className="flex items-center justify-center gap-2">
@@ -160,7 +160,7 @@ export default function Login() {
                 Don&apos;t have an account?{' '}
                 <Link
                   to="/register"
-                  className="font-semibold text-[#1040C0] hover:text-[#0D3399] underline underline-offset-2 transition-colors inline-flex items-center gap-1"
+                  className="font-semibold text-bauhaus-blue hover:text-[#0D3399] underline underline-offset-2 transition-colors inline-flex items-center gap-1"
                 >
                   Create one <ArrowRight className="w-3 h-3" />
                 </Link>
@@ -170,9 +170,9 @@ export default function Login() {
 
           {/* Accent bar */}
           <div className="mt-5 flex h-1">
-            <div className="flex-1 bg-[#D02020]" />
-            <div className="flex-1 bg-[#F0C020]" />
-            <div className="flex-1 bg-[#1040C0]" />
+            <div className="flex-1 bg-bauhaus-red" />
+            <div className="flex-1 bg-bauhaus-yellow" />
+            <div className="flex-1 bg-bauhaus-blue" />
           </div>
         </div>
       </div>
