@@ -313,16 +313,16 @@
 **Goal:** Create a functional frontend.
 
 **Learn:**
-- [ ] React project setup
-- [ ] API integration patterns
-- [ ] Authentication state management
-- [ ] Protected routes
+- [x] React project setup
+- [x] API integration patterns
+- [x] Authentication state management
+- [x] Protected routes
 
 **Tasks:**
-- [ ] Set up React project
-- [ ] Create login/register pages
-- [ ] Implement JWT storage and refresh
-- [ ] Create protected route wrapper
+- [x] Set up React project
+- [x] Create login/register pages
+- [x] Implement JWT storage and refresh
+- [x] Create protected route wrapper
 
 ---
 

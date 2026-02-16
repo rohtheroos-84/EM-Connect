@@ -1,0 +1,78 @@
+# =========================
+# OS
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# IDE / Editor
+# =========================
+.vscode/
+.idea/
+*.iml
+
+# =========================
+# Git
+# =========================
+.git/
+
+# =========================
+# Environment Files
+# =========================
+.env
+.env.*
+*.local
+
+# =========================
+# Frontend (Vite / Node)
+# =========================
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.*
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# =========================
+# Spring Boot / Maven
+# =========================
+services/api/target/
+services/api/*.log
+
+# Maven wrapper cache (optional to ignore)
+# services/api/.mvn/wrapper/maven-wrapper.jar
+
+# =========================
+# Go (All Workers)
+# =========================
+# Compiled binaries
+services/notification-worker/*.exe
+services/ticket-worker/*.exe
+services/websocket-hub/*.exe
+
+# Go build artifacts
+*.exe
+*.out
+*.test
+
+# =========================
+# Generated Ticket Assets
+# =========================
+services/ticket-worker/tickets/
+services/ticket-worker/tickets/qr/
+services/ticket-worker/tickets/metadata/
+
+# =========================
+# Logs
+# =========================
+*.log
+
+# =========================
+# Temporary Files
+# =========================
+*.tmp
+*.swp

@@ -47,6 +47,14 @@ This document provides a description of every source code file in the EM-Connect
   - [Model](#model-2)
   - [Test Dashboard](#test-dashboard)
   - [Dependencies](#dependencies-2)
+- [Frontend (React — Vite)](#frontend-react--vite)
+  - [Root Files](#root-files-1)
+  - [Entry Point & App](#entry-point--app)
+  - [Styling](#styling)
+  - [Context](#context)
+  - [Services](#services-1)
+  - [Components](#components)
+  - [Pages](#pages)
 
 ---
 
@@ -377,3 +385,59 @@ The WebSocket Hub is a Go service that provides real-time communication between 
 | File | Description |
 |------|-------------|
 | `go.mod` | Go module definition. Declares module path `github.com/emconnect/websocket-hub`, requires Go 1.25.0, and depends on `github.com/gorilla/websocket v1.5.3` for WebSocket support and `github.com/rabbitmq/amqp091-go v1.10.0` for RabbitMQ AMQP support. |
+
+---
+
+## Frontend (React — Vite)
+
+**Stack:** Vite 6.x, React 19, React Router 7, Tailwind CSS 4, Lucide React
+**Design System:** Bauhaus — geometric shapes, thick borders, hard shadows, primary palette (red/blue/yellow/black), Outfit font
+**Dev Server:** Port 3000 with API proxy to `:8080`
+
+### Root Files
+
+| File | Description |
+|------|-------------|
+| `index.html` | Entry HTML file. Links Google Fonts (Outfit, weights 400/500/700/900), mount point `<div id="root">`, loads `src/main.jsx` as ES module. |
+| `package.json` | Project config. Dependencies: `react`, `react-dom`, `react-router-dom`, `lucide-react`. Dev deps: `vite`, `@vitejs/plugin-react`, `tailwindcss`, `@tailwindcss/vite`. Scripts: `dev`, `build`, `preview`. |
+| `vite.config.js` | Vite config with `@vitejs/plugin-react` and `@tailwindcss/vite` plugins. Server proxy: `/api` → `http://localhost:8080` (changeOrigin true) so frontend dev calls reach Spring Boot API without CORS issues. |
+
+### Entry Point & App
+
+| File | Description |
+|------|-------------|
+| `src/main.jsx` | React 19 root. Mounts `<App />` inside `<BrowserRouter>` and `<AuthProvider>`. Imports global CSS (`index.css`). Wrapped in `<React.StrictMode>`. |
+| `src/App.jsx` | Route definitions using React Router 7 `<Routes>`. Public routes: `/login` → Login, `/register` → Register. Protected: `/dashboard` → Dashboard (wrapped in `<ProtectedRoute>`). Catch-all `*` → redirects to `/login`. |
+
+### Styling
+
+| File | Description |
+|------|-------------|
+| `src/index.css` | Global styles with Tailwind CSS 4 (`@import "tailwindcss"`). Defines Bauhaus design tokens via `@theme` directive: custom colors (`bauhaus-bg #F0F0F0`, `bauhaus-fg #121212`, `bauhaus-red #D02020`, `bauhaus-blue #1040C0`, `bauhaus-yellow #F0C020`), font family (`outfit`), hard shadows (`bauhaus-sm/md/lg/pressed` — offset-only, no blur). Includes utility classes for geometric corner decorations (`.bauhaus-corner`), diagonal stripe accents (`.bauhaus-stripe`), Bauhaus-style input focus rings (blue offset shadow), scrollbar styling, and a tri-color loading spinner animation (`.bauhaus-spinner`). |
+
+### Context
+
+| File | Description |
+|------|-------------|
+| `src/context/AuthContext.jsx` | Authentication state management via React Context API. Provides `AuthProvider` component and `useAuth()` hook. State: `user` (from localStorage on init), `loading`, `error`. Actions: `login(email, password)` calls API and stores user + token in localStorage, `register(email, password, name)` same flow, `logout()` clears storage and state, `clearError()` resets error. `isAuthenticated` computed from user presence AND token existence. |
+
+### Services
+
+| File | Description |
+|------|-------------|
+| `src/services/api.js` | HTTP client layer. Core `request()` function wraps `fetch()` with automatic JWT injection (from `localStorage` `em_token`), JSON content-type, 401 auto-redirect (clears token, redirects to `/login`), and structured error extraction. Auth helpers: `login(email, password)` → POST `/api/auth/login`, stores `token` and `user` from response; `register(email, password, name)` → POST `/api/auth/register`, same storage; `logout()` clears storage; `getStoredUser()` / `getToken()` / `isAuthenticated()` read from localStorage. Event helpers: `getEvents(page, size)`, `getEvent(id)`, `searchEvents(keyword)`. Generic CRUD: `api.get/post/put/delete`. |
+
+### Components
+
+| File | Description |
+|------|-------------|
+| `src/components/ProtectedRoute.jsx` | Route guard component. Uses `useAuth()` to check `isAuthenticated` — if false, renders `<Navigate to="/login" replace />`. Otherwise renders `children`. Used in `App.jsx` to wrap the Dashboard route. |
+
+### Pages
+
+| File | Description |
+|------|-------------|
+| `src/pages/Login.jsx` | Full-screen Bauhaus-styled login page with split-panel layout. Left panel (desktop): solid blue (`#1040C0`) background with decorative geometric shapes (yellow circle, red square with hard shadow, black circle, white grid lines) and "EM-Connect" branding. Right panel: white card with thick black border and hard shadow, corner decorations (yellow square + red square), icon header (red square with LogIn icon), email/password inputs with left-aligned Lucide icons, red primary submit button with press animation, error alert bar (red tint with AlertCircle icon), divider, and "Create Account" link button. Bottom: three colored squares (red, blue circle, yellow) as decorative dots. Mobile: hides left panel, shows compact brand header. |
+| `src/pages/Register.jsx` | Full-screen Bauhaus-styled registration page, mirrored layout from Login. Left panel: form side. Right panel (desktop): solid red (`#D02020`) background with blue rectangle, yellow circle, white square, grid lines, and "Join Us" branding. Card: blue corner decorations, blue icon (UserPlus), four fields (name, email, password, confirm password) with Lucide icons, blue primary submit button, client-side validation (password match, min 6 chars), divider with "Sign In" link. Both server errors (from context) and local validation errors displayed in the same alert component. |
+| `src/pages/Dashboard.jsx` | Post-login dashboard with Bauhaus styling. Navbar: black background with yellow bottom border, tri-color dots + "EM-Connect" branding, user email display with admin badge (yellow), red logout button. Welcome banner: blue background with user name, yellow accent line, geometric decorations. Content: 4-column stat cards (Events/Registrations/Tickets/Live Now) each with colored icon square and placeholder `—` value. Two "Coming Soon" placeholder cards for Event Management (Phase 8.2) and Real-Time Updates (Phase 8.3). Role badge at bottom showing current user role. Uses `StatCard` and `PlaceholderCard` helper components. |
+

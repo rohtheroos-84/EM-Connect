@@ -1701,11 +1701,116 @@ Invoke-RestMethod -Uri "http://localhost:8081/stats" | ConvertTo-Json
 ![WebSocket Dashboard](services/websocket-hub/websocket-dashboard-7.2result.png)
 
 
-
-
-
-
 ## Phase 8 Notes
+
+### 8.1: Basic React Setup
+
+**Stack:** Vite 6.x + React 19 + React Router 7 + Tailwind CSS 4 + Lucide React icons
+
+**Design System:** Bauhaus-inspired theme
+- **Colors:** Background `#F0F0F0`, Foreground `#121212`, Red `#D02020`, Blue `#1040C0`, Yellow `#F0C020`
+- **Font:** Outfit (Google Fonts) — weights 400, 500, 700, 900
+- **Borders:** Thick (2–4px), always `#121212`, no rounded corners (except circles)
+- **Shadows:** Hard offset only (`shadow-[Xpx_Xpx_0px_0px_#121212]`), button press effect via translate
+- **Buttons:** Uppercase, bold, tracking-wider, press animation (shadow shrinks + translate on hover/active)
+- **Cards:** White bg, `border-4 border-[#121212]`, `shadow-[8px_8px_0px_0px_#121212]`, geometric corner decorations
+
+**Project structure:**
+```
+frontend/
+  index.html          — Entry HTML with Outfit font from Google Fonts
+  package.json        — Dependencies: react, react-dom, react-router-dom, lucide-react, tailwindcss, vite
+  vite.config.js      — Vite config with React plugin, Tailwind plugin, API proxy to :8080
+  src/
+    main.jsx          — React root: BrowserRouter + AuthProvider + App
+    App.jsx           — Route definitions (login, register, dashboard, catch-all → login)
+    index.css         — Tailwind import + Bauhaus design tokens (@theme) + utility classes + spinner
+    context/
+      AuthContext.jsx — Auth state (user, loading, error), login/register/logout, useAuth hook
+    services/
+      api.js          — Fetch wrapper with JWT injection, 401 auto-redirect, login/register/logout helpers
+    components/
+      ProtectedRoute.jsx — Redirects to /login if not authenticated
+    pages/
+      Login.jsx       — Bauhaus-styled login form with split-panel layout (decorative left, form right)
+      Register.jsx    — Bauhaus-styled register form with split-panel (form left, decorative right)
+      Dashboard.jsx   — Navbar + welcome banner + stat cards + placeholder cards for future phases
+```
+
+**Key implementation details:**
+
+1. **Auth flow:** `AuthContext` wraps the entire app. `login(email, password)` and `register(email, password, name)` call API, store token + user in localStorage, update React state.
+
+2. **API response shape (actual from Java backend):**
+   ```json
+   {
+     "message": "Login successful",
+     "user": { "id": 1, "email": "...", "name": "...", "role": "ADMIN", "createdAt": "..." },
+     "token": "eyJ..."
+   }
+   ```
+   Note: This differs from API.md which shows flat `{token, email, name, role}`. The `api.js` service handles the nested `data.user` structure.
+
+3. **Vite proxy config:** `/api` → `http://localhost:8080` (changeOrigin: true). This means the frontend dev server proxies all `/api/*` requests to the Spring Boot backend.
+
+4. **ProtectedRoute:** Simple wrapper that checks `useAuth().isAuthenticated` and redirects to `/login` if false.
+
+5. **401 handling:** The `api.js` fetch wrapper auto-clears localStorage and redirects to `/login` on 401 responses.
+
+6. **Tailwind CSS 4:** Uses new `@import "tailwindcss"` syntax and `@theme` directive for design tokens instead of `tailwind.config.js`.
+
+**Commands:**
+```powershell
+# Dev server (from frontend directory)
+Set-Location c:\Users\rohit\Downloads\EM-Connect\frontend
+node node_modules/vite/bin/vite.js --port 3000
+# → Runs on http://localhost:3000 with proxy to :8080
+
+# Production build
+npx vite build
+# → Output: dist/ folder (~258KB JS + ~20KB CSS gzipped to ~79KB + ~5KB)
+```
+
+**Testing results:**
+```powershell
+# Backend health
+Invoke-RestMethod -Uri "http://localhost:8080/api/health"
+# → { status: "UP", service: "emconnect-api" }
+
+# Login through Vite proxy
+$body = '{"email":"admin@emconnect.com","password":"password123"}'
+$resp = Invoke-RestMethod -Uri "http://localhost:3000/api/auth/login" `
+  -Method POST -ContentType "application/json" `
+  -Body ([System.Text.Encoding]::UTF8.GetBytes($body))
+$resp | ConvertTo-Json -Depth 3
+# → { message: "Login successful", user: { id: 1, email: "admin@emconnect.com", name: "Admin User", role: "ADMIN" }, token: "eyJ..." }
+
+# Register through Vite proxy
+$body = '{"email":"test8_1@emconnect.com","password":"password123","name":"Phase 8.1 Test"}'
+$resp = Invoke-RestMethod -Uri "http://localhost:3000/api/auth/register" `
+  -Method POST -ContentType "application/json" `
+  -Body ([System.Text.Encoding]::UTF8.GetBytes($body))
+$resp | ConvertTo-Json -Depth 3
+# → { message: "Registration successful", user: { id: 3, email: "test8_1@emconnect.com", name: "Phase 8.1 Test", role: "USER" }, token: "eyJ..." }
+
+# Build check
+npx vite build
+# → ✓ 1647 modules transformed, dist/index.html + JS + CSS generated, built in ~7s
+```
+
+| Test | Result |
+|------|--------|
+| `npm install` | ✅ All deps installed |
+| `npx vite build` | ✅ Production build succeeds (~258KB JS, ~20KB CSS) |
+| Vite dev server on :3000 | ✅ Running with HMR |
+| API proxy `/api` → `:8080` | ✅ Login/register work through proxy |
+| Login page renders with Bauhaus styling | ✅ Split-panel layout, geometric shapes, thick borders |
+| Register page renders | ✅ Mirrored layout, blue accent, form validation |
+| Dashboard renders after login | ✅ Navbar, welcome banner, stat cards, coming-soon placeholders |
+| ProtectedRoute redirects to /login | ✅ Unauthenticated access to /dashboard redirects |
+| 401 auto-redirect | ✅ api.js clears token and navigates to /login |
+
+**NOTE:** When using PowerShell with `Invoke-RestMethod`, always use `[System.Text.Encoding]::UTF8.GetBytes($body)` for the `-Body` parameter to avoid JSON encoding issues. The default PowerShell string encoding can corrupt JSON double-quotes.
 
 
 ## Phase 9 Notes
