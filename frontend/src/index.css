@@ -41,7 +41,10 @@ input[type="email"],
 input[type="password"] {
   font-family: 'Outfit', sans-serif;
   font-size: 15px;
-  line-height: 1.5;
+  line-height: 1;
+  height: 48px;
+  display: flex;
+  align-items: center;
 }
 
 input:focus {
@@ -49,9 +52,10 @@ input:focus {
 }
 
 input::placeholder {
-  color: #9CA3AF;
+  color: #BCBCBC;
   font-weight: 400;
   opacity: 1;
+  font-style: italic;
 }
 
 /* ── Button base ── */
