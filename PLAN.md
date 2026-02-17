@@ -330,9 +330,9 @@
 **Goal:** Build core user flows.
 
 **Learn:**
-- [ ] REST API consumption
-- [ ] Loading and error states
-- [ ] Optimistic UI updates
+- [x] REST API consumption
+- [x] Loading and error states
+- [x] Optimistic UI updates
 
 **Tasks:**
 - [ ] Event listing page
