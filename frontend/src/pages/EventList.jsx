@@ -33,7 +33,7 @@ export default function EventList() {
   const [search, setSearch] = useState('');
   const debounceRef = useRef(null);
 
-  const PAGE_SIZE = 9;
+  const PAGE_SIZE = 15;
 
   const fetchEvents = useCallback(async (keyword, pg) => {
     setLoading(true);

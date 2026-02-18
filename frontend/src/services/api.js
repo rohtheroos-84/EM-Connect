@@ -164,6 +164,12 @@ export async function getEventRegistrations(eventId, page = 0, size = 10) {
   return request(`/events/${eventId}/registrations?page=${page}&size=${size}`);
 }
 
+/* ── Tickets ── */
+
+export async function getMyTickets() {
+  return request('/tickets/my');
+}
+
 /* ── Generic GET / POST / PUT / DELETE ── */
 
 export const api = {
