@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
   getEvent,
@@ -18,8 +18,14 @@ import {
   XCircle,
   Ticket,
   Loader2,
+  Download,
+  QrCode,
+  LogIn,
+  Radio,
 } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
+import { useAuth } from '../context/AuthContext';
+import { useWebSocket } from '../context/WebSocketContext';
 
 function fmtDate(iso) {
   if (!iso) return '—';
@@ -49,6 +55,7 @@ const STATUS_STYLE = {
 
 export default function EventDetail() {
   const { id } = useParams();
+  const { isAuthenticated } = useAuth();
   const [event, setEvent] = useState(null);
   const [regStatus, setRegStatus] = useState(null); // { isRegistered, totalRegistrations }
   const [myReg, setMyReg] = useState(null); // user's registration for this event (if any)
@@ -56,30 +63,41 @@ export default function EventDetail() {
   const [error, setError] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [actionMsg, setActionMsg] = useState(null); // { type: 'success'|'error', text }
+  const [showTicket, setShowTicket] = useState(false);
+  const [liveCount, setLiveCount] = useState(null); // live participant count from WS
+  const [liveActivity, setLiveActivity] = useState(null); // { action, userName }
+  const activityTimer = useRef(null);
+
+  const { subscribe, unsubscribe, addListener, removeListener, connected } = useWebSocket();
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const [ev, status] = await Promise.all([
-        getEvent(id),
-        getEventRegistrationStatus(id).catch(() => null),
-      ]);
+      const ev = await getEvent(id);
       setEvent(ev);
-      setRegStatus(status);
 
-      // If registered, find the user's registration to get id/ticketCode
-      if (status?.isRegistered) {
-        try {
-          const myRegs = await getMyRegistrations(0, 50, false);
-          const match = (myRegs.content || []).find(
-            (r) => String(r.event?.id) === String(id) && r.status === 'CONFIRMED'
-          );
-          setMyReg(match || null);
-        } catch {
+      // Only check registration status if user is logged in
+      if (isAuthenticated) {
+        const status = await getEventRegistrationStatus(id).catch(() => null);
+        setRegStatus(status);
+
+        // If registered, find the user's registration to get id/ticketCode
+        if (status?.isRegistered) {
+          try {
+            const myRegs = await getMyRegistrations(0, 50, false);
+            const match = (myRegs.content || []).find(
+              (r) => String(r.event?.id) === String(id) && r.status === 'CONFIRMED'
+            );
+            setMyReg(match || null);
+          } catch {
+            setMyReg(null);
+          }
+        } else {
           setMyReg(null);
         }
       } else {
+        setRegStatus(null);
         setMyReg(null);
       }
     } catch (err) {
@@ -87,11 +105,36 @@ export default function EventDetail() {
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, isAuthenticated]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  /* ── WebSocket: subscribe to live participant count ── */
+  useEffect(() => {
+    if (!id) return;
+
+    subscribe(id);
+
+    const onParticipantCount = (payload) => {
+      if (String(payload.eventId) === String(id)) {
+        setLiveCount(payload.count);
+        setLiveActivity({ action: payload.action, userName: payload.userName });
+        // Clear activity banner after 5s
+        clearTimeout(activityTimer.current);
+        activityTimer.current = setTimeout(() => setLiveActivity(null), 5000);
+      }
+    };
+
+    addListener('participant.count', onParticipantCount);
+
+    return () => {
+      unsubscribe(id);
+      removeListener('participant.count', onParticipantCount);
+      clearTimeout(activityTimer.current);
+    };
+  }, [id, subscribe, unsubscribe, addListener, removeListener]);
 
   const handleRegister = async () => {
     setActionLoading(true);
@@ -176,10 +219,11 @@ export default function EventDetail() {
   const canRegister = isPublished && !isPast && !isRegistered;
   const canCancel = regActive && !isPast;
 
-  const capacityUsed = regStatus?.totalRegistrations || 0;
+  const capacityUsed = liveCount != null ? liveCount : (regStatus?.totalRegistrations || 0);
   const capacityTotal = event.capacity || 0;
   const capacityPct = capacityTotal > 0 ? Math.min(100, Math.round((capacityUsed / capacityTotal) * 100)) : 0;
   const isFull = capacityTotal > 0 && capacityUsed >= capacityTotal;
+  const isLive = connected && liveCount != null;
 
   return (
     <AppLayout>
@@ -233,12 +277,19 @@ export default function EventDetail() {
             {capacityTotal > 0 && (
               <div className="mb-6">
                 <div className="flex justify-between text-[11px] mb-1">
-                  <span className="text-[#6B7280] font-medium">Capacity</span>
-                  <span className="font-bold text-bauhaus-fg">{capacityPct}%</span>
+                  <span className="text-[#6B7280] font-medium flex items-center gap-2">
+                    Capacity
+                    {isLive && (
+                      <span className="flex items-center gap-1 text-[9px] text-[#16A34A] font-bold uppercase tracking-wider">
+                        <Radio className="w-3 h-3 animate-live-pulse" /> Live
+                      </span>
+                    )}
+                  </span>
+                  <span className="font-bold text-bauhaus-fg">{capacityUsed} / {capacityTotal} ({capacityPct}%)</span>
                 </div>
                 <div className="h-2 bg-[#F3F4F6] overflow-hidden">
                   <div
-                    className="h-full transition-all duration-300"
+                    className="h-full transition-all duration-500"
                     style={{
                       width: `${capacityPct}%`,
                       backgroundColor: isFull ? '#D02020' : '#1040C0',
@@ -248,6 +299,14 @@ export default function EventDetail() {
                 {isFull && (
                   <p className="text-[10px] font-bold text-bauhaus-red uppercase tracking-wider mt-1">
                     Event is full
+                  </p>
+                )}
+                {/* Live activity banner */}
+                {liveActivity && (
+                  <p className="text-[11px] text-[#6B7280] mt-1.5 animate-slide-in">
+                    {liveActivity.action === 'registered' ? '✅' : '❌'}{' '}
+                    <span className="font-semibold">{liveActivity.userName}</span>{' '}
+                    {liveActivity.action === 'registered' ? 'just registered' : 'cancelled registration'}
                   </p>
                 )}
               </div>
@@ -287,7 +346,19 @@ export default function EventDetail() {
 
             {/* Registration section */}
             <div className="bg-[#FAFAFA] border border-[#E0E0E0] p-5">
-              {regActive && (
+              {!isAuthenticated && (
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-[#6B7280]">Sign in to register for this event.</p>
+                  <Link
+                    to="/login"
+                    className="flex items-center gap-1.5 px-5 h-12 bg-bauhaus-bluelue text-white text-sm font-bold uppercase tracking-wider hover:bg-[#0D3399] transition-colors"
+                  >
+                    <LogIn className="w-4 h-4" /> Sign In
+                  </Link>
+                </div>
+              )}
+
+              {isAuthenticated && regActive && (
                 <div className="mb-4">
                   <div className="flex items-center gap-2 mb-2">
                     <Ticket className="w-4 h-4 text-[#16A34A]" />
@@ -296,66 +367,85 @@ export default function EventDetail() {
                     </span>
                   </div>
                   {myReg?.ticketCode && (
-                    <p className="text-sm text-[#374151]">
-                      Ticket: <span className="font-mono font-bold">{myReg.ticketCode}</span>
-                    </p>
+                    <div className="flex items-center gap-3">
+                      <p className="text-sm text-[#374151]">
+                        Ticket: <span className="font-mono font-bold">{myReg.ticketCode}</span>
+                      </p>
+                      <button
+                        onClick={() => setShowTicket(true)}
+                        className="flex items-center gap-1 px-3 py-1.5 bg-bauhaus-blue text-white text-[11px] font-bold uppercase tracking-wider hover:bg-[#0D3399] transition-colors cursor-pointer"
+                      >
+                        <QrCode className="w-3.5 h-3.5" /> View Ticket
+                      </button>
+                    </div>
                   )}
                 </div>
               )}
 
-              {isRegistered && !regActive && (
+              {isAuthenticated && isRegistered && !regActive && (
                 <div className="mb-4 flex items-center gap-2">
                   <XCircle className="w-4 h-4 text-bauhaus-red" />
-                  <span className="text-xs font-bold text-bauhaus-red uppercase tracking-wider">
+                  <span className="text-xs font-bold text-bauhaus-reded uppercase tracking-wider">
                     Registration cancelled
                   </span>
                 </div>
               )}
 
-              <div className="flex flex-wrap gap-3">
-                {canRegister && !isFull && (
-                  <button
-                    onClick={handleRegister}
-                    disabled={actionLoading}
-                    className="flex items-center gap-2 px-6 h-12bauhaus-red text-white text-sm font-bold uppercase tracking-wider hover:bg-[#B91C1C] disabled:opacity-50 transition-colors cursor-pointer"
-                  >
-                    {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                    Register Now
-                  </button>
-                )}
+              {isAuthenticated && (
+                <div className="flex flex-wrap gap-3">
+                  {canRegister && !isFull && (
+                    <button
+                      onClick={handleRegister}
+                      disabled={actionLoading}
+                      className="flex items-center gap-2 px-6 h-12 bg-bauhaus-reded text-white text-sm font-bold uppercase tracking-wider hover:bg-[#B91C1C] disabled:opacity-50 transition-colors cursor-pointer"
+                    >
+                      {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                      Register Now
+                    </button>
+                  )}
 
-                {canRegister && isFull && (
-                  <span className="flex items-center px-6 h-12 bg-[#E5E7EB] text-[#9CA3AF] text-sm font-bold uppercase tracking-wider">
-                    Sold Out
-                  </span>
-                )}
+                  {canRegister && isFull && (
+                    <span className="flex items-center px-6 h-12 bg-[#E5E7EB] text-[#9CA3AF] text-sm font-bold uppercase tracking-wider">
+                      Sold Out
+                    </span>
+                  )}
 
-                {canCancel && (
-                  <button
-                    onClick={handleCancel}
-                    disabled={actionLoading}
-                    className="flex items-center gap-2 px-6 h-12 bg-white border border-[#D1D5DB] text-sm font-bold text-bauhaus-red uppercase tracking-wider hover:bg-[#FEF2F2] disabled:opacity-50 transition-colors cursor-pointer"
-                  >
-                    {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                    Cancel Registration
-                  </button>
-                )}
+                  {canCancel && (
+                    <button
+                      onClick={handleCancel}
+                      disabled={actionLoading}
+                      className="flex items-center gap-2 px-6 h-12 bg-white border border-[#D1D5DB] text-sm font-bold text-bauhaus-red uppercase tracking-wider hover:bg-[#FEF2F2] disabled:opacity-50 transition-colors cursor-pointer"
+                    >
+                      {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                      Cancel Registration
+                    </button>
+                  )}
 
-                {isPast && (
-                  <span className="flex items-center px-6 h-12 bg-[#E5E7EB] text-[#9CA3AF] text-sm font-bold uppercase tracking-wider">
-                    Event Ended
-                  </span>
-                )}
+                  {isPast && (
+                    <span className="flex items-center px-6 h-12 bg-[#E5E7EB] text-[#9CA3AF] text-sm font-bold uppercase tracking-wider">
+                      Event Ended
+                    </span>
+                  )}
 
-                {!isPublished && !isPast && (
-                  <span className="flex items-center px-6 h-12 bg-[#E5E7EB] text-[#9CA3AF] text-sm font-bold uppercase tracking-wider">
-                    {event.status === 'CANCELLED' ? 'Event Cancelled' : 'Registration Not Open'}
-                  </span>
-                )}
-              </div>
+                  {!isPublished && !isPast && (
+                    <span className="flex items-center px-6 h-12 bg-[#E5E7EB] text-[#9CA3AF] text-sm font-bold uppercase tracking-wider">
+                      {event.status === 'CANCELLED' ? 'Event Cancelled' : 'Registration Not Open'}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
+
+        {/* Ticket Modal */}
+        {showTicket && myReg?.ticketCode && (
+          <TicketModal
+            ticketCode={myReg.ticketCode}
+            event={event}
+            onClose={() => setShowTicket(false)}
+          />
+        )}
       </div>
     </AppLayout>
   );
@@ -369,6 +459,105 @@ function MetaItem({ icon: Icon, label, value }) {
       <div>
         <p className="text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wider">{label}</p>
         <p className="text-sm text-[#374151] mt-0.5">{value}</p>
+      </div>
+    </div>
+  );
+}
+
+/* ── Ticket Modal with QR Code ── */
+function TicketModal({ ticketCode, event, onClose }) {
+  const qrUrl = `/api/tickets/${ticketCode}/qr`;
+  const [qrLoaded, setQrLoaded] = useState(false);
+  const [qrError, setQrError] = useState(false);
+
+  const handleDownload = async () => {
+    try {
+      const token = localStorage.getItem('em_token');
+      const res = await fetch(qrUrl, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+      });
+      if (!res.ok) throw new Error('Download failed');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${ticketCode}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {
+      alert('Failed to download QR code. The ticket may still be generating.');
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
+      <div
+        className="bg-white border border-[#E0E0E0] w-full max-w-md mx-4 overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="h-1 bg-[#16A34A]" />
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-black text-bauhaus-fgg uppercase tracking-tight">
+              Your Ticket
+            </h3>
+            <button
+              onClick={onClose}
+              className="text-[#9CA3AF] hover:text-bauhaus-fg text-xl font-bold leading-none cursor-pointer"
+            >
+              ×
+            </button>
+          </div>
+
+          {/* Ticket info */}
+          <div className="bg-[#FAFAFA] border border-[#E0E0E0] p-4 mb-4">
+            <p className="text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wider mb-1">Event</p>
+            <p className="text-sm font-bold text-bauhaus-fg uppercase">{event?.title}</p>
+            {event?.location && (
+              <p className="text-[11px] text-[#6B7280] mt-1">{event.location}</p>
+            )}
+          </div>
+
+          <div className="bg-[#FAFAFA] border border-[#E0E0E0] p-4 mb-4">
+            <p className="text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wider mb-1">Ticket Code</p>
+            <p className="text-lg font-mono font-bold text-bauhaus-fg">{ticketCode}</p>
+          </div>
+
+          {/* QR Code */}
+          <div className="flex flex-col items-center py-4">
+            {!qrError ? (
+              <>
+                <img
+                  src={qrUrl}
+                  alt={`QR code for ${ticketCode}`}
+                  className={`w-48 h-48 border border-[#E0E0E0] ${qrLoaded ? '' : 'hidden'}`}
+                  onLoad={() => setQrLoaded(true)}
+                  onError={() => setQrError(true)}
+                />
+                {!qrLoaded && (
+                  <div className="w-48 h-48 border border-[#E0E0E0] flex items-center justify-center">
+                    <Loader2 className="w-6 h-6 text-[#BCBCBC] animate-spin" />
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="w-48 h-48 border border-dashed border-[#D1D5DB] flex flex-col items-center justify-center text-center p-4">
+                <QrCode className="w-8 h-8 text-[#D1D5DB] mb-2" />
+                <p className="text-[11px] text-[#9CA3AF]">QR code is being generated. Check back shortly.</p>
+              </div>
+            )}
+          </div>
+
+          {/* Download */}
+          <button
+            onClick={handleDownload}
+            className="w-full flex items-center justify-center gap-2 h-12 bg-bauhaus-fg text-white text-sm font-bold uppercase tracking-wider hover:bg-[#333] transition-colors cursor-pointer"
+          >
+            <Download className="w-4 h-4" /> Download QR Code
+          </button>
+        </div>
       </div>
     </div>
   );

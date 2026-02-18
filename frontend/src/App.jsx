@@ -6,45 +6,35 @@ import EventList from './pages/EventList';
 import EventDetail from './pages/EventDetail';
 import MyRegistrations from './pages/MyRegistrations';
 import ProtectedRoute from './components/ProtectedRoute';
+import LiveAnnouncements from './components/LiveAnnouncements';
 
 export default function App() {
   return (
-    <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute>
-            <Dashboard />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/events"
-        element={
-          <ProtectedRoute>
-            <EventList />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/events/:id"
-        element={
-          <ProtectedRoute>
-            <EventDetail />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/my-registrations"
-        element={
-          <ProtectedRoute>
-            <MyRegistrations />
-          </ProtectedRoute>
-        }
-      />
-      <Route path="*" element={<Navigate to="/login" replace />} />
-    </Routes>
+    <>
+      <LiveAnnouncements />
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/events" element={<EventList />} />
+        <Route path="/events/:id" element={<EventDetail />} />
+        <Route
+          path="/my-registrations"
+          element={
+            <ProtectedRoute>
+              <MyRegistrations />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
+    </>
   );
 }

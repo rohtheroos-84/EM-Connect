@@ -10,6 +10,7 @@ async function request(endpoint, options = {}) {
     ...options.headers,
   };
 
+  // Only attach token if we have one
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
@@ -19,8 +20,8 @@ async function request(endpoint, options = {}) {
     headers,
   });
 
-  // Handle 401 — token expired or invalid
-  if (response.status === 401) {
+  // Handle 401 — but only redirect if user had a token (was logged in)
+  if (response.status === 401 && token) {
     localStorage.removeItem('em_token');
     localStorage.removeItem('em_user');
     window.location.href = '/login';

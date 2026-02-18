@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { getEvents, searchEvents } from '../services/api';
-import { Search, MapPin, Clock, Users, ChevronLeft, ChevronRight, AlertCircle, Calendar } from 'lucide-react';
+import { searchEvents } from '../services/api';
+import { Search, MapPin, Clock, Users, ChevronLeft, ChevronRight, AlertCircle, Calendar, X } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
 
 function fmtDate(iso) {
@@ -31,17 +31,16 @@ export default function EventList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
-  const [activeSearch, setActiveSearch] = useState('');
+  const debounceRef = useRef(null);
 
   const PAGE_SIZE = 9;
 
-  const fetchEvents = useCallback(async () => {
+  const fetchEvents = useCallback(async (keyword, pg) => {
     setLoading(true);
     setError(null);
     try {
-      const data = activeSearch
-        ? await searchEvents(activeSearch, page, PAGE_SIZE)
-        : await getEvents(page, PAGE_SIZE);
+      // Always use search endpoint — empty keyword returns all published events
+      const data = await searchEvents(keyword || '', pg, PAGE_SIZE);
       setEvents(data.content || []);
       setTotalPages(data.totalPages || 0);
       setTotalElements(data.totalElements || 0);
@@ -50,20 +49,31 @@ export default function EventList() {
     } finally {
       setLoading(false);
     }
-  }, [page, activeSearch]);
+  }, []);
 
-  useEffect(() => { fetchEvents(); }, [fetchEvents]);
+  // Initial load
+  useEffect(() => { fetchEvents('', 0); }, [fetchEvents]);
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    setPage(0);
-    setActiveSearch(search.trim());
+  // Debounced search — fires 400ms after user stops typing
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setPage(0);
+      fetchEvents(search.trim(), 0);
+    }, 400);
+    return () => clearTimeout(debounceRef.current);
+  }, [search, fetchEvents]);
+
+  // Page change
+  const changePage = (newPage) => {
+    setPage(newPage);
+    fetchEvents(search.trim(), newPage);
   };
 
   const clearSearch = () => {
     setSearch('');
-    setActiveSearch('');
     setPage(0);
+    fetchEvents('', 0);
   };
 
   return (
@@ -81,33 +91,24 @@ export default function EventList() {
           </div>
 
           {/* Search */}
-          <form onSubmit={handleSearch} className="flex gap-2">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#BCBCBC] pointer-events-none" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search events…"
-                className="pl-9 pr-4 h-10 w-64 bg-white border border-[#D1D5DB] text-sm text-bauhaus-fg placeholder:text-[#BCBCBC] placeholder:italic focus:border-bauhaus-blue focus:shadow-[0_0_0_3px_rgba(16,64,192,0.08)] transition-all duration-150"
-              />
-            </div>
-            <button
-              type="submit"
-              className="px-4 h-10 bg-bauhaus-blue text-white text-xs font-bold uppercase tracking-wider hover:bg-[#0D3399] transition-colors cursor-pointer"
-            >
-              Search
-            </button>
-            {activeSearch && (
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#BCBCBC] pointer-events-none" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search events…"
+              className="pl-9 pr-9 h-10 w-72 bg-white border border-[#D1D5DB] text-sm text-bauhaus-fg placeholder:text-[#BCBCBC] placeholder:italic focus:border-bauhaus-blue focus:shadow-[0_0_0_3px_rgba(16,64,192,0.08)] transition-all duration-150"
+            />
+            {search && (
               <button
-                type="button"
                 onClick={clearSearch}
-                className="px-3 h-10 bg-white border border-[#D1D5DB] text-xs font-bold text-[#6B7280] uppercase tracking-wider hover:bg-[#F5F5F5] transition-colors cursor-pointer"
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center text-[#9CA3AF] hover:text-bauhaus-fg cursor-pointer"
               >
-                Clear
+                <X className="w-3.5 h-3.5" />
               </button>
             )}
-          </form>
+          </div>
         </div>
 
         {/* Error */}
@@ -115,7 +116,7 @@ export default function EventList() {
           <div className="mb-6 flex items-center gap-3 bg-[#FEF2F2] border-l-[3px] border-bauhaus-red px-4 py-3">
             <AlertCircle className="w-4 h-4 text-bauhaus-red shrink-0" />
             <p className="text-sm text-bauhaus-red">{error}</p>
-            <button onClick={fetchEvents} className="ml-auto text-sm font-bold text-bauhaus-red underline cursor-pointer">
+            <button onClick={() => fetchEvents(search.trim(), page)} className="ml-auto text-sm font-bold text-bauhaus-red underline cursor-pointer">
               Retry
             </button>
           </div>
@@ -143,14 +144,14 @@ export default function EventList() {
           <div className="text-center py-20">
             <Calendar className="w-12 h-12 text-[#D1D5DB] mx-auto mb-4" />
             <h3 className="text-lg font-bold text-bauhaus-fg uppercase tracking-tight">
-              {activeSearch ? 'No events found' : 'No events yet'}
+              {search.trim() ? 'No events found' : 'No events yet'}
             </h3>
             <p className="text-sm text-[#6B7280] mt-1">
-              {activeSearch
-                ? `No events match "${activeSearch}". Try a different search.`
+              {search.trim()
+                ? `No events match "${search.trim()}". Try a different search.`
                 : 'Events will appear here once they are published.'}
             </p>
-            {activeSearch && (
+            {search.trim() && (
               <button
                 onClick={clearSearch}
                 className="mt-4 px-4 py-2 bg-bauhaus-blue text-white text-xs font-bold uppercase tracking-wider hover:bg-[#0D3399] transition-colors cursor-pointer"
@@ -178,14 +179,14 @@ export default function EventList() {
                 </span>
                 <div className="flex gap-2">
                   <button
-                    onClick={() => setPage((p) => Math.max(0, p - 1))}
+                    onClick={() => changePage(Math.max(0, page - 1))}
                     disabled={page === 0}
                     className="flex items-center gap-1 px-3 py-1.5 bg-white border border-[#D1D5DB] text-xs font-bold text-bauhaus-fg uppercase tracking-wider disabled:opacity-30 disabled:pointer-events-none hover:bg-[#F5F5F5] transition-colors cursor-pointer"
                   >
                     <ChevronLeft className="w-3.5 h-3.5" /> Prev
                   </button>
                   <button
-                    onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                    onClick={() => changePage(Math.min(totalPages - 1, page + 1))}
                     disabled={page >= totalPages - 1}
                     className="flex items-center gap-1 px-3 py-1.5 bg-white border border-[#D1D5DB] text-xs font-bold text-bauhaus-fg uppercase tracking-wider disabled:opacity-30 disabled:pointer-events-none hover:bg-[#F5F5F5] transition-colors cursor-pointer"
                   >

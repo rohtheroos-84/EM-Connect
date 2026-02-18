@@ -12,6 +12,9 @@ import {
   ChevronRight,
   Loader2,
   CalendarX,
+  QrCode,
+  Download,
+  X,
 } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
 
@@ -50,6 +53,7 @@ export default function MyRegistrations() {
   const [activeOnly, setActiveOnly] = useState(false);
   const [cancelling, setCancelling] = useState(null); // registration id being cancelled
   const [actionMsg, setActionMsg] = useState(null);
+  const [ticketModal, setTicketModal] = useState(null); // { ticketCode, event }
 
   const PAGE_SIZE = 10;
 
@@ -194,6 +198,7 @@ export default function MyRegistrations() {
                   registration={reg}
                   onCancel={handleCancel}
                   cancelling={cancelling}
+                  onViewTicket={(tc, ev) => setTicketModal({ ticketCode: tc, event: ev })}
                 />
               ))}
             </div>
@@ -225,12 +230,21 @@ export default function MyRegistrations() {
           </>
         )}
       </div>
+
+      {/* Ticket Modal */}
+      {ticketModal && (
+        <TicketModal
+          ticketCode={ticketModal.ticketCode}
+          event={ticketModal.event}
+          onClose={() => setTicketModal(null)}
+        />
+      )}
     </AppLayout>
   );
 }
 
 /* ── Registration Row ── */
-function RegistrationRow({ registration: reg, onCancel, cancelling }) {
+function RegistrationRow({ registration: reg, onCancel, cancelling, onViewTicket }) {
   const statusInfo = REG_STATUS_STYLE[reg.status] || REG_STATUS_STYLE.CONFIRMED;
   const event = reg.event || {};
   const isPast = event.endDate && new Date(event.endDate) < new Date();
@@ -286,6 +300,14 @@ function RegistrationRow({ registration: reg, onCancel, cancelling }) {
 
           {/* Right — Actions */}
           <div className="flex items-center gap-2 shrink-0">
+            {reg.ticketCode && reg.status === 'CONFIRMED' && (
+              <button
+                onClick={() => onViewTicket(reg.ticketCode, event)}
+                className="px-4 h-9 flex items-center gap-1.5 bg-white border border-[#D1D5DB] text-xs font-bold text-bauhaus-fg uppercase tracking-wider hover:bg-[#F5F5F5] transition-colors cursor-pointer"
+              >
+                <QrCode className="w-3.5 h-3.5" /> Ticket
+              </button>
+            )}
             <Link
               to={`/events/${event.id}`}
               className="px-4 h-9 flex items-center bg-white border border-[#D1D5DB] text-xs font-bold text-bauhaus-fg uppercase tracking-wider hover:bg-[#F5F5F5] transition-colors"
@@ -303,6 +325,94 @@ function RegistrationRow({ registration: reg, onCancel, cancelling }) {
               </button>
             )}
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Ticket Modal ── */
+function TicketModal({ ticketCode, event, onClose }) {
+  const [imgSrc, setImgSrc] = useState(null);
+  const [imgError, setImgError] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+
+  const token = localStorage.getItem('token');
+  const qrUrl = `/api/tickets/${ticketCode}/qr`;
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(qrUrl, { headers: { Authorization: `Bearer ${token}` } });
+        if (!res.ok) throw new Error('not ready');
+        const blob = await res.blob();
+        if (!cancelled) setImgSrc(URL.createObjectURL(blob));
+      } catch {
+        if (!cancelled) setImgError(true);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [qrUrl, token]);
+
+  const handleDownload = async () => {
+    setDownloading(true);
+    try {
+      const res = await fetch(qrUrl, { headers: { Authorization: `Bearer ${token}` } });
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${ticketCode}.png`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch { /* ignore */ }
+    setDownloading(false);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
+      <div
+        className="bg-white border border-[#E0E0E0] w-full max-w-sm mx-4"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-3 border-b border-[#E0E0E0]">
+          <h3 className="text-sm font-bold text-bauhaus-fg uppercase tracking-tight">Your Ticket</h3>
+          <button onClick={onClose} className="p-1 hover:bg-[#F5F5F5] transition-colors cursor-pointer">
+            <X className="w-4 h-4 text-[#6B7280]" />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="p-5 text-center">
+          <p className="text-[15px] font-bold text-bauhaus-fg uppercase tracking-tight mb-1">
+            {event?.title || 'Event'}
+          </p>
+          <p className="text-xs text-[#6B7280] font-mono mb-4">{ticketCode}</p>
+
+          {imgSrc ? (
+            <img src={imgSrc} alt="QR Code" className="w-48 h-48 mx-auto border border-[#E0E0E0]" />
+          ) : imgError ? (
+            <div className="w-48 h-48 mx-auto border border-[#E0E0E0] flex items-center justify-center bg-[#FAFAFA]">
+              <p className="text-xs text-[#9CA3AF]">QR generating…<br />Check back shortly.</p>
+            </div>
+          ) : (
+            <div className="w-48 h-48 mx-auto border border-[#E0E0E0] flex items-center justify-center bg-[#FAFAFA]">
+              <Loader2 className="w-6 h-6 text-[#9CA3AF] animate-spin" />
+            </div>
+          )}
+
+          {imgSrc && (
+            <button
+              onClick={handleDownload}
+              disabled={downloading}
+              className="mt-4 inline-flex items-center gap-1.5 px-4 h-9 bg-bauhaus-fg text-white text-xs font-bold uppercase tracking-wider hover:bg-[#333] disabled:opacity-50 transition-colors cursor-pointer"
+            >
+              <Download className="w-3.5 h-3.5" />
+              {downloading ? 'Saving…' : 'Download QR'}
+            </button>
+          )}
         </div>
       </div>
     </div>
