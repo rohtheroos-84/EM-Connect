@@ -1,123 +1,66 @@
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
-import { LogOut, Calendar, Users, Ticket, Zap } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Calendar, Users, Ticket, Zap } from 'lucide-react';
+import AppLayout from '../components/AppLayout';
 
 export default function Dashboard() {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
-
-  const isAdmin = user?.role === 'ADMIN';
+  const { user } = useAuth();
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-bauhaus-bg">
-      {/* ── Navbar ── */}
-      <nav className="bg-bauhaus-fg shrink-0">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 flex items-center justify-between h-14">
-          <div className="flex items-center gap-3">
-            <div className="flex gap-1">
-              <div className="w-2.5 h-2.5 bg-bauhaus-red" />
-              <div className="w-2.5 h-2.5 bg-bauhaus-yellow" />
-              <div className="w-2.5 h-2.5 bg-bauhaus-blue" />
-            </div>
-            <span className="text-base font-black text-white tracking-tight uppercase">
-              EM-Connect
+    <AppLayout>
+      <div className="max-w-7xl mx-auto px-6 lg:px-8">
+        {/* Welcome */}
+        <div className="pt-8 pb-6 border-b border-[#E0E0E0]">
+          <p className="text-[11px] font-bold text-bauhaus-fg/35 uppercase tracking-[0.15em]">
+            Welcome back
+          </p>
+          <div className="flex items-end justify-between mt-1">
+            <h2 className="text-2xl font-black text-bauhaus-fg tracking-tight uppercase">
+              {user?.name || 'User'}
+            </h2>
+            <span className="px-2.5 py-1 bg-bauhaus-blue text-white text-[10px] font-bold uppercase tracking-wider">
+              {user?.role || 'USER'}
             </span>
           </div>
-          <div className="flex items-center gap-3">
-            <span className="hidden sm:block text-sm text-white/50">{user?.email}</span>
-            {isAdmin && (
-              <span className="hidden sm:block px-2 py-0.5 bg-bauhaus-yellow text-bauhaus-fg text-[10px] font-bold uppercase tracking-wider">
-                Admin
-              </span>
-            )}
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-bauhaus-red text-white text-xs font-bold uppercase tracking-wider hover:bg-[#B91C1C] transition-colors duration-150 cursor-pointer"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              Logout
-            </button>
-          </div>
         </div>
-        {/* Accent bar */}
-        <div className="flex h-0.75">
-          <div className="flex-1 bg-bauhaus-red" />
-          <div className="flex-1 bg-bauhaus-yellow" />
-          <div className="flex-1 bg-bauhaus-blue" />
-        </div>
-      </nav>
 
-      {/* ── Main scrollable area ── */}
-      <main className="flex-1 overflow-y-auto">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          {/* Welcome */}
-          <div className="pt-8 pb-6 border-b border-[#E0E0E0]">
-            <p className="text-[11px] font-bold text-bauhaus-fg/35 uppercase tracking-[0.15em]">
-              Welcome back
-            </p>
-            <div className="flex items-end justify-between mt-1">
-              <h2 className="text-2xl font-black text-bauhaus-fg tracking-tight uppercase">
-                {user?.name || 'User'}
-              </h2>
-              <span className="px-2.5 py-1 bg-bauhaus-blue text-white text-[10px] font-bold uppercase tracking-wider">
-                {user?.role || 'USER'}
-              </span>
-            </div>
+        {/* Stats */}
+        <section className="pt-8 pb-6">
+          <h3 className="text-[11px] font-bold text-bauhaus-fg/35 uppercase tracking-[0.15em] mb-4">
+            Overview
+          </h3>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <StatCard icon={<Calendar className="w-4 h-4" />} label="Events" value="0" sub="Total created" accent="#D02020" />
+            <StatCard icon={<Users className="w-4 h-4" />} label="Registrations" value="0" sub="Across all events" accent="#1040C0" />
+            <StatCard icon={<Ticket className="w-4 h-4" />} label="Tickets" value="0" sub="Issued to date" accent="#F0C020" />
+            <StatCard icon={<Zap className="w-4 h-4" />} label="Live Now" value="0" sub="Active events" accent="#121212" />
           </div>
+        </section>
 
-          {/* Stats */}
-          <section className="pt-8 pb-6">
-            <h3 className="text-[11px] font-bold text-bauhaus-fg/35 uppercase tracking-[0.15em] mb-4">
-              Overview
-            </h3>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-              <StatCard icon={<Calendar className="w-4 h-4" />} label="Events" value="0" sub="Total created" accent="#D02020" />
-              <StatCard icon={<Users className="w-4 h-4" />} label="Registrations" value="0" sub="Across all events" accent="#1040C0" />
-              <StatCard icon={<Ticket className="w-4 h-4" />} label="Tickets" value="0" sub="Issued to date" accent="#F0C020" />
-              <StatCard icon={<Zap className="w-4 h-4" />} label="Live Now" value="0" sub="Active events" accent="#121212" />
-            </div>
-          </section>
-
-          {/* Feature cards */}
-          <section className="pb-10">
-            <h3 className="text-[11px] font-bold text-bauhaus-fg/35 uppercase tracking-[0.15em] mb-4">
-              Quick Actions
-            </h3>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        {/* Quick Actions */}
+        <section className="pb-10">
+          <h3 className="text-[11px] font-bold text-bauhaus-fg/35 uppercase tracking-[0.15em] mb-4">
+            Quick Actions
+          </h3>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+            <Link to="/events" className="block group">
               <FeatureCard
-                title="Event Management"
-                desc="Create, publish, and manage your events. Set up registrations, track attendees, and organise everything in one place."
-                phase="Phase 8.2"
+                title="Browse Events"
+                desc="Discover upcoming events, search by keyword, and register with a single click."
                 accent="#D02020"
               />
+            </Link>
+            <Link to="/my-registrations" className="block group">
               <FeatureCard
-                title="Real-Time Updates"
-                desc="Live participant counts, instant announcements, and real-time notifications delivered straight to your dashboard."
-                phase="Phase 8.3"
+                title="My Registrations"
+                desc="View your active and past registrations, ticket codes, and manage your bookings."
                 accent="#1040C0"
               />
-            </div>
-          </section>
-        </div>
-      </main>
-
-      {/* ── Footer ── */}
-      <footer className="shrink-0 bg-bauhaus-fg">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 py-3 flex items-center justify-between">
-          <span className="text-[11px] text-white/25 font-medium">EM-Connect © 2026</span>
-          <div className="flex gap-1">
-            <div className="w-2 h-2 bg-bauhaus-red" />
-            <div className="w-2 h-2 bg-bauhaus-yellow" />
-            <div className="w-2 h-2 bg-bauhaus-blue" />
+            </Link>
           </div>
-        </div>
-      </footer>
-    </div>
+        </section>
+      </div>
+    </AppLayout>
   );
 }
 
@@ -141,17 +84,12 @@ function StatCard({ icon, label, value, sub, accent }) {
 }
 
 /* ── Feature Card ── */
-function FeatureCard({ title, desc, phase, accent }) {
+function FeatureCard({ title, desc, accent }) {
   return (
-    <div className="bg-white border border-[#E0E0E0] overflow-hidden">
+    <div className="bg-white border border-[#E0E0E0] overflow-hidden group-hover:shadow-[3px_3px_0px_0px_#121212] group-hover:border-bauhaus-fg transition-all duration-150">
       <div className="h-0.75" style={{ backgroundColor: accent }} />
       <div className="p-5">
-        <div className="flex items-start justify-between gap-3 mb-2">
-          <h4 className="text-[15px] font-bold text-bauhaus-fg uppercase tracking-tight">{title}</h4>
-          <span className="shrink-0 px-2 py-0.5 bg-bauhaus-bg text-[10px] font-bold text-[#BCBCBC] uppercase tracking-wider whitespace-nowrap">
-            {phase}
-          </span>
-        </div>
+        <h4 className="text-[15px] font-bold text-bauhaus-fg uppercase tracking-tight mb-2">{title}</h4>
         <p className="text-sm text-[#6B7280] leading-relaxed">{desc}</p>
       </div>
     </div>

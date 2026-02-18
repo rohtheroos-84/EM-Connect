@@ -91,7 +91,7 @@ export function isAuthenticated() {
   return !!getToken();
 }
 
-/* ── Events (for future phases) ── */
+/* ── Events ── */
 
 export async function getEvents(page = 0, size = 10) {
   return request(`/events?page=${page}&size=${size}`);
@@ -103,6 +103,64 @@ export async function getEvent(id) {
 
 export async function searchEvents(keyword, page = 0, size = 10) {
   return request(`/events/search?keyword=${encodeURIComponent(keyword)}&page=${page}&size=${size}`);
+}
+
+export async function getMyEvents(page = 0, size = 10) {
+  return request(`/events/my-events?page=${page}&size=${size}`);
+}
+
+export async function createEvent(data) {
+  return request('/events', { method: 'POST', body: JSON.stringify(data) });
+}
+
+export async function updateEvent(id, data) {
+  return request(`/events/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+}
+
+export async function deleteEvent(id) {
+  return request(`/events/${id}`, { method: 'DELETE' });
+}
+
+export async function publishEvent(id) {
+  return request(`/events/${id}/publish`, { method: 'POST' });
+}
+
+export async function cancelEvent(id) {
+  return request(`/events/${id}/cancel`, { method: 'POST' });
+}
+
+export async function completeEvent(id) {
+  return request(`/events/${id}/complete`, { method: 'POST' });
+}
+
+/* ── Registrations ── */
+
+export async function registerForEvent(eventId) {
+  return request(`/events/${eventId}/register`, { method: 'POST' });
+}
+
+export async function cancelRegistration(registrationId) {
+  return request(`/registrations/${registrationId}/cancel`, { method: 'POST' });
+}
+
+export async function getMyRegistrations(page = 0, size = 10, activeOnly = false) {
+  return request(`/registrations/my-registrations?page=${page}&size=${size}&activeOnly=${activeOnly}`);
+}
+
+export async function getRegistration(id) {
+  return request(`/registrations/${id}`);
+}
+
+export async function getRegistrationByTicket(ticketCode) {
+  return request(`/registrations/ticket/${ticketCode}`);
+}
+
+export async function getEventRegistrationStatus(eventId) {
+  return request(`/events/${eventId}/registration-status`);
+}
+
+export async function getEventRegistrations(eventId, page = 0, size = 10) {
+  return request(`/events/${eventId}/registrations?page=${page}&size=${size}`);
 }
 
 /* ── Generic GET / POST / PUT / DELETE ── */

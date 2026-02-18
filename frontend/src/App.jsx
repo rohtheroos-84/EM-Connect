@@ -2,6 +2,9 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
+import EventList from './pages/EventList';
+import EventDetail from './pages/EventDetail';
+import MyRegistrations from './pages/MyRegistrations';
 import ProtectedRoute from './components/ProtectedRoute';
 
 export default function App() {
@@ -14,6 +17,30 @@ export default function App() {
         element={
           <ProtectedRoute>
             <Dashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/events"
+        element={
+          <ProtectedRoute>
+            <EventList />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/events/:id"
+        element={
+          <ProtectedRoute>
+            <EventDetail />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/my-registrations"
+        element={
+          <ProtectedRoute>
+            <MyRegistrations />
           </ProtectedRoute>
         }
       />
