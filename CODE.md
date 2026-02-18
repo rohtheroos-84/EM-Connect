@@ -51,10 +51,10 @@ This document provides a description of every source code file in the EM-Connect
   - [Root Files](#root-files-1)
   - [Entry Point & App](#entry-point--app)
   - [Styling](#styling)
-  - [Context](#context)
-  - [Services](#services-1)
+  - [Context Providers](#context-providers)
   - [Components](#components)
   - [Pages](#pages)
+  - [Services](#services-1)
 
 ---
 
@@ -392,7 +392,7 @@ The WebSocket Hub is a Go service that provides real-time communication between 
 
 **Stack:** Vite 6.x, React 19, React Router 7, Tailwind CSS 4, Lucide React
 **Design System:** Bauhaus — geometric shapes, thick borders, hard shadows, primary palette (red/blue/yellow/black), Outfit font
-**Dev Server:** Port 3000 with API proxy to `:8080`
+**Dev Server:** Port 3000 with API proxy to `:8080` and WebSocket proxy to `:8081`
 
 ### Root Files
 
@@ -400,44 +400,52 @@ The WebSocket Hub is a Go service that provides real-time communication between 
 |------|-------------|
 | `index.html` | Entry HTML file. Links Google Fonts (Outfit, weights 400/500/700/900), mount point `<div id="root">`, loads `src/main.jsx` as ES module. |
 | `package.json` | Project config. Dependencies: `react`, `react-dom`, `react-router-dom`, `lucide-react`. Dev deps: `vite`, `@vitejs/plugin-react`, `tailwindcss`, `@tailwindcss/vite`. Scripts: `dev`, `build`, `preview`. |
-| `vite.config.js` | Vite config with `@vitejs/plugin-react` and `@tailwindcss/vite` plugins. Server proxy: `/api` → `http://localhost:8080` (changeOrigin true) so frontend dev calls reach Spring Boot API without CORS issues. |
+| `vite.config.js` | Vite config with `@vitejs/plugin-react` and `@tailwindcss/vite` plugins. Server runs on port 3000 with dual proxy: `/api` → `http://localhost:8080` (Spring Boot REST API, changeOrigin true), `/ws` → `ws://localhost:8081` (WebSocket Hub, `ws: true`). |
 
 ### Entry Point & App
 
 | File | Description |
 |------|-------------|
-| `src/main.jsx` | React 19 root. Mounts `<App />` inside `<BrowserRouter>` and `<AuthProvider>`. Imports global CSS (`index.css`). Wrapped in `<React.StrictMode>`. |
-| `src/App.jsx` | Route definitions using React Router 7 `<Routes>`. Public routes: `/login` → Login, `/register` → Register. Protected: `/dashboard` → Dashboard (wrapped in `<ProtectedRoute>`). Catch-all `*` → redirects to `/login`. |
+| `src/main.jsx` | React 19 root. Mounts `<App />` inside provider hierarchy: `<BrowserRouter>` → `<AuthProvider>` → `<WebSocketProvider>` → `<ToastProvider>`. Imports global CSS (`index.css`). Wrapped in `<React.StrictMode>`. Provider nesting order ensures auth is available to WebSocket, and WebSocket events are available to toasts. |
+| `src/App.jsx` | Top-level route definitions using React Router 7 `<Routes>`. Public routes: `/login` → Login, `/register` → Register, `/events` → EventList, `/events/:id` → EventDetail. Protected routes (wrapped in `<ProtectedRoute>`): `/dashboard` → Dashboard, `/my-registrations` → MyRegistrations. Catch-all `*` → redirects to `/login`. Renders `<LiveAnnouncements>` globally so WebSocket-driven toast notifications appear on every page. |
 
 ### Styling
 
 | File | Description |
 |------|-------------|
-| `src/index.css` | Global styles with Tailwind CSS 4 (`@import "tailwindcss"`). Defines Bauhaus design tokens via `@theme` directive: custom colors (`bauhaus-bg #F0F0F0`, `bauhaus-fg #121212`, `bauhaus-red #D02020`, `bauhaus-blue #1040C0`, `bauhaus-yellow #F0C020`), font family (`outfit`), hard shadows (`bauhaus-sm/md/lg/pressed` — offset-only, no blur). Includes utility classes for geometric corner decorations (`.bauhaus-corner`), diagonal stripe accents (`.bauhaus-stripe`), Bauhaus-style input focus rings (blue offset shadow), scrollbar styling, and a tri-color loading spinner animation (`.bauhaus-spinner`). |
+| `src/index.css` | Global styles with Tailwind CSS 4 (`@import "tailwindcss"`). Defines Bauhaus design tokens via `@theme` directive: custom colors (`bauhaus-bg #F0F0F0`, `bauhaus-fg #121212`, `bauhaus-red #D02020`, `bauhaus-blue #1040C0`, `bauhaus-yellow #F0C020`), font family (`outfit`), hard shadows (`bauhaus-sm/md/lg/pressed` — offset-only, no blur). Includes utility classes for geometric corner decorations (`.bauhaus-corner`), diagonal stripe accents (`.bauhaus-stripe`), Bauhaus-style input focus rings (blue offset shadow), scrollbar styling, a tri-color loading spinner animation (`.bauhaus-spinner`), toast slide-in animation (`.animate-slide-in`), and a live-pulse keyframe (`.animate-live-pulse`) for the WebSocket status indicator. |
 
-### Context
-
-| File | Description |
-|------|-------------|
-| `src/context/AuthContext.jsx` | Authentication state management via React Context API. Provides `AuthProvider` component and `useAuth()` hook. State: `user` (from localStorage on init), `loading`, `error`. Actions: `login(email, password)` calls API and stores user + token in localStorage, `register(email, password, name)` same flow, `logout()` clears storage and state, `clearError()` resets error. `isAuthenticated` computed from user presence AND token existence. |
-
-### Services
+### Context Providers
 
 | File | Description |
 |------|-------------|
-| `src/services/api.js` | HTTP client layer. Core `request()` function wraps `fetch()` with automatic JWT injection (from `localStorage` `em_token`), JSON content-type, 401 auto-redirect (clears token, redirects to `/login`), and structured error extraction. Auth helpers: `login(email, password)` → POST `/api/auth/login`, stores `token` and `user` from response; `register(email, password, name)` → POST `/api/auth/register`, same storage; `logout()` clears storage; `getStoredUser()` / `getToken()` / `isAuthenticated()` read from localStorage. Event helpers: `getEvents(page, size)`, `getEvent(id)`, `searchEvents(keyword)`. Generic CRUD: `api.get/post/put/delete`. |
+| `src/context/AuthContext.jsx` | Authentication state management via React Context API. Provides `AuthProvider` component and `useAuth()` hook. State: `user` (from localStorage on init), `loading`, `error`. Actions: `login(email, password)` calls API and stores user + token in localStorage, `register(email, password, name)` same flow, `logout()` clears storage and state, `clearError()` resets error. `isAuthenticated` is computed from user presence AND token existence via `useCallback` for stable references. |
+| `src/context/WebSocketContext.jsx` | Persistent WebSocket connection manager via React Context. Provides `WebSocketProvider` and `useWebSocket()` hook. Connects to `/ws` endpoint (proxied to port 8081). Features: auto-reconnect with exponential backoff (1s→30s max), keep-alive pings every 30s, topic subscribe/unsubscribe by `eventId`, typed message listener registry (supports wildcard `*` listener), and automatic re-subscription on reconnect. Uses `useRef` for mutable WS state (socket, timers, listener map, subscription set) to avoid unnecessary re-renders. Exposes `isConnected`, `subscribe(eventId)`, `unsubscribe(eventId)`, `addListener(type, fn)`, `removeListener(type, fn)`. |
+| `src/context/ToastContext.jsx` | Toast notification system via React Context. Provides `ToastProvider` and `useToast()` hook. `addToast({ title, message, type, duration })` creates a toast with auto-dismiss timer (default 5s). Toast UI renders as a fixed overlay in top-right corner with slide-in animation. Supports three color schemes: `published` (green accent), `cancelled` (red accent), and default (blue accent). Each toast has a close button. Module-level counter ensures unique IDs. `useRef` tracks timers to prevent stale closure issues. |
 
 ### Components
 
 | File | Description |
 |------|-------------|
-| `src/components/ProtectedRoute.jsx` | Route guard component. Uses `useAuth()` to check `isAuthenticated` — if false, renders `<Navigate to="/login" replace />`. Otherwise renders `children`. Used in `App.jsx` to wrap the Dashboard route. |
+| `src/components/AppLayout.jsx` | Shared layout shell used by all authenticated and public pages. Top navbar: Bauhaus tri-color dots + "EM-Connect" brand, responsive nav links (conditional on auth state — public: Browse Events; auth: Dashboard, Browse Events, My Registrations), user email display with admin badge (yellow), logout button. Includes a green "LIVE" indicator badge that pulsates when WebSocket is connected. Mobile hamburger menu with `sm:hidden` responsive breakpoint. Footer: copyright text + colored accent bar. |
+| `src/components/LiveAnnouncements.jsx` | Headless component (renders `null`) that bridges WebSocket events to toast notifications. Subscribes to `event.published` and `event.cancelled` message types via `useWebSocket().addListener`. When events arrive, fires corresponding toasts via `useToast().addToast` with appropriate titles, messages, and auto-dismiss durations. Cleanup via `removeListener` in `useEffect` return. Decoupled observer pattern — no UI of its own, rendered globally in `App.jsx`. |
+| `src/components/ProtectedRoute.jsx` | Route guard component. Uses `useAuth()` to check `isAuthenticated` — if false, renders `<Navigate to="/login" replace />`. Otherwise renders `children`. Used in `App.jsx` to wrap Dashboard and MyRegistrations routes. |
+| `src/components/TicketModal.jsx` | Shared ticket modal overlay used by Dashboard, EventDetail, and MyRegistrations. Displays QR code image, event info, and ticket code. Fetches QR from `/api/tickets/{code}/qr` using authenticated `fetch()` with JWT Bearer token (from `localStorage` `em_token`) → blob → `URL.createObjectURL()`. This approach is necessary because browser `<img>` tags cannot send custom Authorization headers. Features: loading spinner during fetch, error/"QR generating..." fallback, download button (creates a temporary `<a>` element for programmatic PNG save). Backdrop click-to-close with `stopPropagation` on inner card. Green accent bar, event details section, centered QR image, ticket code display. |
 
 ### Pages
 
 | File | Description |
 |------|-------------|
-| `src/pages/Login.jsx` | Full-screen Bauhaus-styled login page with split-panel layout. Left panel (desktop): solid blue (`#1040C0`) background with decorative geometric shapes (yellow circle, red square with hard shadow, black circle, white grid lines) and "EM-Connect" branding. Right panel: white card with thick black border and hard shadow, corner decorations (yellow square + red square), icon header (red square with LogIn icon), email/password inputs with left-aligned Lucide icons, red primary submit button with press animation, error alert bar (red tint with AlertCircle icon), divider, and "Create Account" link button. Bottom: three colored squares (red, blue circle, yellow) as decorative dots. Mobile: hides left panel, shows compact brand header. |
-| `src/pages/Register.jsx` | Full-screen Bauhaus-styled registration page, mirrored layout from Login. Left panel: form side. Right panel (desktop): solid red (`#D02020`) background with blue rectangle, yellow circle, white square, grid lines, and "Join Us" branding. Card: blue corner decorations, blue icon (UserPlus), four fields (name, email, password, confirm password) with Lucide icons, blue primary submit button, client-side validation (password match, min 6 chars), divider with "Sign In" link. Both server errors (from context) and local validation errors displayed in the same alert component. |
-| `src/pages/Dashboard.jsx` | Post-login dashboard with Bauhaus styling. Navbar: black background with yellow bottom border, tri-color dots + "EM-Connect" branding, user email display with admin badge (yellow), red logout button. Welcome banner: blue background with user name, yellow accent line, geometric decorations. Content: 4-column stat cards (Events/Registrations/Tickets/Live Now) each with colored icon square and placeholder `—` value. Two "Coming Soon" placeholder cards for Event Management (Phase 8.2) and Real-Time Updates (Phase 8.3). Role badge at bottom showing current user role. Uses `StatCard` and `PlaceholderCard` helper components. |
+| `src/pages/Login.jsx` | Full-screen Bauhaus-styled login page with split-panel layout. Left panel (desktop): solid blue (`#1040C0`) background with decorative geometric shapes (yellow circle, red square with hard shadow, black circle, white grid lines) and "EM-Connect" branding. Right panel: white card with thick black border and hard shadow, corner decorations (yellow square + red square), icon header (red square with LogIn icon), email/password inputs, red primary submit button with press animation, error alert bar (red tint with AlertCircle icon), divider, and "Create Account" link button. Bottom: three colored squares (red, blue circle, yellow) as decorative dots. Mobile: hides left panel, shows compact brand header. Clear-on-type pattern clears auth errors as user types. Client-side email regex validation. |
+| `src/pages/Register.jsx` | Full-screen Bauhaus-styled registration page, mirrored layout from Login. Left panel: form side. Right panel (desktop): solid red (`#D02020`) background with blue rectangle, yellow circle, white square, grid lines, and "Join Us" branding. Card: blue corner decorations, blue icon (UserPlus), four fields (name, email, password, confirm password). Password strength meter with `useMemo`-based computation — evaluates length, uppercase, digits, and special chars, displays 4-bar visual indicator (Weak→Fair→Good→Strong with color gradient). `touched` state tracking for field-level validation, password match indicator icons, dynamic border colors. Blue primary submit button. Same Bauhaus card design as Login with reversed brand panel side (right, red). |
+| `src/pages/Dashboard.jsx` | Post-login user dashboard. Welcome header with user name and role badge. Four stat cards (Events, Registrations, Tickets, Live Now) fetched in parallel via `Promise.all` — events count from `searchEvents` totalElements, registrations count from `getMyRegistrations` totalElements, tickets count from `getMyTickets` list length, live-now computed client-side by filtering events where `startDate <= now <= endDate`. Two-column preview section: left shows top 3 published events as linked cards (with status accent bar, location, date/time), right shows top 3 user registrations as cards (with status badge, ticket code, event link, date, cancel QR button for confirmed tickets). QR button opens shared `TicketModal`. Graceful degradation with `.catch(() => defaults)` for each API call. Loading states with spinner indicators. `StatCard` sub-component with colored icon square, value, and subtitle. Status-to-color mapping for accent bars. `en-IN` locale for date/time formatting. |
+| `src/pages/EventList.jsx` | Paginated, searchable event browsing page. Debounced search input (400ms via `useRef` + `setTimeout`) calls `searchEvents(keyword, page, size)`. Displays events in a responsive 3-column grid via `EventCard` sub-component — each card shows status badge, title, description (truncated via `line-clamp-2`), date range, location, and hover effect (`hover:shadow-[3px_3px_0px_0px_#121212]`). Includes loading skeleton placeholders (8 animated cards), empty state message, error state with retry button, and prev/next pagination controls. Status-styled badges with color mapping. |
+| `src/pages/EventDetail.jsx` | Full event detail page loaded via `useParams()` for event ID. Top section: status badge, event title, meta grid with `MetaItem` helper (date, time, location, capacity). Description section. Capacity progress bar with live WebSocket updates — subscribes to `participant.count` events for the specific event, animates bar width transitions. Live activity banner shows "X just registered" when real-time registration events arrive. Registration action section with complex conditional rendering based on auth state × registration state × event state: register button (with loading), cancel button (for confirmed registrations), "Sold Out" indicator, "Event Ended" state, "View Ticket" button (opens shared `TicketModal`). Uses `useWebSocket().subscribe/unsubscribe` with cleanup on unmount. |
+| `src/pages/MyRegistrations.jsx` | Paginated list of user's registrations loaded via `getMyRegistrations(page, size, activeOnly)`. Toggle for active-only filtering (re-fetches from page 0). Each registration rendered via `RegistrationRow` sub-component showing: status badge (colored by status), ticket code (monospace font), event title (linked to event detail), date/location info, and action buttons. Actions: view ticket QR (opens shared `TicketModal`, available for confirmed registrations), view event link, cancel registration (inline with loading state, only for confirmed + future events). Prev/next pagination. |
+
+### Services
+
+| File | Description |
+|------|-------------|
+| `src/services/api.js` | Central HTTP client layer. Core `request(path, options)` function wraps `fetch()` with automatic JWT injection (from `localStorage` `em_token`), JSON content-type header, 401 auto-redirect (clears token, redirects to `/login` only if token existed), structured error message extraction, and 204/content-type handling. **Auth functions:** `login(email, password)` → POST `/api/auth/login` (stores token + user), `register(email, password, name)` → POST `/api/auth/register`, `logout()` clears storage, `getStoredUser()` / `getToken()` / `isAuthenticated()` read from localStorage. **Event functions:** `getEvents(page, size)`, `getEvent(id)`, `searchEvents(keyword, page, size)`, `getMyEvents()`, `createEvent(data)`, `updateEvent(id, data)`, `deleteEvent(id)`, `publishEvent(id)`, `cancelEvent(id)`, `completeEvent(id)`. **Registration functions:** `registerForEvent(eventId)`, `cancelRegistration(id)`, `getMyRegistrations(page, size, activeOnly)`, `getRegistration(id)`, `getRegistrationByTicket(code)`, `getEventRegistrationStatus(eventId)`, `getEventRegistrations(eventId, page, size)`. **Ticket functions:** `getMyTickets()` → GET `/api/tickets/my`. **Generic CRUD:** `api.get/post/put/delete` for ad-hoc requests. |
 
