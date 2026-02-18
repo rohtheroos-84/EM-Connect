@@ -1812,7 +1812,7 @@ npx vite build
 
 **NOTE:** When using PowerShell with `Invoke-RestMethod`, always use `[System.Text.Encoding]::UTF8.GetBytes($body)` for the `-Body` parameter to avoid JSON encoding issues. The default PowerShell string encoding can corrupt JSON double-quotes.
 
-### 8.1.1: UI/UX Overhaul — Function-First Redesign
+#### 8.1.1: UI/UX Overhaul — Function-First Redesign
 
 **Problem:** Initial implementation prioritized decorative composition over usability:
 - Giant geometric shapes (circles, squares, grid lines) in decorative panels competed with forms and CTAs
@@ -1843,6 +1843,54 @@ npx vite build
 - For icon integration in inputs: icons should be MUTED color (`#9CA3AF`), slightly SMALLER than default (`18px` not `20px`), and `pointer-events-none`. This prevents visual competition with input text.
 - Always use `disabled:pointer-events-none` on buttons (not just `disabled:cursor-not-allowed`) to prevent hover transform effects during loading.
 - Build output: 21.7KB CSS, 261KB JS (vs previous 23KB CSS, 257KB JS). Slightly larger JS from password strength + validation logic.
+
+
+### 8.2 Event Listing, Detail, Registration Flow & My Registrations
+
+**Scope**: Public event browsing, event detail view, registration/cancellation flow, user registration history.
+
+**Files Created**:
+| File | Purpose |
+|------|---------|
+| `frontend/src/components/AppLayout.jsx` | Shared layout — navbar with auth-aware links, Bauhaus footer, viewport-locked flex column |
+| `frontend/src/pages/EventList.jsx` | Public paginated event listing with search, status badges, capacity display |
+| `frontend/src/pages/EventDetail.jsx` | Full event detail with registration status check, register/cancel buttons, ticket display |
+| `frontend/src/pages/MyRegistrations.jsx` | User's registrations with status filters, cancel action, pagination, ticket codes |
+
+**Files Modified**:
+| File | Changes |
+|------|---------|
+| `frontend/src/services/api.js` | Added: `getPublishedEvents()`, `getEvent()`, `getRegistrationStatus()`, `registerForEvent()`, `cancelRegistration()`, `getMyRegistrations()` |
+| `frontend/src/App.jsx` | Added routes: `/events`, `/events/:id` (public), `/my-registrations` (protected). All dashboard routes use `<AppLayout>` |
+| `frontend/src/pages/Dashboard.jsx` | Refactored to use `<AppLayout>`, updated feature cards to link to `/events` and `/my-registrations` |
+
+**API Endpoints Used**:
+| Method | Endpoint | Auth | Page |
+|--------|----------|------|------|
+| GET | `/api/events/published?page=&size=&search=` | No | EventList |
+| GET | `/api/events/{id}` | No | EventDetail |
+| GET | `/api/registrations/events/{eventId}/status` | Yes | EventDetail |
+| GET | `/api/registrations/my-registrations?page=&size=` | Yes | MyRegistrations |
+| POST | `/api/registrations/events/{eventId}` | Yes | EventDetail |
+| POST | `/api/registrations/{id}/cancel` | Yes | EventDetail, MyRegistrations |
+
+**Testing Results**:
+| Test | Result |
+|------|--------|
+| Event listing loads published events | ✅ |
+| Search filters events | ✅ |
+| Pagination works | ✅ |
+| Event detail shows full info | ✅ |
+| Unauthenticated user sees "Sign in" prompt | ✅ |
+| Authenticated user can register | ✅ |
+| Registration shows success + ticket code | ✅ |
+| Cancel registration works | ✅ |
+| My Registrations lists all registrations | ✅ |
+| Active Only filter works | ✅ |
+| Cancel from My Registrations works | ✅ |
+| Navigation links work correctly | ✅ |
+| Protected routes redirect to login | ✅ |
+| Build succeeds with no errors | ✅ (1651 modules, 260KB JS, 19KB CSS) |
 
 
 ## Phase 9 Notes
