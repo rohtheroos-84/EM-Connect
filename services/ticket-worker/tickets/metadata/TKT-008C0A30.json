@@ -1,0 +1,13 @@
+{
+  "ticketCode": "TKT-008C0A30",
+  "eventId": 4,
+  "userId": 4,
+  "userName": "rooster",
+  "userEmail": "rohit.n2023a@vitstudent.ac.in",
+  "eventTitle": "WebSocket Live Test 2",
+  "eventLocation": "Virtual Room",
+  "eventStartDate": "2026-11-01T10:00:00",
+  "qrImagePath": "tickets\\qr\\TKT-008C0A30.png",
+  "generatedAt": "2026-02-18T13:05:21.8368281+05:30",
+  "status": "VALID"
+}

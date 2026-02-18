@@ -1892,6 +1892,159 @@ npx vite build
 | Protected routes redirect to login | ✅ |
 | Build succeeds with no errors | ✅ (1651 modules, 260KB JS, 19KB CSS) |
 
+---
+
+#### 8.2.1: Bug Fixes — Public Access, QR Tickets, Search
+
+**Three bugs identified and fixed after 8.2 completion:**
+
+##### Fix 1: Events page redirected to login (should be public)
+**Root cause:** Three issues compounding:
+1. `App.jsx` wrapped `/events` and `/events/:id` routes in `<ProtectedRoute>`, forcing login
+2. `api.js` 401 handler redirected to `/login` on ALL 401 responses — even unauthenticated users hitting public endpoints that don't need auth
+3. `AppLayout.jsx` only showed nav items for logged-in users — no way for anonymous users to browse
+
+**Fix:**
+- Removed `<ProtectedRoute>` wrapper from `/events` and `/events/:id` routes in `App.jsx`
+- Changed 401 handler in `api.js` to only redirect if user had a token: `if (response.status === 401 && token)`
+- Split `AppLayout` nav into `PUBLIC_NAV` (Events only) and `AUTH_NAV` (Dashboard, Events, My Registrations)
+- Added Login button for unauthenticated users in navbar (blue button with LogIn icon)
+- Updated `EventDetail.jsx` to check `isAuthenticated` before calling registration-status APIs; shows "Sign in to register" for anonymous users
+
+##### Fix 2: QR codes not visible anywhere
+**Root cause:** Backend generates QR codes via ticket-worker and serves them at `GET /api/tickets/{code}/qr`, but frontend never displayed them.
+
+**Fix — EventDetail.jsx:**
+- Added `showTicket` state and "View Ticket" button next to ticket code for registered users
+- Created `TicketModal` component: shows event name, ticket code, QR image (fetched from `/api/tickets/{code}/qr`), loading/error/generating states, download button (uses blob + createObjectURL)
+
+**Fix — MyRegistrations.jsx:**
+- Added `ticketModal` state and `onViewTicket` callback passed to `RegistrationRow`
+- Added "Ticket" button (with QrCode icon) in registration row actions for CONFIRMED registrations
+- Created `TicketModal` component (same pattern as EventDetail's) with QR fetch, download, loading states
+
+**QR code flow:** Register → RabbitMQ `REGISTRATION_CONFIRMED` event → `ticket-worker` (Go) generates QR PNG at `./tickets/qr/{CODE}.png` + metadata JSON at `./tickets/metadata/{CODE}.json` → API serves via `GET /api/tickets/{code}/qr` (requires auth: owner or admin)
+
+##### Fix 3: Search bar not working
+**Root cause:** `EventList.jsx` used `getEvents()` for default listing (which hits `/api/events` — returns ALL events including DRAFT) and only called `searchEvents()` on form submit. The backend search endpoint (`/api/events/search?keyword=`) already supports partial matching with case-insensitive `%keyword%` LIKE on PUBLISHED events only.
+
+**Fix:**
+- Changed to always use `searchEvents()` — empty keyword returns all published events
+- Added debounced live-search (400ms) with `useRef` timeout — no submit button needed
+- Added X clear button to reset search
+- Removed old `getEvents` import (no longer needed)
+
+**Build:** ✅ 1651 modules, no errors
+
+---
+
+### 8.3: Real-Time UI — WebSocket Integration
+
+**What was built:**
+1. **WebSocket connection** to the Go WebSocket hub (`ws://localhost:8081/ws` via Vite proxy)
+2. **Live participant counts** on EventDetail page — updates instantly when anyone registers/cancels
+3. **Real-time announcements** as toast notifications — event published / event cancelled
+
+**Files Created:**
+| File | Purpose |
+|------|---------|
+| `frontend/src/context/WebSocketContext.jsx` | WebSocket provider: connection management, auto-reconnect with exponential backoff, subscribe/unsubscribe to event topics, message listener API |
+| `frontend/src/context/ToastContext.jsx` | Toast notification system: auto-dismiss after 6-10s, slide-in animation, published (green) / cancelled (red) styling |
+| `frontend/src/components/LiveAnnouncements.jsx` | Headless component bridging WebSocket `event.published` and `event.cancelled` messages to toast notifications |
+
+**Files Modified:**
+| File | Changes |
+|------|---------|
+| `vite.config.js` | Added `/ws` proxy to `ws://localhost:8081` |
+| `main.jsx` | Wrapped app with `<WebSocketProvider>` and `<ToastProvider>` |
+| `App.jsx` | Added `<LiveAnnouncements />` component for global event announcements |
+| `AppLayout.jsx` | Added "LIVE" indicator (green pulsing dot + text) next to brand when WebSocket is connected |
+| `EventDetail.jsx` | Subscribes to event topic via `subscribe(eventId)`, listens for `participant.count` messages, updates capacity bar + shows live activity banner ("✅ UserName just registered"), unsubscribes on unmount |
+| `index.css` | Added `animate-slide-in` (toast entrance) and `animate-live-pulse` (live indicator) keyframe animations |
+
+**WebSocket Protocol (Go Hub ↔ Browser):**
+
+Client → Server messages:
+```json
+{ "type": "subscribe", "payload": { "eventId": 5 } }
+{ "type": "unsubscribe", "payload": { "eventId": 5 } }
+{ "type": "ping" }
+```
+
+Server → Client messages:
+```json
+// On connect (to individual client)
+{ "type": "connected", "payload": { "message": "Connected to EM-Connect WebSocket Hub", "totalClients": 3 } }
+
+// Global broadcast (all clients)
+{ "type": "event.published", "payload": { "eventId": 5, "eventTitle": "...", "eventType": "EVENT_PUBLISHED", "location": "...", "startDate": "...", "organizerName": "...", "capacity": 100 } }
+{ "type": "event.cancelled", "payload": { "eventId": 5, "eventTitle": "...", "eventType": "EVENT_CANCELLED", "affectedRegistrations": 12 } }
+
+// Topic broadcast (only clients subscribed to event:N)
+{ "type": "participant.count", "payload": { "eventId": 5, "eventTitle": "...", "count": 42, "action": "registered", "userName": "John Doe" } }
+```
+
+**Architecture:**
+```
+Browser ──WebSocket──→ Vite proxy (:3000/ws) ──→ WebSocket Hub (:8081/ws)
+                                                       ↑
+                                                  RabbitMQ consumer
+                                                       ↑
+Spring Boot API → RabbitMQ (REGISTRATION_CONFIRMED / EVENT_PUBLISHED / EVENT_CANCELLED)
+```
+
+**Auto-reconnect:** Exponential backoff starting at 1s, max 30s. Re-subscribes to all active topics on reconnect.
+
+**Keep-alive:** Sends `ping` every 30s. Hub has 60s pong timeout.
+
+**Testing Instructions:**
+
+1. **Start all services:**
+```powershell
+# 1. Docker (PostgreSQL + RabbitMQ)
+docker-compose up -d
+
+# 2. Spring Boot API (from services/api/)
+$env:JAVA_TOOL_OPTIONS="-Duser.timezone=Asia/Kolkata"
+.\mvnw spring-boot:run
+
+# 3. WebSocket Hub (from services/websocket-hub/)
+go run .
+
+# 4. Ticket Worker (from services/ticket-worker/)
+go run .
+
+# 5. Notification Worker (from services/notification-worker/)
+go run .
+
+# 6. Frontend (from frontend/)
+node node_modules/vite/bin/vite.js --port 3000
+```
+
+2. **Test live participant counts:**
+   - Open `http://localhost:3000/events/{id}` in Browser A (logged in as User A)
+   - Open same URL in Browser B (logged in as User B)
+   - Register in Browser A → Browser B sees the capacity bar update live + activity banner
+   - Cancel in Browser A → Browser B sees count decrease + activity banner
+
+3. **Test real-time announcements:**
+   - Open any page in multiple browser tabs
+   - Publish an event via admin API:
+     ```powershell
+     $token = (Invoke-RestMethod -Uri "http://localhost:8080/api/auth/login" -Method POST -ContentType "application/json" -Body ([System.Text.Encoding]::UTF8.GetBytes('{"email":"admin@emconnect.com","password":"password123"}'))).token
+     Invoke-RestMethod -Uri "http://localhost:8080/api/events/{id}/publish" -Method PUT -Headers @{ Authorization = "Bearer $token" }
+     ```
+   - All tabs should show a green toast: "New Event Published — {title} — {location}"
+   - Cancel an event → all tabs show red toast: "Event Cancelled — {title} has been cancelled."
+
+4. **Test WebSocket reconnection:**
+   - Open frontend with DevTools network tab
+   - Stop the WebSocket hub service
+   - Observe reconnection attempts (exponential backoff)
+   - Restart the hub → "LIVE" indicator should reappear, subscriptions should be re-established
+
+**Build:** ✅ 1654 modules, 300KB JS (gzip: 88KB), 28KB CSS (gzip: 6KB)
+
 
 ## Phase 9 Notes
 

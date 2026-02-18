@@ -1,0 +1,13 @@
+{
+  "ticketCode": "TKT-E1F1F63A",
+  "eventId": 6,
+  "userId": 2,
+  "userName": "WS Test User",
+  "userEmail": "wstest@test.com",
+  "eventTitle": "Cancel Test Event",
+  "eventLocation": "Room B",
+  "eventStartDate": "2026-12-05T09:00:00",
+  "qrImagePath": "tickets\\qr\\TKT-E1F1F63A.png",
+  "generatedAt": "2026-02-18T13:04:22.5098266+05:30",
+  "status": "VALID"
+}

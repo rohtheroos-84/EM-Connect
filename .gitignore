@@ -62,9 +62,9 @@ services/websocket-hub/*.exe
 # =========================
 # Generated Ticket Assets
 # =========================
-services/ticket-worker/tickets/
-services/ticket-worker/tickets/qr/
-services/ticket-worker/tickets/metadata/
+# services/ticket-worker/tickets/
+# services/ticket-worker/tickets/qr/
+# services/ticket-worker/tickets/metadata/
 
 # =========================
 # Logs

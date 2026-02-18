@@ -1,0 +1,13 @@
+{
+  "ticketCode": "TKT-C60A94F5",
+  "eventId": 1,
+  "userId": 4,
+  "userName": "rooster",
+  "userEmail": "rohit.n2023a@vitstudent.ac.in",
+  "eventTitle": "Spring Boot Conference 2026",
+  "eventLocation": "Hyderabad Convention Center",
+  "eventStartDate": "2026-03-01T10:00:00",
+  "qrImagePath": "tickets\\qr\\TKT-C60A94F5.png",
+  "generatedAt": "2026-02-18T13:04:22.5332078+05:30",
+  "status": "VALID"
+}

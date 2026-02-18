@@ -1,0 +1,13 @@
+{
+  "ticketCode": "TKT-385FEB10",
+  "eventId": 5,
+  "userId": 2,
+  "userName": "WS Test User",
+  "userEmail": "wstest@test.com",
+  "eventTitle": "Live Count Test",
+  "eventLocation": "Conference Hall A",
+  "eventStartDate": "2026-12-01T10:00:00",
+  "qrImagePath": "tickets\\qr\\TKT-385FEB10.png",
+  "generatedAt": "2026-02-18T13:04:22.4840798+05:30",
+  "status": "VALID"
+}
