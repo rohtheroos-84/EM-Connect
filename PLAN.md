@@ -335,10 +335,10 @@
 - [x] Optimistic UI updates
 
 **Tasks:**
-- [ ] Event listing page
-- [ ] Event detail page
-- [ ] Registration flow
-- [ ] User's registrations view
+- [x] Event listing page
+- [x] Event detail page
+- [x] Registration flow
+- [x] User's registrations view
 
 ---
 
@@ -346,9 +346,9 @@
 **Goal:** Integrate WebSocket.
 
 **Learn:**
-- [ ] WebSocket client in browser
-- [ ] React state updates from WebSocket
-- [ ] Reconnection strategies
+- [x] WebSocket client in browser
+- [x] React state updates from WebSocket
+- [x] Reconnection strategies
 
 **Tasks:**
 - [ ] Connect to WebSocket hub
