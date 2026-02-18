@@ -357,7 +357,7 @@
 
 ---
 
-## Phase 9: Caching & Performance
+<!-- ## Phase 9: Caching & Performance
 
 ### Step 9.1: Redis Integration
 **Goal:** Add caching layer.
@@ -410,7 +410,7 @@
 - [ ] Handle broker unavailability
 - [ ] Test failure scenarios
 
----
+--- -->
 
 ## Progress Summary
 
@@ -424,8 +424,8 @@
 | 6 | Ticket Generation | ✅ Completed |
 | 7 | Real-Time Features | ✅ Completed |
 | 8 | Frontend Integration | ✅ Completed |
-| 9 | Caching & Performance | ⬜ Not Started |
-| 10 | Observability & Production Readiness | ⬜ Not Started |
+<!-- | 9 | Caching & Performance | ⬜ Not Started |
+| 10 | Observability & Production Readiness | ⬜ Not Started | -->
 
 ---
 
