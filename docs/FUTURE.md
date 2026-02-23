@@ -114,9 +114,9 @@ Organized by priority (P0 = Critical, P1 = High, P2 = Medium, P3 = Nice to Have)
   - [ ] WebSocket-based updates  
   - [ ] Moderation controls  
 
-- [ ] Dark Mode  
-  - [ ] Bauhaus dark variant  
-  - [ ] Persist user preference  
+- [x] Dark Mode  
+  - [x] Bauhaus dark variant  
+  - [x] Persist user preference  
 
 - [ ] PWA Support  
   - [ ] Service worker  
