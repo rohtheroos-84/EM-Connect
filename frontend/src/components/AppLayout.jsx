@@ -2,6 +2,7 @@ import { NavLink, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useWebSocket } from '../context/WebSocketContext';
 import { LogOut, LayoutDashboard, Calendar, ClipboardList, LogIn } from 'lucide-react';
+import ThemeToggle from './ThemeToggle';
 
 const PUBLIC_NAV = [
   { to: '/events', label: 'Events', icon: Calendar },
@@ -70,33 +71,36 @@ export default function AppLayout({ children }) {
             </div>
           </div>
 
-          {/* Right: user + logout */}
-          <div className="flex items-center gap-3">
-            {isAuthenticated ? (
-              <>
-                <span className="hidden md:block text-sm text-white/50">{user?.email}</span>
-                {isAdmin && (
-                  <span className="hidden md:block px-2 py-0.5 bg-bauhaus-yellow text-bauhaus-fg text-[10px] font-bold uppercase tracking-wider">
-                    Admin
-                  </span>
-                )}
-                <button
-                  onClick={handleLogout}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-bauhaus-red text-white text-xs font-bold uppercase tracking-wider hover:bg-[#B91C1C] transition-colors duration-150 cursor-pointer"
+          {/* Right: theme toggle + user actions */}
+          <div className="flex items-center gap-4">
+            <ThemeToggle />
+            <div className="flex items-center gap-3">
+              {isAuthenticated ? (
+                <>
+                  <span className="hidden md:block text-sm text-white/50">{user?.email}</span>
+                  {isAdmin && (
+                    <span className="hidden md:block px-2 py-0.5 bg-bauhaus-yellow text-bauhaus-fg text-[10px] font-bold uppercase tracking-wider">
+                      Admin
+                    </span>
+                  )}
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-bauhaus-red text-white text-xs font-bold uppercase tracking-wider hover:bg-[#B91C1C] transition-colors duration-150 cursor-pointer"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <Link
+                  to="/login"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-bauhaus-blue text-white text-xs font-bold uppercase tracking-wider hover:bg-[#0D3399] transition-colors duration-150"
                 >
-                  <LogOut className="w-3.5 h-3.5" />
-                  Logout
-                </button>
-              </>
-            ) : (
-              <Link
-                to="/login"
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-bauhaus-blue text-white text-xs font-bold uppercase tracking-wider hover:bg-[#0D3399] transition-colors duration-150"
-              >
-                <LogIn className="w-3.5 h-3.5" />
-                Login
-              </Link>
-            )}
+                  <LogIn className="w-3.5 h-3.5" />
+                  Login
+                </Link>
+              )}
+            </div>
           </div>
         </div>
         {/* Accent bar */}

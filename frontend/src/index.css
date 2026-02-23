@@ -11,6 +11,20 @@
   --font-family-outfit: 'Outfit', sans-serif;
 }
 
+:root {
+  color-scheme: light;
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+  --color-bauhaus-bg: #050509;
+  --color-bauhaus-fg: #F3F4F6;
+  --color-bauhaus-red: #F97373;
+  --color-bauhaus-blue: #60A5FA;
+  --color-bauhaus-yellow: #FACC6B;
+  --color-bauhaus-white: #0B0F19;
+}
+
 /* ── Base Styles ── */
 * {
   margin: 0;
@@ -20,8 +34,8 @@
 
 body {
   font-family: 'Outfit', sans-serif;
-  background-color: #F0F0F0;
-  color: #121212;
+  background-color: var(--color-bauhaus-bg);
+  color: var(--color-bauhaus-fg);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -31,7 +45,7 @@ body {
 a:focus-visible,
 button:focus-visible,
 [tabindex]:focus-visible {
-  outline: 3px solid #1040C0;
+  outline: 3px solid var(--color-bauhaus-blue);
   outline-offset: 2px;
 }
 
@@ -69,11 +83,11 @@ button {
 }
 
 ::-webkit-scrollbar-track {
-  background: #F0F0F0;
+  background: var(--color-bauhaus-bg);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #121212;
+  background: var(--color-bauhaus-fg);
   border-radius: 4px;
 }
 
