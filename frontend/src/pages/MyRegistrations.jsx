@@ -113,7 +113,7 @@ export default function MyRegistrations() {
             className={`px-4 h-10 text-xs font-bold uppercase tracking-wider border transition-colors cursor-pointer ${
               activeOnly
                 ? 'bg-bauhaus-blue text-white border-bauhaus-blue'
-                : 'bg-white text-[#6B7280] border-[#D1D5DB] hover:bg-[#F5F5F5]'
+                : 'bg-bauhaus-white/80 text-[#6B7280] border-[#D1D5DB] hover:bg-bauhaus-bg'
             }`}
           >
             {activeOnly ? 'Active Only' : 'Show All'}
@@ -155,7 +155,7 @@ export default function MyRegistrations() {
         {loading && (
           <div className="space-y-3">
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="bg-white border border-[#E0E0E0] p-5 animate-pulse">
+              <div key={i} className="bg-bauhaus-white/80 border border-[#1F2937]/20 p-5 animate-pulse">
                 <div className="flex gap-4">
                   <div className="h-5 bg-[#E5E7EB] rounded w-1/4" />
                   <div className="h-5 bg-[#E5E7EB] rounded w-1/6" />
@@ -204,7 +204,7 @@ export default function MyRegistrations() {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-between mt-8 pt-6 border-t border-[#E0E0E0]">
+              <div className="flex items-center justify-between mt-8 pt-6 border-t border-[#111827]/40">
                 <span className="text-xs text-[#6B7280]">
                   Page {page + 1} of {totalPages}
                 </span>
@@ -212,14 +212,14 @@ export default function MyRegistrations() {
                   <button
                     onClick={() => setPage((p) => Math.max(0, p - 1))}
                     disabled={page === 0}
-                    className="flex items-center gap-1 px-3 py-1.5 bg-white border border-[#D1D5DB] text-xs font-bold text-bauhaus-fg uppercase tracking-wider disabled:opacity-30 disabled:pointer-events-none hover:bg-[#F5F5F5] transition-colors cursor-pointer"
+                    className="flex items-center gap-1 px-3 py-1.5 bg-bauhaus-white/80 border border-[#D1D5DB] text-xs font-bold text-bauhaus-fg uppercase tracking-wider disabled:opacity-30 disabled:pointer-events-none hover:bg-bauhaus-bg transition-colors cursor-pointer"
                   >
                     <ChevronLeft className="w-3.5 h-3.5" /> Prev
                   </button>
                   <button
                     onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
                     disabled={page >= totalPages - 1}
-                    className="flex items-center gap-1 px-3 py-1.5 bg-white border border-[#D1D5DB] text-xs font-bold text-bauhaus-fg uppercase tracking-wider disabled:opacity-30 disabled:pointer-events-none hover:bg-[#F5F5F5] transition-colors cursor-pointer"
+                    className="flex items-center gap-1 px-3 py-1.5 bg-bauhaus-white/80 border border-[#D1D5DB] text-xs font-bold text-bauhaus-fg uppercase tracking-wider disabled:opacity-30 disabled:pointer-events-none hover:bg-bauhaus-bg transition-colors cursor-pointer"
                   >
                     Next <ChevronRight className="w-3.5 h-3.5" />
                   </button>
@@ -251,7 +251,7 @@ function RegistrationRow({ registration: reg, onCancel, cancelling, onViewTicket
   const isCancelling = cancelling === reg.id;
 
   return (
-    <div className="bg-white border border-[#E0E0E0] overflow-hidden hover:border-[#C0C0C0] transition-colors">
+    <div className="bg-bauhaus-white/80 border border-[#1F2937]/20 overflow-hidden hover:border-bauhaus-fg/60 transition-colors">
       <div className="h-0.75" style={{ backgroundColor: statusInfo.bg }} />
       <div className="p-5">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
@@ -302,14 +302,14 @@ function RegistrationRow({ registration: reg, onCancel, cancelling, onViewTicket
             {reg.ticketCode && reg.status === 'CONFIRMED' && (
               <button
                 onClick={() => onViewTicket(reg.ticketCode, event)}
-                className="px-4 h-9 flex items-center gap-1.5 bg-white border border-[#D1D5DB] text-xs font-bold text-bauhaus-fg uppercase tracking-wider hover:bg-[#F5F5F5] transition-colors cursor-pointer"
+                className="px-4 h-9 flex items-center gap-1.5 bg-bauhaus-white/80 border border-[#D1D5DB] text-xs font-bold text-bauhaus-fg uppercase tracking-wider hover:bg-bauhaus-bg transition-colors cursor-pointer"
               >
                 <QrCode className="w-3.5 h-3.5" /> Ticket
               </button>
             )}
             <Link
               to={`/events/${event.id}`}
-              className="px-4 h-9 flex items-center bg-white border border-[#D1D5DB] text-xs font-bold text-bauhaus-fg uppercase tracking-wider hover:bg-[#F5F5F5] transition-colors"
+              className="px-4 h-9 flex items-center bg-bauhaus-white/80 border border-[#D1D5DB] text-xs font-bold text-bauhaus-fg uppercase tracking-wider hover:bg-bauhaus-bg transition-colors"
             >
               View
             </Link>
@@ -317,7 +317,7 @@ function RegistrationRow({ registration: reg, onCancel, cancelling, onViewTicket
               <button
                 onClick={() => onCancel(reg.id)}
                 disabled={isCancelling}
-                className="px-4 h-9 flex items-center gap-1 bg-white border border-[#D1D5DB] text-xs font-bold text-bauhaus-red uppercase tracking-wider hover:bg-[#FEF2F2] disabled:opacity-50 transition-colors cursor-pointer"
+                className="px-4 h-9 flex items-center gap-1 bg-bauhaus-white/80 border border-[#D1D5DB] text-xs font-bold text-bauhaus-red uppercase tracking-wider hover:bg-[#FEF2F2] disabled:opacity-50 transition-colors cursor-pointer"
               >
                 {isCancelling ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
                 Cancel

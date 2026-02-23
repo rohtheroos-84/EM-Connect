@@ -158,11 +158,11 @@ export default function Dashboard() {
             </div>
 
             {loading ? (
-              <div className="bg-white border border-[#E0E0E0] p-8 flex items-center justify-center">
+              <div className="bg-bauhaus-white/80 border border-[#1F2937]/20 p-8 flex items-center justify-center">
                 <Loader2 className="w-5 h-5 text-[#9CA3AF] animate-spin" />
               </div>
             ) : recentEvents.length === 0 ? (
-              <div className="bg-white border border-[#E0E0E0] p-6 text-center">
+              <div className="bg-bauhaus-white/80 border border-[#1F2937]/20 p-6 text-center">
                 <p className="text-sm text-[#9CA3AF]">No published events yet.</p>
               </div>
             ) : (
@@ -171,7 +171,7 @@ export default function Dashboard() {
                   <Link
                     key={ev.id}
                     to={`/events/${ev.id}`}
-                    className="block bg-white border border-[#E0E0E0] overflow-hidden hover:border-[#C0C0C0] transition-colors"
+                    className="block bg-bauhaus-white/80 border border-[#1F2937]/20 overflow-hidden hover:border-bauhaus-fg/60 transition-colors"
                   >
                     <div className="h-0.75" style={{ backgroundColor: STATUS_ACCENT[ev.status] || '#9CA3AF' }} />
                     <div className="p-4">
@@ -212,11 +212,11 @@ export default function Dashboard() {
             </div>
 
             {loading ? (
-              <div className="bg-white border border-[#E0E0E0] p-8 flex items-center justify-center">
+              <div className="bg-bauhaus-white/80 border border-[#1F2937]/20 p-8 flex items-center justify-center">
                 <Loader2 className="w-5 h-5 text-[#9CA3AF] animate-spin" />
               </div>
             ) : recentRegs.length === 0 ? (
-              <div className="bg-white border border-[#E0E0E0] p-6 text-center">
+              <div className="bg-bauhaus-white/80 border border-[#1F2937]/20 p-6 text-center">
                 <p className="text-sm text-[#9CA3AF]">No registrations yet.</p>
                 <Link
                   to="/events"
@@ -232,7 +232,7 @@ export default function Dashboard() {
                   return (
                     <div
                       key={reg.id}
-                      className="bg-white border border-[#E0E0E0] overflow-hidden"
+                      className="bg-bauhaus-white/80 border border-[#1F2937]/20 overflow-hidden"
                     >
                       <div
                         className="h-0.75"
@@ -297,7 +297,7 @@ export default function Dashboard() {
 /* ── Stat Card ── */
 function StatCard({ icon, label, value, sub, accent }) {
   return (
-    <div className="bg-white border border-[#E0E0E0] overflow-hidden">
+    <div className="bg-bauhaus-white/80 border border-[#1F2937]/20 overflow-hidden">
       <div className="h-0.75" style={{ backgroundColor: accent }} />
       <div className="p-4">
         <div className="flex items-center gap-2 mb-2">

@@ -98,7 +98,7 @@ export default function EventList() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search events…"
-              className="pl-9 pr-9 h-10 w-72 bg-white border border-[#D1D5DB] text-sm text-bauhaus-fg placeholder:text-[#BCBCBC] placeholder:italic focus:border-bauhaus-blue focus:shadow-[0_0_0_3px_rgba(16,64,192,0.08)] transition-all duration-150"
+              className="pl-9 pr-9 h-10 w-72 bg-bauhaus-white/80 border border-[#D1D5DB] text-sm text-bauhaus-fg placeholder:text-[#BCBCBC] placeholder:italic focus:border-bauhaus-blue focus:shadow-[0_0_0_3px_rgba(16,64,192,0.08)] transition-all duration-150"
             />
             {search && (
               <button
@@ -126,7 +126,7 @@ export default function EventList() {
         {loading && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="bg-white border border-[#E0E0E0] overflow-hidden animate-pulse">
+              <div key={i} className="bg-bauhaus-white/80 border border-[#1F2937]/20 overflow-hidden animate-pulse">
                 <div className="h-0.75 bg-[#E0E0E0]" />
                 <div className="p-5 space-y-3">
                   <div className="h-5 bg-[#E5E7EB] rounded w-3/4" />
@@ -173,7 +173,7 @@ export default function EventList() {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-between mt-8 pt-6 border-t border-[#E0E0E0]">
+              <div className="flex items-center justify-between mt-8 pt-6 border-t border-[#111827]/40">
                 <span className="text-xs text-[#6B7280]">
                   Page {page + 1} of {totalPages}
                 </span>
@@ -181,14 +181,14 @@ export default function EventList() {
                   <button
                     onClick={() => changePage(Math.max(0, page - 1))}
                     disabled={page === 0}
-                    className="flex items-center gap-1 px-3 py-1.5 bg-white border border-[#D1D5DB] text-xs font-bold text-bauhaus-fg uppercase tracking-wider disabled:opacity-30 disabled:pointer-events-none hover:bg-[#F5F5F5] transition-colors cursor-pointer"
+                    className="flex items-center gap-1 px-3 py-1.5 bg-bauhaus-white/80 border border-[#D1D5DB] text-xs font-bold text-bauhaus-fg uppercase tracking-wider disabled:opacity-30 disabled:pointer-events-none hover:bg-bauhaus-bg transition-colors cursor-pointer"
                   >
                     <ChevronLeft className="w-3.5 h-3.5" /> Prev
                   </button>
                   <button
                     onClick={() => changePage(Math.min(totalPages - 1, page + 1))}
                     disabled={page >= totalPages - 1}
-                    className="flex items-center gap-1 px-3 py-1.5 bg-white border border-[#D1D5DB] text-xs font-bold text-bauhaus-fg uppercase tracking-wider disabled:opacity-30 disabled:pointer-events-none hover:bg-[#F5F5F5] transition-colors cursor-pointer"
+                    className="flex items-center gap-1 px-3 py-1.5 bg-bauhaus-white/80 border border-[#D1D5DB] text-xs font-bold text-bauhaus-fg uppercase tracking-wider disabled:opacity-30 disabled:pointer-events-none hover:bg-bauhaus-bg transition-colors cursor-pointer"
                   >
                     Next <ChevronRight className="w-3.5 h-3.5" />
                   </button>
@@ -210,7 +210,7 @@ function EventCard({ event }) {
   return (
     <Link
       to={`/events/${event.id}`}
-      className="block bg-white border border-[#E0E0E0] overflow-hidden hover:shadow-[3px_3px_0px_0px_#121212] hover:border-bauhaus-fg transition-all duration-150 group"
+      className="block bg-bauhaus-white/80 border border-[#1F2937]/20 overflow-hidden hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,0.7)] hover:border-bauhaus-fg transition-all duration-150 group"
     >
       <div className="h-0.75" style={{ backgroundColor: status.bg }} />
       <div className="p-5">
