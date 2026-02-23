@@ -78,9 +78,9 @@ export default function EventList() {
 
   return (
     <AppLayout>
-      <div className="max-w-7xl mx-auto px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-6 lg:px-8 pt-10 pb-8">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 mb-10">
           <div>
             <h1 className="text-2xl font-black text-bauhaus-fg tracking-tight uppercase">
               Events
@@ -97,7 +97,7 @@ export default function EventList() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search events…"
-              className="pl-9 pr-9 h-10 w-72 bg-bauhaus-white/80 border border-[#D1D5DB] text-sm text-bauhaus-fg placeholder:text-[#BCBCBC] placeholder:italic focus:border-bauhaus-blue focus:shadow-[0_0_0_3px_rgba(16,64,192,0.08)] transition-all duration-150"
+              className="pl-9 pr-9 h-10 w-72 rounded-lg bg-bauhaus-white/80 border border-[#D1D5DB] text-sm text-bauhaus-fg placeholder:text-[#BCBCBC] placeholder:italic focus:border-bauhaus-blue focus:shadow-[0_0_0_3px_rgba(16,64,192,0.08)] transition-all duration-150"
             />
             {search && (
               <button

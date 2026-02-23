@@ -43,7 +43,7 @@ export default function AppLayout({ children }) {
                 EM-Connect
               </span>
               {connected && (
-                <span className="flex items-center gap-1 px-1.5 py-0.5 bg-[#16A34A]/20 border border-[#16A34A]/30">
+                <span className="flex items-center gap-1">
                   <span className="w-1.5 h-1.5 bg-[#16A34A] rounded-full animate-live-pulse" />
                   <span className="text-[9px] font-bold text-[#16A34A] uppercase tracking-wider">Live</span>
                 </span>
@@ -57,7 +57,7 @@ export default function AppLayout({ children }) {
                   key={to}
                   to={to}
                   className={({ isActive }) =>
-                    `flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-colors duration-150 ${
+                    `flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider transition-colors duration-150 ${
                       isActive
                         ? 'bg-white/15 text-white'
                         : 'text-white/40 hover:text-white/70'
