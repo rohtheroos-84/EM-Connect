@@ -67,7 +67,7 @@ export default function TicketModal({ ticketCode, event, onClose }) {
       onClick={onClose}
     >
       <div
-        className="bg-white border border-[#E0E0E0] w-full max-w-md mx-4 overflow-hidden"
+        className="bg-bauhaus-white border border-[#1F2937]/30 w-full max-w-md mx-4 overflow-hidden shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Accent bar */}
@@ -81,14 +81,14 @@ export default function TicketModal({ ticketCode, event, onClose }) {
             </h3>
             <button
               onClick={onClose}
-              className="p-1 hover:bg-[#F5F5F5] transition-colors cursor-pointer"
+              className="p-1 hover:bg-bauhaus-fg/10 transition-colors cursor-pointer rounded"
             >
-              <X className="w-4 h-4 text-[#6B7280]" />
+              <X className="w-4 h-4 text-bauhaus-fg/70" />
             </button>
           </div>
 
           {/* Event info */}
-          <div className="bg-[#FAFAFA] border border-[#E0E0E0] p-4 mb-4">
+          <div className="bg-bauhaus-bg/50 border border-[#1F2937]/20 p-4 mb-4 rounded">
             <p className="text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wider mb-1">
               Event
             </p>
@@ -101,7 +101,7 @@ export default function TicketModal({ ticketCode, event, onClose }) {
           </div>
 
           {/* Ticket code */}
-          <div className="bg-[#FAFAFA] border border-[#E0E0E0] p-4 mb-4">
+          <div className="bg-bauhaus-bg/50 border border-[#1F2937]/20 p-4 mb-4 rounded">
             <p className="text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wider mb-1">
               Ticket Code
             </p>
@@ -114,18 +114,18 @@ export default function TicketModal({ ticketCode, event, onClose }) {
               <img
                 src={imgSrc}
                 alt={`QR code for ${ticketCode}`}
-                className="w-48 h-48 border border-[#E0E0E0]"
+                className="w-48 h-48 border border-[#1F2937]/30 rounded"
               />
             ) : imgError ? (
-              <div className="w-48 h-48 border border-dashed border-[#D1D5DB] flex flex-col items-center justify-center text-center p-4">
-                <QrCode className="w-8 h-8 text-[#D1D5DB] mb-2" />
-                <p className="text-[11px] text-[#9CA3AF]">
+              <div className="w-48 h-48 border border-dashed border-bauhaus-fg/30 flex flex-col items-center justify-center text-center p-4 rounded">
+                <QrCode className="w-8 h-8 text-bauhaus-fg/40 mb-2" />
+                <p className="text-[11px] text-bauhaus-fg/60">
                   QR code is being generated. Check back shortly.
                 </p>
               </div>
             ) : (
-              <div className="w-48 h-48 border border-[#E0E0E0] flex items-center justify-center">
-                <Loader2 className="w-6 h-6 text-[#BCBCBC] animate-spin" />
+              <div className="w-48 h-48 border border-[#1F2937]/30 flex items-center justify-center rounded">
+                <Loader2 className="w-6 h-6 text-bauhaus-fg/50 animate-spin" />
               </div>
             )}
           </div>
@@ -134,7 +134,7 @@ export default function TicketModal({ ticketCode, event, onClose }) {
           <button
             onClick={handleDownload}
             disabled={downloading || !imgSrc}
-            className="w-full flex items-center justify-center gap-2 h-12 bg-bauhaus-fg text-white text-sm font-bold uppercase tracking-wider hover:bg-[#333] disabled:opacity-40 transition-colors cursor-pointer"
+            className="w-full flex items-center justify-center gap-2 h-12 bg-bauhaus-nav text-white text-sm font-bold uppercase tracking-wider hover:opacity-90 disabled:opacity-40 transition-colors cursor-pointer"
           >
             <Download className="w-4 h-4" />
             {downloading ? 'Saving…' : 'Download QR Code'}

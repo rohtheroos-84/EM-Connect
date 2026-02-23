@@ -20,6 +20,7 @@ import {
   Loader2,
   QrCode,
   LogIn,
+  Radio,
 } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
 import TicketModal from '../components/TicketModal';
@@ -174,10 +175,10 @@ export default function EventDetail() {
       <AppLayout>
         <div className="max-w-4xl mx-auto px-6 lg:px-8 py-8">
           <div className="animate-pulse space-y-4">
-            <div className="h-4 bg-[#E5E7EB] rounded w-24" />
-            <div className="h-8 bg-[#E5E7EB] rounded w-2/3" />
-            <div className="h-4 bg-[#E5E7EB] rounded w-1/3" />
-            <div className="h-40 bg-[#E5E7EB] rounded" />
+            <div className="h-4 bg-bauhaus-fg/15 rounded w-24" />
+            <div className="h-8 bg-bauhaus-fg/15 rounded w-2/3" />
+            <div className="h-4 bg-bauhaus-fg/15 rounded w-1/3" />
+            <div className="h-40 bg-bauhaus-fg/15 rounded" />
           </div>
         </div>
       </AppLayout>
@@ -200,7 +201,7 @@ export default function EventDetail() {
             </button>
             <Link
               to="/events"
-              className="px-4 py-2 bg-white border border-[#D1D5DB] text-xs font-bold text-bauhaus-fg uppercase tracking-wider hover:bg-[#F5F5F5] transition-colors"
+              className="px-4 py-2 bg-bauhaus-white/80 border border-[#1F2937]/30 text-xs font-bold text-bauhaus-fg uppercase tracking-wider hover:bg-bauhaus-bg transition-colors"
             >
               Back to Events
             </Link>
@@ -236,7 +237,7 @@ export default function EventDetail() {
         </Link>
 
         {/* Main card */}
-        <div className="bg-white border border-[#E0E0E0] overflow-hidden">
+        <div className="bg-bauhaus-white border border-[#1F2937]/20 overflow-hidden shadow-sm">
           <div className="h-1" style={{ backgroundColor: status.bg }} />
 
           <div className="p-6 sm:p-8">
@@ -261,7 +262,7 @@ export default function EventDetail() {
             </h1>
 
             {/* Meta grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 pb-6 border-b border-[#E0E0E0]">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 pb-6 border-b border-bauhaus-fg/15">
               <MetaItem icon={Calendar} label="Date" value={`${fmtDate(event.startDate)} — ${fmtDate(event.endDate)}`} />
               <MetaItem icon={Clock} label="Time" value={`${fmtTime(event.startDate)} — ${fmtTime(event.endDate)}`} />
               {event.location && (
@@ -286,7 +287,7 @@ export default function EventDetail() {
                   </span>
                   <span className="font-bold text-bauhaus-fg">{capacityUsed} / {capacityTotal} ({capacityPct}%)</span>
                 </div>
-                <div className="h-2 bg-[#F3F4F6] overflow-hidden">
+                <div className="h-2 bg-bauhaus-fg/10 overflow-hidden rounded-full">
                   <div
                     className="h-full transition-all duration-500"
                     style={{
@@ -344,13 +345,13 @@ export default function EventDetail() {
             )}
 
             {/* Registration section */}
-            <div className="bg-[#FAFAFA] border border-[#E0E0E0] p-5">
+            <div className="bg-bauhaus-bg/50 border border-bauhaus-fg/15 p-5 rounded">
               {!isAuthenticated && (
                 <div className="flex items-center justify-between">
                   <p className="text-sm text-[#6B7280]">Sign in to register for this event.</p>
                   <Link
                     to="/login"
-                    className="flex items-center gap-1.5 px-5 h-12 bg-bauhaus-bluelue text-white text-sm font-bold uppercase tracking-wider hover:bg-[#0D3399] transition-colors"
+                    className="flex items-center gap-1.5 px-5 h-12 bg-bauhaus-blue text-white text-sm font-bold uppercase tracking-wider hover:bg-[#0D3399] transition-colors"
                   >
                     <LogIn className="w-4 h-4" /> Sign In
                   </Link>
@@ -384,7 +385,7 @@ export default function EventDetail() {
               {isAuthenticated && isRegistered && !regActive && (
                 <div className="mb-4 flex items-center gap-2">
                   <XCircle className="w-4 h-4 text-bauhaus-red" />
-                  <span className="text-xs font-bold text-bauhaus-reded uppercase tracking-wider">
+                  <span className="text-xs font-bold text-bauhaus-red uppercase tracking-wider">
                     Registration cancelled
                   </span>
                 </div>
@@ -396,7 +397,7 @@ export default function EventDetail() {
                     <button
                       onClick={handleRegister}
                       disabled={actionLoading}
-                      className="flex items-center gap-2 px-6 h-12 bg-bauhaus-reded text-white text-sm font-bold uppercase tracking-wider hover:bg-[#B91C1C] disabled:opacity-50 transition-colors cursor-pointer"
+                      className="flex items-center gap-2 px-6 h-12 bg-bauhaus-red text-white text-sm font-bold uppercase tracking-wider hover:bg-[#B91C1C] disabled:opacity-50 transition-colors cursor-pointer"
                     >
                       {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                       Register Now
@@ -404,7 +405,7 @@ export default function EventDetail() {
                   )}
 
                   {canRegister && isFull && (
-                    <span className="flex items-center px-6 h-12 bg-[#E5E7EB] text-[#9CA3AF] text-sm font-bold uppercase tracking-wider">
+                    <span className="flex items-center px-6 h-12 bg-bauhaus-fg/10 text-bauhaus-fg/60 text-sm font-bold uppercase tracking-wider">
                       Sold Out
                     </span>
                   )}
@@ -413,7 +414,7 @@ export default function EventDetail() {
                     <button
                       onClick={handleCancel}
                       disabled={actionLoading}
-                      className="flex items-center gap-2 px-6 h-12 bg-white border border-[#D1D5DB] text-sm font-bold text-bauhaus-red uppercase tracking-wider hover:bg-[#FEF2F2] disabled:opacity-50 transition-colors cursor-pointer"
+                      className="flex items-center gap-2 px-6 h-12 bg-bauhaus-white/80 border border-[#1F2937]/30 text-sm font-bold text-bauhaus-red uppercase tracking-wider hover:bg-bauhaus-red/10 disabled:opacity-50 transition-colors cursor-pointer"
                     >
                       {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                       Cancel Registration
@@ -421,13 +422,13 @@ export default function EventDetail() {
                   )}
 
                   {isPast && (
-                    <span className="flex items-center px-6 h-12 bg-[#E5E7EB] text-[#9CA3AF] text-sm font-bold uppercase tracking-wider">
+                    <span className="flex items-center px-6 h-12 bg-bauhaus-fg/10 text-bauhaus-fg/60 text-sm font-bold uppercase tracking-wider">
                       Event Ended
                     </span>
                   )}
 
                   {!isPublished && !isPast && (
-                    <span className="flex items-center px-6 h-12 bg-[#E5E7EB] text-[#9CA3AF] text-sm font-bold uppercase tracking-wider">
+                    <span className="flex items-center px-6 h-12 bg-bauhaus-fg/10 text-bauhaus-fg/60 text-sm font-bold uppercase tracking-wider">
                       {event.status === 'CANCELLED' ? 'Event Cancelled' : 'Registration Not Open'}
                     </span>
                   )}

@@ -4,6 +4,7 @@
 @theme {
   --color-bauhaus-bg: #F0F0F0;
   --color-bauhaus-fg: #121212;
+  --color-bauhaus-nav: #121212;
   --color-bauhaus-red: #D02020;
   --color-bauhaus-blue: #1040C0;
   --color-bauhaus-yellow: #F0C020;
@@ -19,6 +20,7 @@
   color-scheme: dark;
   --color-bauhaus-bg: #050816;   /* deep navy/charcoal */
   --color-bauhaus-fg: #E5E7EB;   /* soft light gray text */
+  --color-bauhaus-nav: #0f172a;  /* dark nav bar (always dark) */
   --color-bauhaus-red: #FCA5A5;  /* softened red */
   --color-bauhaus-blue: #60A5FA; /* softer blue */
   --color-bauhaus-yellow: #FACC6B;

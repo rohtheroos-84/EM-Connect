@@ -29,7 +29,7 @@ export default function AppLayout({ children }) {
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-bauhaus-bg">
       {/* ── Navbar ── */}
-      <nav className="bg-bauhaus-fg shrink-0">
+      <nav className="bg-bauhaus-nav shrink-0">
         <div className="max-w-7xl mx-auto px-6 lg:px-8 flex items-center justify-between h-14">
           {/* Left: brand + nav links */}
           <div className="flex items-center gap-6">
@@ -112,7 +112,7 @@ export default function AppLayout({ children }) {
       </nav>
 
       {/* ── Mobile nav ── */}
-      <div className="sm:hidden flex bg-bauhaus-fg border-t border-white/10 shrink-0">
+      <div className="sm:hidden flex bg-bauhaus-nav border-t border-white/10 shrink-0">
         {navItems.map(({ to, label, icon: Icon }) => (
           <NavLink
             key={to}
@@ -135,7 +135,7 @@ export default function AppLayout({ children }) {
       </main>
 
       {/* ── Footer ── */}
-      <footer className="shrink-0 bg-bauhaus-fg">
+      <footer className="shrink-0 bg-bauhaus-nav">
         <div className="max-w-7xl mx-auto px-6 lg:px-8 py-3 flex items-center justify-between">
           <span className="text-[11px] text-white/25 font-medium">EM-Connect © 2026</span>
           <div className="flex gap-1">

@@ -36,10 +36,10 @@ export function ToastProvider({ children }) {
               key={t.id}
               className={`pointer-events-auto flex items-start gap-3 px-4 py-3 border-l-[3px] shadow-lg animate-slide-in ${
                 t.type === 'published'
-                  ? 'bg-[#F0FDF4] border-[#16A34A]'
+                  ? 'bg-bauhaus-white border-[#16A34A]'
                   : t.type === 'cancelled'
-                    ? 'bg-[#FEF2F2] border-bauhaus-red'
-                    : 'bg-white border-bauhaus-blue'
+                    ? 'bg-bauhaus-white border-bauhaus-red'
+                    : 'bg-bauhaus-white border-bauhaus-blue'
               }`}
             >
               {t.type === 'published' ? (
@@ -49,13 +49,13 @@ export function ToastProvider({ children }) {
               ) : null}
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-bold text-bauhaus-fg uppercase tracking-tight">{t.title}</p>
-                <p className="text-xs text-[#6B7280] mt-0.5">{t.message}</p>
+                <p className="text-xs text-bauhaus-fg/70 mt-0.5">{t.message}</p>
               </div>
               <button
                 onClick={() => dismiss(t.id)}
-                className="p-0.5 hover:bg-black/5 transition-colors cursor-pointer shrink-0"
+                className="p-0.5 hover:bg-bauhaus-fg/10 transition-colors cursor-pointer shrink-0 rounded"
               >
-                <X className="w-3.5 h-3.5 text-[#9CA3AF]" />
+                <X className="w-3.5 h-3.5 text-bauhaus-fg/60" />
               </button>
             </div>
           ))}
