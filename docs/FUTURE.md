@@ -82,11 +82,11 @@ Organized by priority (P0 = Critical, P1 = High, P2 = Medium, P3 = Nice to Have)
   - [ ] Cloud storage integration  
   - [ ] Display banner on event page  
 
-- [ ] User Profile Page  
-  - [ ] Edit name  
-  - [ ] Change password  
-  - [ ] Upload avatar  
-  - [ ] Registration history stats  
+- [x] User Profile Page  
+  - [x] Edit name  
+  - [x] Change password  
+  - [x] Upload avatar  
+  - [x] Registration history stats  
 
 - [ ] Email Templates  
   - [ ] Rich HTML templates  
