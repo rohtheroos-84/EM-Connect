@@ -19,7 +19,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
-
+@SuppressWarnings("null")
 @RestController
 @RequestMapping("/api/users")
 public class UserController {

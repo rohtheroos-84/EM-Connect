@@ -259,14 +259,14 @@ export default function Profile() {
                       type="text"
                       value={nameValue}
                       onChange={(e) => setNameValue(e.target.value)}
-                      className="h-[40px] px-3 border border-[#1F2937]/30 bg-bauhaus-bg text-bauhaus-fg text-sm font-medium flex-1 focus:outline-none focus:border-bauhaus-blue"
+                      className="h-10 px-3 border border-[#1F2937]/30 bg-bauhaus-bg text-bauhaus-fg text-sm font-medium flex-1 focus:outline-none focus:border-bauhaus-blue"
                       autoFocus
                       onKeyDown={(e) => e.key === 'Enter' && handleSaveName()}
                     />
                     <button
                       onClick={handleSaveName}
                       disabled={nameSaving}
-                      className="h-[40px] px-3 bg-bauhaus-blue text-white text-xs font-bold uppercase tracking-wider hover:bg-bauhaus-blue/80 transition-colors cursor-pointer disabled:opacity-50"
+                      className="h-10 px-3 bg-bauhaus-blue text-white text-xs font-bold uppercase tracking-wider hover:bg-bauhaus-blue/80 transition-colors cursor-pointer disabled:opacity-50"
                     >
                       {nameSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
                     </button>
@@ -276,7 +276,7 @@ export default function Profile() {
                         setNameValue(profile?.name || '');
                         setNameMsg(null);
                       }}
-                      className="h-[40px] px-3 bg-bauhaus-bg border border-[#1F2937]/20 text-bauhaus-fg text-xs hover:bg-bauhaus-bg/60 transition-colors cursor-pointer"
+                      className="h-10 px-3 bg-bauhaus-bg border border-[#1F2937]/20 text-bauhaus-fg text-xs hover:bg-bauhaus-bg/60 transition-colors cursor-pointer"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
@@ -441,7 +441,7 @@ export default function Profile() {
                   <button
                     type="submit"
                     disabled={pwSaving || !pwCurrent || !pwNew || !pwConfirm}
-                    className="h-[40px] px-5 bg-bauhaus-yellow text-bauhaus-fg text-xs font-bold uppercase tracking-wider hover:bg-bauhaus-yellow/80 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="h-10 px-5 bg-bauhaus-yellow text-bauhaus-fg text-xs font-bold uppercase tracking-wider hover:bg-bauhaus-yellow/80 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     {pwSaving ? (
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -458,7 +458,7 @@ export default function Profile() {
                       setPwConfirm('');
                       setPwMsg(null);
                     }}
-                    className="h-[40px] px-4 border border-[#1F2937]/20 text-bauhaus-fg text-xs font-bold uppercase tracking-wider hover:bg-bauhaus-bg transition-colors cursor-pointer"
+                    className="h-10 px-4 border border-[#1F2937]/20 text-bauhaus-fg text-xs font-bold uppercase tracking-wider hover:bg-bauhaus-bg transition-colors cursor-pointer"
                   >
                     Cancel
                   </button>
@@ -552,7 +552,7 @@ function PwInput({ label, value, onChange, placeholder, match }) {
           value={value}
           onChange={onChange}
           placeholder={placeholder}
-          className={`w-full h-[40px] px-3 border bg-bauhaus-bg text-bauhaus-fg text-sm focus:outline-none focus:border-bauhaus-blue ${
+          className={`w-full h-10 px-3 border bg-bauhaus-bg text-bauhaus-fg text-sm focus:outline-none focus:border-bauhaus-blue ${
             match === false
               ? 'border-bauhaus-red'
               : match === true

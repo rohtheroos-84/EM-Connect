@@ -9,7 +9,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
-
+@SuppressWarnings("null")
 @Service
 public class CustomUserDetailsService implements UserDetailsService {
 
