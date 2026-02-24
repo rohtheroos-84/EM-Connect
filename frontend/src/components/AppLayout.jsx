@@ -86,7 +86,7 @@ export default function AppLayout({ children }) {
                   )}
                   <button
                     onClick={handleLogout}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-bauhaus-red text-white text-xs font-bold uppercase tracking-wider hover:bg-[#B91C1C] transition-colors duration-150 cursor-pointer"
+                    className="flex items-center gap-1.5 px-2 py-1 text-bauhaus-red text-xs font-semibold uppercase tracking-wider hover:opacity-70 transition-opacity duration-150 cursor-pointer"
                   >
                     <LogOut className="w-3.5 h-3.5" />
                     Logout
