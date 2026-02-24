@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard';
 import EventList from './pages/EventList';
 import EventDetail from './pages/EventDetail';
 import MyRegistrations from './pages/MyRegistrations';
+import Profile from './pages/Profile';
 import ProtectedRoute from './components/ProtectedRoute';
 import LiveAnnouncements from './components/LiveAnnouncements';
 
@@ -30,6 +31,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <MyRegistrations />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <Profile />
             </ProtectedRoute>
           }
         />

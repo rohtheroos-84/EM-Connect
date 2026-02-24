@@ -11,6 +11,7 @@ public class UserResponse {
     private String name;
     private String role;
     private LocalDateTime createdAt;
+    private String avatarUrl;
 
     // Default constructor
     public UserResponse() {
@@ -23,6 +24,7 @@ public class UserResponse {
         this.name = user.getName();
         this.role = user.getRole().name();  // Convert enum to string
         this.createdAt = user.getCreatedAt();
+        this.avatarUrl = user.getAvatarUrl();
     }
 
     // Getters and Setters
@@ -64,5 +66,13 @@ public class UserResponse {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public String getAvatarUrl() {
+        return avatarUrl;
+    }
+
+    public void setAvatarUrl(String avatarUrl) {
+        this.avatarUrl = avatarUrl;
     }
 }

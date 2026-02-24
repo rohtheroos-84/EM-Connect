@@ -5,6 +5,7 @@ import {
   logout as apiLogout,
   getStoredUser,
   isAuthenticated as checkAuth,
+  getCurrentUser as apiGetCurrentUser,
 } from '../services/api';
 
 const AuthContext = createContext(null);
@@ -51,6 +52,18 @@ export function AuthProvider({ children }) {
 
   const clearError = useCallback(() => setError(null), []);
 
+  const refreshUser = useCallback(async () => {
+    try {
+      const userData = await apiGetCurrentUser();
+      setUser(userData);
+      localStorage.setItem('em_user', JSON.stringify(userData));
+      return userData;
+    } catch {
+      // Silently fail
+      return null;
+    }
+  }, []);
+
   const value = {
     user,
     loading,
@@ -59,6 +72,7 @@ export function AuthProvider({ children }) {
     register,
     logout,
     clearError,
+    refreshUser,
     isAuthenticated: !!user && checkAuth(),
   };
 

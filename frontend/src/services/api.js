@@ -170,6 +170,40 @@ export async function getMyTickets() {
   return request('/tickets/my');
 }
 
+/* ── Profile ── */
+
+export async function getCurrentUser() {
+  return request('/users/me');
+}
+
+export async function updateProfile(data) {
+  return request('/users/me', { method: 'PUT', body: JSON.stringify(data) });
+}
+
+export async function changePassword(data) {
+  return request('/users/me/password', { method: 'PUT', body: JSON.stringify(data) });
+}
+
+export async function uploadAvatar(file) {
+  const token = localStorage.getItem('em_token');
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await fetch(`${API_BASE}/users/me/avatar`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    const message = body.message || body.error || `Upload failed (${response.status})`;
+    throw new Error(message);
+  }
+
+  return response.json();
+}
+
 /* ── Generic GET / POST / PUT / DELETE ── */
 
 export const api = {
