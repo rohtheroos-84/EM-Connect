@@ -118,12 +118,6 @@ Organized by priority (P0 = Critical, P1 = High, P2 = Medium, P3 = Nice to Have)
   - [x] Bauhaus dark variant  
   - [x] Persist user preference  
 
-- [ ] PWA Support  
-  - [ ] Service worker  
-  - [ ] Offline access  
-  - [ ] Push notifications  
-  - [ ] Add to home screen  
-
 - [ ] View Customizations  
   - [ ] User-selectable layout preferences  
   - [ ] Saved dashboard views  
@@ -150,7 +144,7 @@ VERBATIM FEATURE LIST for reference (PRIORITY ORDERED)
 
 P0 – Critical
 
-1. verbatim: 'ASK SAME GITHUB COPILOT CHAT THE SAME VULNERABILITIES QUESTION AND FIX EM ALL' -> PRIORITY 1
+1. verbatim: 'ASK SAME GITHUB COPILOT CHAT THE SAME VULNERABILITIES QUESTION AND FIX EM ALL' -> PRIORITY 19 "DO AT LAST"
 2. Rate Limiting & Abuse Prevention — Spring Boot rate limiter (Bucket4j) on registration and auth endpoints
 3. figuring out preventing double loading ui for updates
 
@@ -181,7 +175,6 @@ P3 – Experience & Enhancements
 17. Analytics Dashboard — Registration trends over time, popular events, peak registration hours (charts via Recharts)
 18. Event Comments/Discussion — Real-time comment thread per event via WebSocket
 19. Dark Mode — Bauhaus dark variant with inverted palette
-20. PWA Support — Service worker for offline access, push notifications, "Add to Home Screen"
-21. view customizations
-22. professional ui
+20. view customizations
+21. professional ui
 -->
