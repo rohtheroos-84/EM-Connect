@@ -177,7 +177,7 @@ export default function Login() {
                     <span className="text-[11px] font-bold text-[#BCBCBC] uppercase tracking-[0.12em] select-none">or</span>
                     <div className="flex-1 h-px bg-[#E5E7EB]" />
                   </div>
-                  <div className="flex justify-center [&>div]:w-full [&_iframe]:!w-full">
+                  <div className="flex justify-center [&>div]:w-full [&_iframe]:w-full!">
                     <GoogleLogin
                       onSuccess={handleGoogleSuccess}
                       onError={handleGoogleError}
