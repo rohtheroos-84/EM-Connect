@@ -177,18 +177,19 @@ export default function Login() {
                     <span className="text-[11px] font-bold text-[#BCBCBC] uppercase tracking-[0.12em] select-none">or</span>
                     <div className="flex-1 h-px bg-[#E5E7EB]" />
                   </div>
-                  <div className="flex justify-center [&>div]:w-full [&_iframe]:w-full!">
+                  <div className="w-full flex justify-center">
+                  <div className="w-full max-w-md">
                     <GoogleLogin
                       onSuccess={handleGoogleSuccess}
                       onError={handleGoogleError}
                       theme="outline"
                       size="large"
                       shape="rectangular"
-                      text="signin_with"
-                      width="400"
+                      text="signup_with"
                       logo_alignment="center"
                     />
                   </div>
+                </div>
                 </div>
               )}
             </div>
