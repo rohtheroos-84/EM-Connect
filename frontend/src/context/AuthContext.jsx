@@ -3,6 +3,7 @@ import {
   login as apiLogin,
   register as apiRegister,
   logout as apiLogout,
+  googleLogin as apiGoogleLogin,
   getStoredUser,
   isAuthenticated as checkAuth,
   getCurrentUser as apiGetCurrentUser,
@@ -52,6 +53,21 @@ export function AuthProvider({ children }) {
 
   const clearError = useCallback(() => setError(null), []);
 
+  const googleLoginFn = useCallback(async (credential) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await apiGoogleLogin(credential);
+      setUser(data.user);
+      return data;
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   const refreshUser = useCallback(async () => {
     try {
       const userData = await apiGetCurrentUser();
@@ -72,6 +88,7 @@ export function AuthProvider({ children }) {
     register,
     logout,
     clearError,
+    googleLogin: googleLoginFn,
     refreshUser,
     isAuthenticated: !!user && checkAuth(),
   };

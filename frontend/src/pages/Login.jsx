@@ -1,13 +1,16 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { GoogleLogin } from '@react-oauth/google';
 import { LogIn, AlertCircle, ArrowRight } from 'lucide-react';
+
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [touched, setTouched] = useState({});
-  const { login, loading, error, clearError } = useAuth();
+  const { login, googleLogin, loading, error, clearError } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -18,6 +21,19 @@ export default function Login() {
     } catch {
       /* error handled by context */
     }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    try {
+      await googleLogin(credentialResponse.credential);
+      navigate('/dashboard');
+    } catch {
+      /* error handled by context */
+    }
+  };
+
+  const handleGoogleError = () => {
+    clearError();
   };
 
   const clearOnType = (setter) => (e) => {
@@ -152,6 +168,29 @@ export default function Login() {
                   )}
                 </button>
               </form>
+
+              {/* Google Sign In */}
+              {GOOGLE_CLIENT_ID && (
+                <div className="mt-7">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="flex-1 h-px bg-[#E5E7EB]" />
+                    <span className="text-[11px] font-bold text-[#BCBCBC] uppercase tracking-[0.12em] select-none">or</span>
+                    <div className="flex-1 h-px bg-[#E5E7EB]" />
+                  </div>
+                  <div className="flex justify-center [&>div]:w-full [&_iframe]:!w-full">
+                    <GoogleLogin
+                      onSuccess={handleGoogleSuccess}
+                      onError={handleGoogleError}
+                      theme="outline"
+                      size="large"
+                      shape="rectangular"
+                      text="signin_with"
+                      width="400"
+                      logo_alignment="center"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Footer */}

@@ -1,7 +1,10 @@
 import { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { GoogleLogin } from '@react-oauth/google';
 import { UserPlus, AlertCircle, ArrowRight, Check, X } from 'lucide-react';
+
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 function getPasswordStrength(pwd) {
   if (!pwd) return { level: 0, label: '', color: '#E5E7EB' };
@@ -24,7 +27,7 @@ export default function Register() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [touched, setTouched] = useState({});
   const [localError, setLocalError] = useState(null);
-  const { register, loading, error, clearError } = useAuth();
+  const { register, googleLogin, loading, error, clearError } = useAuth();
   const navigate = useNavigate();
 
   const strength = useMemo(() => getPasswordStrength(password), [password]);
@@ -45,6 +48,17 @@ export default function Register() {
       await register(email, password, name);
       navigate('/dashboard');
     } catch { /* context sets error */ }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    try {
+      await googleLogin(credentialResponse.credential);
+      navigate('/dashboard');
+    } catch { /* context sets error */ }
+  };
+
+  const handleGoogleError = () => {
+    clearError();
   };
 
   const displayError = localError || error;
@@ -254,6 +268,29 @@ export default function Register() {
                   )}
                 </button>
               </form>
+
+              {/* Google Sign Up */}
+              {GOOGLE_CLIENT_ID && (
+                <div className="mt-7">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="flex-1 h-px bg-[#E5E7EB]" />
+                    <span className="text-[11px] font-bold text-[#BCBCBC] uppercase tracking-[0.12em] select-none">or</span>
+                    <div className="flex-1 h-px bg-[#E5E7EB]" />
+                  </div>
+                  <div className="flex justify-center [&>div]:w-full [&_iframe]:!w-full">
+                    <GoogleLogin
+                      onSuccess={handleGoogleSuccess}
+                      onError={handleGoogleError}
+                      theme="outline"
+                      size="large"
+                      shape="rectangular"
+                      text="signup_with"
+                      width="400"
+                      logo_alignment="center"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Footer */}
