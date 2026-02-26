@@ -1,6 +1,7 @@
 package com.emconnect.api.controller;
 
 import com.emconnect.api.dto.AuthResponse;
+import com.emconnect.api.dto.GoogleTokenRequest;
 import com.emconnect.api.dto.LoginRequest;
 import com.emconnect.api.dto.RegisterRequest;
 import com.emconnect.api.service.AuthService;
@@ -35,6 +36,14 @@ public class AuthController {
             @Valid @RequestBody LoginRequest request) {
         
         AuthResponse response = authService.login(request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/google")
+    public ResponseEntity<AuthResponse> googleLogin(
+            @Valid @RequestBody GoogleTokenRequest request) {
+
+        AuthResponse response = authService.googleLogin(request.getCredential());
         return ResponseEntity.ok(response);
     }
 }

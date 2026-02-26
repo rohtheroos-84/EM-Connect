@@ -12,6 +12,7 @@ public class UserResponse {
     private String role;
     private LocalDateTime createdAt;
     private String avatarUrl;
+    private String oauthProvider;
 
     // Default constructor
     public UserResponse() {
@@ -25,6 +26,7 @@ public class UserResponse {
         this.role = user.getRole().name();  // Convert enum to string
         this.createdAt = user.getCreatedAt();
         this.avatarUrl = user.getAvatarUrl();
+        this.oauthProvider = user.getOauthProvider();
     }
 
     // Getters and Setters
@@ -74,5 +76,13 @@ public class UserResponse {
 
     public void setAvatarUrl(String avatarUrl) {
         this.avatarUrl = avatarUrl;
+    }
+
+    public String getOauthProvider() {
+        return oauthProvider;
+    }
+
+    public void setOauthProvider(String oauthProvider) {
+        this.oauthProvider = oauthProvider;
     }
 }

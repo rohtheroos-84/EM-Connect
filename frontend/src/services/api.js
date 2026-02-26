@@ -79,6 +79,18 @@ export function logout() {
   localStorage.removeItem('em_user');
 }
 
+export async function googleLogin(credential) {
+  const data = await request('/auth/google', {
+    method: 'POST',
+    body: JSON.stringify({ credential }),
+  });
+  if (data.token) {
+    localStorage.setItem('em_token', data.token);
+    localStorage.setItem('em_user', JSON.stringify(data.user));
+  }
+  return data;
+}
+
 export function getStoredUser() {
   const raw = localStorage.getItem('em_user');
   return raw ? JSON.parse(raw) : null;

@@ -59,6 +59,11 @@ jwt:
   secret: myVerySecureSecretKeyThatIsAtLeast256BitsLongForHS256Algorithm2024!
   expiration: 86400000  # 24 hours in milliseconds
 
+# Google OAuth Configuration
+google:
+  oauth:
+    client-id: ${GOOGLE_OAUTH_CLIENT_ID:}  # Set via env var or replace with your Google Client ID
+
 # Ticket Configuration
 ticket:
   qr:
