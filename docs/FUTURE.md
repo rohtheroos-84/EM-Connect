@@ -44,9 +44,9 @@ Organized by priority (P0 = Critical, P1 = High, P2 = Medium, P3 = Nice to Have)
   - [ ] Ticket worker auto-start  
   - [ ] WebSocket hub auto-start  
 
-- [ ] OAuth Login  
-  - [ ] Google login    
-  - [ ] Role mapping for OAuth users  
+- [x] OAuth Login  
+  - [x] Google login    
+  - [x] Role mapping for OAuth users  
 
 ---
 
