@@ -94,10 +94,10 @@ Organized by priority (P0 = Critical, P1 = High, P2 = Medium, P3 = Nice to Have)
   - [ ] Reminder email  
   - [ ] Cancellation email  
 
-- [ ] Export to Calendar  
-  - [ ] Generate .ics file  
-  - [ ] Google Calendar support  
-  - [ ] Outlook support  
+- [x] Export to Calendar  
+  - [x] Generate .ics file  
+  - [x] Google Calendar support  
+  - [x] Outlook support  
 
 ---
 
