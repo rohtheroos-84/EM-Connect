@@ -13,9 +13,12 @@ import {
   Loader2,
   CalendarX,
   QrCode,
+  CalendarPlus,
+  Download,
 } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
 import TicketModal from '../components/TicketModal';
+import { downloadICS, getGoogleCalendarUrl } from '../services/calendar';
 
 function fmtDate(iso) {
   if (!iso) return '—';
@@ -306,6 +309,26 @@ function RegistrationRow({ registration: reg, onCancel, cancelling, onViewTicket
               >
                 <QrCode className="w-3.5 h-3.5" /> Ticket
               </button>
+            )}
+            {reg.status === 'CONFIRMED' && (
+              <>
+                <button
+                  onClick={() => downloadICS(event)}
+                  title="Download .ics file"
+                  className="px-3 h-9 flex items-center gap-1 bg-bauhaus-white/80 border border-[#D1D5DB] text-xs font-bold text-bauhaus-fg uppercase tracking-wider hover:bg-bauhaus-bg transition-colors cursor-pointer"
+                >
+                  <Download className="w-3.5 h-3.5" /> .ics
+                </button>
+                <a
+                  href={getGoogleCalendarUrl(event)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Add to Google Calendar"
+                  className="px-3 h-9 flex items-center gap-1 bg-bauhaus-white/80 border border-[#D1D5DB] text-xs font-bold text-bauhaus-fg uppercase tracking-wider hover:bg-bauhaus-bg transition-colors"
+                >
+                  <CalendarPlus className="w-3.5 h-3.5" />
+                </a>
+              </>
             )}
             <Link
               to={`/events/${event.id}`}

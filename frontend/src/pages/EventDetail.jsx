@@ -21,8 +21,11 @@ import {
   QrCode,
   LogIn,
   Radio,
+  CalendarPlus,
+  Download,
 } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
+import { downloadICS, getGoogleCalendarUrl } from '../services/calendar';
 import TicketModal from '../components/TicketModal';
 import { useAuth } from '../context/AuthContext';
 import { useWebSocket } from '../context/WebSocketContext';
@@ -379,6 +382,23 @@ export default function EventDetail() {
                       </button>
                     </div>
                   )}
+                  {/* Export to Calendar */}
+                  <div className="flex items-center gap-2 mt-3">
+                    <button
+                      onClick={() => downloadICS(event)}
+                      className="flex items-center gap-1 px-3 py-1.5 bg-bauhaus-white/80 border border-[#1F2937]/20 text-[11px] font-bold text-bauhaus-fg uppercase tracking-wider hover:bg-bauhaus-bg transition-colors cursor-pointer"
+                    >
+                      <Download className="w-3.5 h-3.5" /> .ics
+                    </button>
+                    <a
+                      href={getGoogleCalendarUrl(event)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 px-3 py-1.5 bg-bauhaus-white/80 border border-[#1F2937]/20 text-[11px] font-bold text-bauhaus-fg uppercase tracking-wider hover:bg-bauhaus-bg transition-colors"
+                    >
+                      <CalendarPlus className="w-3.5 h-3.5" /> Google Calendar
+                    </a>
+                  </div>
                 </div>
               )}
 
