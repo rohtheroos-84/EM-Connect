@@ -45,8 +45,7 @@ Organized by priority (P0 = Critical, P1 = High, P2 = Medium, P3 = Nice to Have)
   - [ ] WebSocket hub auto-start  
 
 - [ ] OAuth Login  
-  - [ ] Google login  
-  - [ ] GitHub login  
+  - [ ] Google login    
   - [ ] Role mapping for OAuth users  
 
 ---
@@ -98,6 +97,12 @@ Organized by priority (P0 = Critical, P1 = High, P2 = Medium, P3 = Nice to Have)
   - [x] Generate .ics file  
   - [x] Google Calendar support  
   - [x] Outlook support  
+
+- [ ] Forgot Password Flow and Implementation  
+  - [ ] Password reset request page  
+  - [ ] Email with reset link  
+  - [ ] Reset password form  
+  - [ ] Token expiration handling
 
 ---
 
@@ -169,12 +174,13 @@ P2 – Core Product Features
 14. User Profile Page — Edit name, change password, upload avatar, view registration history stats
 15. Email Templates — Rich HTML email templates for confirmations, reminders, and cancellations instead of plain text
 16. Export to Calendar — .ics file download for registered events (Google Calendar / Outlook integration)
+17. Forgot Password Flow and Implementation — Password reset request page, email with reset link, reset form, token expiration handling
 
 P3 – Experience & Enhancements
 
-17. Analytics Dashboard — Registration trends over time, popular events, peak registration hours (charts via Recharts)
-18. Event Comments/Discussion — Real-time comment thread per event via WebSocket
-19. Dark Mode — Bauhaus dark variant with inverted palette
-20. view customizations
-21. professional ui
+18. Analytics Dashboard — Registration trends over time, popular events, peak registration hours (charts via Recharts)
+19. Event Comments/Discussion — Real-time comment thread per event via WebSocket
+20. Dark Mode — Bauhaus dark variant with inverted palette
+21. view customizations
+22. professional ui
 -->
