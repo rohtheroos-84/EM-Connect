@@ -45,6 +45,9 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
     // Count all registrations for an event
     long countByEventId(Long eventId);
 
+    // Count registrations by status (admin stats)
+    long countByStatus(RegistrationStatus status);
+
     // Get user's upcoming event registrations
     @Query("SELECT r FROM Registration r " +
            "WHERE r.user.id = :userId " +
