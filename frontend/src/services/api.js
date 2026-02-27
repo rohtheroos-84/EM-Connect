@@ -216,6 +216,29 @@ export async function uploadAvatar(file) {
   return response.json();
 }
 
+/* ── Admin ── */
+
+export async function getAdminDashboard() {
+  return request('/admin/dashboard');
+}
+
+export async function getAllUsers() {
+  return request('/admin/users');
+}
+
+export async function promoteUser(id) {
+  return request(`/admin/users/${id}/promote`, { method: 'PUT' });
+}
+
+export async function demoteUser(id) {
+  return request(`/admin/users/${id}/demote`, { method: 'PUT' });
+}
+
+export async function getAdminEvents(page = 0, size = 20, status = '') {
+  const statusParam = status ? `&status=${status}` : '';
+  return request(`/admin/events?page=${page}&size=${size}${statusParam}`);
+}
+
 /* ── Generic GET / POST / PUT / DELETE ── */
 
 export const api = {
