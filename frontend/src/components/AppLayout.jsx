@@ -1,7 +1,7 @@
 import { NavLink, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useWebSocket } from '../context/WebSocketContext';
-import { LogOut, LayoutDashboard, Calendar, ClipboardList, LogIn, UserCircle } from 'lucide-react';
+import { LogOut, LayoutDashboard, Calendar, ClipboardList, LogIn, UserCircle, ShieldCheck } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 
 const PUBLIC_NAV = [
@@ -15,12 +15,16 @@ const AUTH_NAV = [
   { to: '/profile', label: 'Profile', icon: UserCircle },
 ];
 
+const ADMIN_NAV_ITEM = { to: '/admin', label: 'Admin', icon: ShieldCheck };
+
 export default function AppLayout({ children }) {
   const { user, logout, isAuthenticated } = useAuth();
   const { connected } = useWebSocket();
   const navigate = useNavigate();
   const isAdmin = user?.role === 'ADMIN';
-  const navItems = isAuthenticated ? AUTH_NAV : PUBLIC_NAV;
+  const navItems = isAuthenticated
+    ? (isAdmin ? [...AUTH_NAV, ADMIN_NAV_ITEM] : AUTH_NAV)
+    : PUBLIC_NAV;
 
   const handleLogout = () => {
     logout();
