@@ -40,9 +40,15 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+  # ── MailHog (DEV ONLY) ──────────────────────────────────────────────
+  # Local email sink for development. When using real SMTP (Gmail etc.)
+  # set SMTP_AUTH=true and configure SMTP_USER / SMTP_PASS env vars
+  # on the notification-worker instead.  You can safely comment this
+  # service out in production.
   mailhog:
     image: mailhog/mailhog:latest
     container_name: emconnect-mailhog
+    profiles: ["dev"]          # only starts with: docker compose --profile dev up
     ports:
       - "1025:1025"   # SMTP server
       - "8025:8025"   # Web UI
