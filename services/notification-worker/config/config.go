@@ -30,6 +30,10 @@ type RabbitMQConfig struct {
 type EmailConfig struct {
 	SMTPHost     string
 	SMTPPort     int
+	SMTPUser     string
+	SMTPPass     string
+	SMTPAuth     bool
+	SMTPTLS      bool
 	FromAddress  string
 	FromName     string
 	MaxRetries   int
@@ -56,8 +60,12 @@ func Load() *Config {
 			DLQQueue:      getEnv("RABBITMQ_DLQ_QUEUE", "notification.dlq"),
 		},
 		Email: EmailConfig{
-			SMTPHost:     getEnv("SMTP_HOST", "localhost"),
-			SMTPPort:     getEnvInt("SMTP_PORT", 1025),
+			SMTPHost:     getEnv("SMTP_HOST", "smtp.gmail.com"),
+			SMTPPort:     getEnvInt("SMTP_PORT", 587),
+			SMTPUser:     getEnv("SMTP_USER", ""),
+			SMTPPass:     getEnv("SMTP_PASS", ""),
+			SMTPAuth:     getEnvBool("SMTP_AUTH", true),
+			SMTPTLS:      getEnvBool("SMTP_TLS", true),
 			FromAddress:  getEnv("SMTP_FROM_ADDRESS", "noreply@emconnect.local"),
 			FromName:     getEnv("SMTP_FROM_NAME", "EM-Connect"),
 			MaxRetries:   getEnvInt("EMAIL_MAX_RETRIES", 3),
@@ -83,6 +91,16 @@ func getEnvInt(key string, defaultValue int) int {
 	if value, exists := os.LookupEnv(key); exists {
 		if intVal, err := strconv.Atoi(value); err == nil {
 			return intVal
+		}
+	}
+	return defaultValue
+}
+
+// getEnvBool reads a boolean environment variable or returns a default
+func getEnvBool(key string, defaultValue bool) bool {
+	if value, exists := os.LookupEnv(key); exists {
+		if boolVal, err := strconv.ParseBool(value); err == nil {
+			return boolVal
 		}
 	}
 	return defaultValue
