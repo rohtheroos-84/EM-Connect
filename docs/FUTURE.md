@@ -12,15 +12,15 @@ Organized by priority (P0 = Critical, P1 = High, P2 = Medium, P3 = Nice to Have)
   - [ ] Validate input sanitization across all endpoints  
   - [ ] Add security headers (CSP, HSTS, etc.)  
 
-- [ ] Rate Limiting & Abuse Prevention  
+<!-- - [ ] Rate Limiting & Abuse Prevention  
   - [ ] Apply rate limiting on auth endpoints  
   - [ ] Apply rate limiting on registration endpoints  
-  - [ ] Protect against brute force attacks  
+  - [ ] Protect against brute force attacks   -->
 
-- [ ] Prevent Double UI Loading / Duplicate Requests  
+<!-- - [ ] Prevent Double UI Loading / Duplicate Requests  
   - [ ] Disable buttons during API calls  
   - [ ] Add idempotency protection for critical actions  
-  - [ ] Prevent duplicate registration submissions  
+  - [ ] Prevent duplicate registration submissions   -->
 
 ---
 
@@ -52,9 +52,9 @@ Organized by priority (P0 = Critical, P1 = High, P2 = Medium, P3 = Nice to Have)
 
 ## 🟡 P2 – Core Product Enhancements
 
-- [ ] Admin Dashboard & Event CRUD UI  
-  - [ ] Create/edit/publish/cancel/complete events via frontend  
-  - [ ] Admin-only management panel  
+- [x] Admin Dashboard & Event CRUD UI  
+  - [x] Create/edit/publish/cancel/complete events via frontend  
+  - [x] Admin-only management panel  
 
 - [ ] Attendee Check-in System  
   - [ ] QR scanner page  
@@ -114,10 +114,10 @@ Organized by priority (P0 = Critical, P1 = High, P2 = Medium, P3 = Nice to Have)
   - [ ] Peak registration hours  
   - [ ] Charts integration  
 
-- [ ] Event Comments / Discussion  
+<!-- - [ ] Event Comments / Discussion  
   - [ ] Real-time comment threads  
   - [ ] WebSocket-based updates  
-  - [ ] Moderation controls  
+  - [ ] Moderation controls   -->
 
 - [x] Dark Mode  
   - [x] Bauhaus dark variant  
