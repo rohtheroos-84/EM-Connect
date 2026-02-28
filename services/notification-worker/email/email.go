@@ -1,27 +1,24 @@
 package email
 
 import (
-	"crypto/tls"
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"io"
 	"log"
-	"net"
-	"net/smtp"
-	"strings"
+	"net/http"
 	"time"
 )
 
+const sendGridEndpoint = "https://api.sendgrid.com/v3/mail/send"
+
 // Config holds email service configuration
 type Config struct {
-	SMTPHost     string
-	SMTPPort     int
-	SMTPUser     string
-	SMTPPass     string
-	SMTPAuth     bool
-	SMTPTLS      bool
-	FromAddress  string
-	FromName     string
-	MaxRetries   int
-	RetryBackoff time.Duration
+	SendGridAPIKey string
+	FromAddress    string
+	FromName       string
+	MaxRetries     int
+	RetryBackoff   time.Duration
 }
 
 // Email represents an email to be sent
@@ -31,14 +28,18 @@ type Email struct {
 	HTMLBody string
 }
 
-// Service handles sending emails
+// Service handles sending emails via the SendGrid API
 type Service struct {
 	config Config
+	client *http.Client
 }
 
 // NewService creates a new email service
 func NewService(cfg Config) *Service {
-	return &Service{config: cfg}
+	return &Service{
+		config: cfg,
+		client: &http.Client{Timeout: 15 * time.Second},
+	}
 }
 
 // SendWithRetry sends an email with retry logic
@@ -65,88 +66,66 @@ func (s *Service) SendWithRetry(email Email) error {
 	return fmt.Errorf("failed to send email after %d attempts: %w", s.config.MaxRetries, lastErr)
 }
 
-// send dispatches the email via SMTP.
-// When SMTPAuth=true and SMTPTLS=true it performs STARTTLS + PLAIN auth
-// (works with Gmail App Passwords, Outlook, SendGrid, etc.).
-// When SMTPAuth=false it falls back to plain unauthenticated SMTP (MailHog / dev).
-func (s *Service) send(email Email) error {
-	addr := net.JoinHostPort(s.config.SMTPHost, fmt.Sprintf("%d", s.config.SMTPPort))
-	msg := s.buildMessage(email)
+// ── SendGrid v3 API payload types ──────────────────────────────────────
 
-	// ── Unauthenticated path (dev / MailHog) ──
-	if !s.config.SMTPAuth {
-		return smtp.SendMail(addr, nil, s.config.FromAddress, []string{email.To}, []byte(msg))
-	}
-
-	// ── Authenticated + TLS path ──
-	// 1. Dial TCP
-	conn, err := net.DialTimeout("tcp", addr, 15*time.Second)
-	if err != nil {
-		return fmt.Errorf("dial %s: %w", addr, err)
-	}
-
-	// 2. Create SMTP client
-	client, err := smtp.NewClient(conn, s.config.SMTPHost)
-	if err != nil {
-		conn.Close()
-		return fmt.Errorf("smtp client: %w", err)
-	}
-	defer client.Close()
-
-	// 3. EHLO
-	if err := client.Hello("localhost"); err != nil {
-		return fmt.Errorf("ehlo: %w", err)
-	}
-
-	// 4. STARTTLS
-	if s.config.SMTPTLS {
-		tlsCfg := &tls.Config{ServerName: s.config.SMTPHost}
-		if err := client.StartTLS(tlsCfg); err != nil {
-			return fmt.Errorf("starttls: %w", err)
-		}
-	}
-
-	// 5. Authenticate
-	auth := smtp.PlainAuth("", s.config.SMTPUser, s.config.SMTPPass, s.config.SMTPHost)
-	if err := client.Auth(auth); err != nil {
-		return fmt.Errorf("auth: %w", err)
-	}
-
-	// 6. MAIL FROM
-	if err := client.Mail(s.config.FromAddress); err != nil {
-		return fmt.Errorf("mail from: %w", err)
-	}
-
-	// 7. RCPT TO
-	if err := client.Rcpt(email.To); err != nil {
-		return fmt.Errorf("rcpt to: %w", err)
-	}
-
-	// 8. DATA
-	w, err := client.Data()
-	if err != nil {
-		return fmt.Errorf("data: %w", err)
-	}
-	if _, err := w.Write([]byte(msg)); err != nil {
-		return fmt.Errorf("write body: %w", err)
-	}
-	if err := w.Close(); err != nil {
-		return fmt.Errorf("close data: %w", err)
-	}
-
-	// 9. QUIT
-	return client.Quit()
+type sgMailBody struct {
+	Personalizations []sgPersonalization `json:"personalizations"`
+	From             sgAddress           `json:"from"`
+	Subject          string              `json:"subject"`
+	Content          []sgContent         `json:"content"`
 }
 
-// buildMessage constructs the MIME email with headers
-func (s *Service) buildMessage(email Email) string {
-	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("From: %s <%s>\r\n", s.config.FromName, s.config.FromAddress))
-	sb.WriteString(fmt.Sprintf("To: %s\r\n", email.To))
-	sb.WriteString(fmt.Sprintf("Subject: %s\r\n", email.Subject))
-	sb.WriteString("MIME-Version: 1.0\r\n")
-	sb.WriteString("Content-Type: text/html; charset=UTF-8\r\n")
-	sb.WriteString("\r\n")
-	sb.WriteString(email.HTMLBody)
-	return sb.String()
+type sgPersonalization struct {
+	To []sgAddress `json:"to"`
+}
+
+type sgAddress struct {
+	Email string `json:"email"`
+	Name  string `json:"name,omitempty"`
+}
+
+type sgContent struct {
+	Type  string `json:"type"`
+	Value string `json:"value"`
+}
+
+// send dispatches the email via the SendGrid v3 HTTP API.
+func (s *Service) send(email Email) error {
+	payload := sgMailBody{
+		Personalizations: []sgPersonalization{
+			{To: []sgAddress{{Email: email.To}}},
+		},
+		From:    sgAddress{Email: s.config.FromAddress, Name: s.config.FromName},
+		Subject: email.Subject,
+		Content: []sgContent{
+			{Type: "text/html", Value: email.HTMLBody},
+		},
+	}
+
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("marshal payload: %w", err)
+	}
+
+	req, err := http.NewRequest(http.MethodPost, sendGridEndpoint, bytes.NewReader(body))
+	if err != nil {
+		return fmt.Errorf("create request: %w", err)
+	}
+	req.Header.Set("Authorization", "Bearer "+s.config.SendGridAPIKey)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := s.client.Do(req)
+	if err != nil {
+		return fmt.Errorf("http request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// SendGrid returns 202 Accepted on success
+	if resp.StatusCode == http.StatusAccepted {
+		return nil
+	}
+
+	// Read error body for diagnostics
+	errBody, _ := io.ReadAll(resp.Body)
+	return fmt.Errorf("sendgrid API error (HTTP %d): %s", resp.StatusCode, string(errBody))
 }

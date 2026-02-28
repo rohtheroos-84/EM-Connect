@@ -23,16 +23,19 @@ func main() {
 	log.Printf("   Service: %s", cfg.Service.Name)
 	log.Printf("   Environment: %s", cfg.Service.Environment)
 	log.Printf("   Queue: %s", cfg.RabbitMQ.Queue)
-	log.Printf("   SMTP: %s:%d", cfg.Email.SMTPHost, cfg.Email.SMTPPort)
+	log.Printf("   Email via: SendGrid API (from: %s)", cfg.Email.FromAddress)
+
+	if cfg.Email.SendGridAPIKey == "" {
+		log.Println("⚠️  WARNING: SENDGRID_API_KEY is not set — emails will fail!")
+	}
 
 	// Create email service
 	emailService := email.NewService(email.Config{
-		SMTPHost: cfg.Email.SMTPHost,
-		SMTPPort: cfg.Email.SMTPPort,
-		SMTPUser: cfg.Email.SMTPUser,
-		SMTPPass: cfg.Email.SMTPPass,
-		SMTPAuth: cfg.Email.SMTPAuth,
-		SMTPTLS:  cfg.Email.SMTPTLS,
+		SendGridAPIKey: cfg.Email.SendGridAPIKey,
+		FromAddress:    cfg.Email.FromAddress,
+		FromName:       cfg.Email.FromName,
+		MaxRetries:     cfg.Email.MaxRetries,
+		RetryBackoff:   cfg.Email.RetryBackoff,
 	})
 
 	// Create handler with email service

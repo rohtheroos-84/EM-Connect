@@ -28,16 +28,11 @@ type RabbitMQConfig struct {
 
 // EmailConfig holds email service settings
 type EmailConfig struct {
-	SMTPHost     string
-	SMTPPort     int
-	SMTPUser     string
-	SMTPPass     string
-	SMTPAuth     bool
-	SMTPTLS      bool
-	FromAddress  string
-	FromName     string
-	MaxRetries   int
-	RetryBackoff time.Duration
+	SendGridAPIKey string
+	FromAddress    string
+	FromName       string
+	MaxRetries     int
+	RetryBackoff   time.Duration
 }
 
 // ServiceConfig holds service-level settings
@@ -60,16 +55,11 @@ func Load() *Config {
 			DLQQueue:      getEnv("RABBITMQ_DLQ_QUEUE", "notification.dlq"),
 		},
 		Email: EmailConfig{
-			SMTPHost:     getEnv("SMTP_HOST", "smtp.gmail.com"),
-			SMTPPort:     getEnvInt("SMTP_PORT", 587),
-			SMTPUser:     getEnv("SMTP_USER", ""),
-			SMTPPass:     getEnv("SMTP_PASS", ""),
-			SMTPAuth:     getEnvBool("SMTP_AUTH", true),
-			SMTPTLS:      getEnvBool("SMTP_TLS", true),
-			FromAddress:  getEnv("SMTP_FROM_ADDRESS", "noreply@emconnect.local"),
-			FromName:     getEnv("SMTP_FROM_NAME", "EM-Connect"),
-			MaxRetries:   getEnvInt("EMAIL_MAX_RETRIES", 3),
-			RetryBackoff: time.Duration(getEnvInt("EMAIL_RETRY_BACKOFF_MS", 1000)) * time.Millisecond,
+			SendGridAPIKey: getEnv("SENDGRID_API_KEY", ""),
+			FromAddress:    getEnv("EMAIL_FROM_ADDRESS", "drogonxdrogon@gmail.com"),
+			FromName:       getEnv("EMAIL_FROM_NAME", "EM-Connect"),
+			MaxRetries:     getEnvInt("EMAIL_MAX_RETRIES", 3),
+			RetryBackoff:   time.Duration(getEnvInt("EMAIL_RETRY_BACKOFF_MS", 1000)) * time.Millisecond,
 		},
 		Service: ServiceConfig{
 			Name:        "notification-worker",
@@ -91,16 +81,6 @@ func getEnvInt(key string, defaultValue int) int {
 	if value, exists := os.LookupEnv(key); exists {
 		if intVal, err := strconv.Atoi(value); err == nil {
 			return intVal
-		}
-	}
-	return defaultValue
-}
-
-// getEnvBool reads a boolean environment variable or returns a default
-func getEnvBool(key string, defaultValue bool) bool {
-	if value, exists := os.LookupEnv(key); exists {
-		if boolVal, err := strconv.ParseBool(value); err == nil {
-			return boolVal
 		}
 	}
 	return defaultValue
