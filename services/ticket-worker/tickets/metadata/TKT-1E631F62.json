@@ -1,0 +1,13 @@
+{
+  "ticketCode": "TKT-1E631F62",
+  "eventId": 7,
+  "userId": 4,
+  "userName": "rooster123",
+  "userEmail": "rohit.n2023a@vitstudent.ac.in",
+  "eventTitle": "Bauhaus Event 1",
+  "eventLocation": "Hall 1",
+  "eventStartDate": "2026-06-01T10:00:00",
+  "qrImagePath": "tickets\\qr\\TKT-1E631F62.png",
+  "generatedAt": "2026-03-01T20:14:54.2854008+05:30",
+  "status": "VALID"
+}

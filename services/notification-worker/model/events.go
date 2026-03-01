@@ -21,13 +21,21 @@ func (t *Timestamp) UnmarshalJSON(data []byte) error {
 		return nil
 	}
 
-	// Try as string (RFC3339)
+	// Try as string — Java serializes Instant/LocalDateTime in many forms
 	var str string
 	if err := json.Unmarshal(data, &str); err == nil {
-		parsed, err := time.Parse(time.RFC3339, str)
-		if err == nil {
-			t.Time = parsed
-			return nil
+		// Try common formats in order of likelihood
+		for _, layout := range []string{
+			time.RFC3339Nano,                // 2026-03-01T20:11:37.5594923Z
+			time.RFC3339,                    // 2026-03-01T20:11:37Z
+			"2006-01-02T15:04:05.999999999", // Java LocalDateTime with fractional seconds (no TZ)
+			"2006-01-02T15:04:05",           // Java LocalDateTime without fractional seconds
+			"2006-01-02 15:04:05",           // fallback space-separated
+		} {
+			if parsed, err := time.Parse(layout, str); err == nil {
+				t.Time = parsed
+				return nil
+			}
 		}
 	}
 
@@ -61,17 +69,17 @@ func (t *LocalDateTime) UnmarshalJSON(data []byte) error {
 	// Try as string
 	var str string
 	if err := json.Unmarshal(data, &str); err == nil {
-		// Try RFC3339
-		parsed, err := time.Parse(time.RFC3339, str)
-		if err == nil {
-			t.Time = parsed
-			return nil
-		}
-		// Try without timezone
-		parsed, err = time.Parse("2006-01-02T15:04:05", str)
-		if err == nil {
-			t.Time = parsed
-			return nil
+		for _, layout := range []string{
+			time.RFC3339Nano,
+			time.RFC3339,
+			"2006-01-02T15:04:05.999999999",
+			"2006-01-02T15:04:05",
+			"2006-01-02 15:04:05",
+		} {
+			if parsed, err := time.Parse(layout, str); err == nil {
+				t.Time = parsed
+				return nil
+			}
 		}
 	}
 
