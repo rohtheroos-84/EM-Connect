@@ -1,0 +1,13 @@
+{
+  "ticketCode": "TKT-E862764D",
+  "eventId": 11,
+  "userId": 4,
+  "userName": "rooster123",
+  "userEmail": "rohit.n2023a@vitstudent.ac.in",
+  "eventTitle": "Bauhaus Event 5",
+  "eventLocation": "Hall 5",
+  "eventStartDate": "2026-06-05T10:00:00",
+  "qrImagePath": "tickets\\qr\\TKT-E862764D.png",
+  "generatedAt": "2026-03-01T20:02:55.777052+05:30",
+  "status": "VALID"
+}

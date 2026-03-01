@@ -151,26 +151,29 @@ public class RabbitMQConfig {
      * This allows any language (Go, Python, etc.) to consume our messages.
      */
     @Bean
-    public MessageConverter jsonMessageConverter() {
-        return new Jackson2JsonMessageConverter();
+    public MessageConverter jsonMessageConverter(
+            com.fasterxml.jackson.databind.ObjectMapper objectMapper) {
+
+        return new Jackson2JsonMessageConverter(objectMapper);
     }
 
     /**
      * Configure RabbitTemplate with JSON converter.
      */
     @Bean
-    public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory) {
+    public RabbitTemplate rabbitTemplate(
+            ConnectionFactory connectionFactory,
+            MessageConverter messageConverter) {
+
         RabbitTemplate template = new RabbitTemplate(connectionFactory);
-        template.setMessageConverter(jsonMessageConverter());
-        
-        // Enable publisher confirms for reliability
+        template.setMessageConverter(messageConverter);
+
         template.setConfirmCallback((correlationData, ack, cause) -> {
             if (!ack) {
-                // Log failed message delivery
                 System.err.println("Message delivery failed: " + cause);
             }
         });
-        
+
         return template;
     }
 }

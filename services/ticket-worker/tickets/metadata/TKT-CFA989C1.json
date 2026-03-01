@@ -1,0 +1,13 @@
+{
+  "ticketCode": "TKT-CFA989C1",
+  "eventId": 10,
+  "userId": 4,
+  "userName": "rooster123",
+  "userEmail": "rohit.n2023a@vitstudent.ac.in",
+  "eventTitle": "Bauhaus Event 4",
+  "eventLocation": "Hall 4",
+  "eventStartDate": "2026-06-04T10:00:00",
+  "qrImagePath": "tickets\\qr\\TKT-CFA989C1.png",
+  "generatedAt": "2026-03-01T19:52:45.2644842+05:30",
+  "status": "VALID"
+}

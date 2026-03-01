@@ -56,7 +56,7 @@ func Load() *Config {
 		},
 		Email: EmailConfig{
 			SendGridAPIKey: getEnv("SENDGRID_API_KEY", ""),
-			FromAddress:    getEnv("EMAIL_FROM_ADDRESS", "drogonxdrogon@gmail.com"),
+			FromAddress:    getEnv("EMAIL_FROM_ADDRESS", "rohit84.official@gmail.com"),
 			FromName:       getEnv("EMAIL_FROM_NAME", "EM-Connect"),
 			MaxRetries:     getEnvInt("EMAIL_MAX_RETRIES", 3),
 			RetryBackoff:   time.Duration(getEnvInt("EMAIL_RETRY_BACKOFF_MS", 1000)) * time.Millisecond,
