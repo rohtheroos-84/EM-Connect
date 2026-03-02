@@ -7,6 +7,7 @@ import EventDetail from './pages/EventDetail';
 import MyRegistrations from './pages/MyRegistrations';
 import Profile from './pages/Profile';
 import Admin from './pages/Admin';
+import Analytics from './pages/Analytics';
 import ProtectedRoute from './components/ProtectedRoute';
 import LiveAnnouncements from './components/LiveAnnouncements';
 
@@ -48,6 +49,14 @@ export default function App() {
           element={
             <ProtectedRoute adminOnly>
               <Admin />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/analytics"
+          element={
+            <ProtectedRoute adminOnly>
+              <Analytics />
             </ProtectedRoute>
           }
         />

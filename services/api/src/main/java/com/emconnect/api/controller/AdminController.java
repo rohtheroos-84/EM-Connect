@@ -20,7 +20,11 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-@SuppressWarnings("null")
+import java.util.ArrayList;
+import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.sql.Date;
+@SuppressWarnings({ "null", "unused" })
 @RestController
 @RequestMapping("/api/admin")
 public class AdminController {
@@ -107,5 +111,116 @@ public class AdminController {
         User savedUser = userRepository.save(user);
         
         return ResponseEntity.ok(new UserResponse(savedUser));
+    }
+
+    // ── Analytics ──────────────────────────────────────────────────────────
+
+    @GetMapping("/analytics")
+    public ResponseEntity<Map<String, Object>> getAnalytics() {
+        Map<String, Object> analytics = new HashMap<>();
+        LocalDateTime thirtyDaysAgo = LocalDateTime.now().minusDays(30);
+
+        // 1. Registration trend (last 30 days)
+        List<Map<String, Object>> registrationTrend = new ArrayList<>();
+        for (Object[] row : registrationRepository.countDailyRegistrations(thirtyDaysAgo)) {
+            Map<String, Object> point = new HashMap<>();
+            point.put("date", row[0].toString());
+            point.put("count", ((Number) row[1]).intValue());
+            registrationTrend.add(point);
+        }
+        analytics.put("registrationTrend", registrationTrend);
+
+        // 2. User growth (last 30 days)
+        List<Map<String, Object>> userGrowth = new ArrayList<>();
+        for (Object[] row : userRepository.countDailyNewUsers(thirtyDaysAgo)) {
+            Map<String, Object> point = new HashMap<>();
+            point.put("date", row[0].toString());
+            point.put("count", ((Number) row[1]).intValue());
+            userGrowth.add(point);
+        }
+        analytics.put("userGrowth", userGrowth);
+
+        // 3. Popular events (top 8)
+        List<Map<String, Object>> popularEvents = new ArrayList<>();
+        for (Object[] row : eventRepository.findPopularEvents(8)) {
+            Map<String, Object> item = new HashMap<>();
+            item.put("title", row[0]);
+            item.put("registrations", ((Number) row[1]).intValue());
+            item.put("capacity", row[2] != null ? ((Number) row[2]).intValue() : 0);
+            popularEvents.add(item);
+        }
+        analytics.put("popularEvents", popularEvents);
+
+        // 4. Peak hours
+        List<Map<String, Object>> peakHours = new ArrayList<>();
+        for (Object[] row : registrationRepository.countRegistrationsByHour()) {
+            Map<String, Object> item = new HashMap<>();
+            item.put("hour", ((Number) row[0]).intValue());
+            item.put("count", ((Number) row[1]).intValue());
+            peakHours.add(item);
+        }
+        analytics.put("peakHours", peakHours);
+
+        // 5. Day of week distribution
+        String[] dayNames = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
+        List<Map<String, Object>> dayOfWeek = new ArrayList<>();
+        for (Object[] row : registrationRepository.countRegistrationsByDayOfWeek()) {
+            Map<String, Object> item = new HashMap<>();
+            int dow = ((Number) row[0]).intValue();
+            item.put("day", dayNames[dow]);
+            item.put("count", ((Number) row[1]).intValue());
+            dayOfWeek.add(item);
+        }
+        analytics.put("dayOfWeek", dayOfWeek);
+
+        // 6. Event status breakdown
+        Map<String, Long> eventStatus = new HashMap<>();
+        eventStatus.put("DRAFT", eventRepository.countByStatus(EventStatus.DRAFT));
+        eventStatus.put("PUBLISHED", eventRepository.countByStatus(EventStatus.PUBLISHED));
+        eventStatus.put("CANCELLED", eventRepository.countByStatus(EventStatus.CANCELLED));
+        eventStatus.put("COMPLETED", eventRepository.countByStatus(EventStatus.COMPLETED));
+        analytics.put("eventStatusBreakdown", eventStatus);
+
+        // 7. Registration status breakdown
+        Map<String, Long> regStatus = new HashMap<>();
+        regStatus.put("CONFIRMED", registrationRepository.countByStatus(RegistrationStatus.CONFIRMED));
+        regStatus.put("CANCELLED", registrationRepository.countByStatus(RegistrationStatus.CANCELLED));
+        regStatus.put("ATTENDED", registrationRepository.countByStatus(RegistrationStatus.ATTENDED));
+        regStatus.put("NO_SHOW", registrationRepository.countByStatus(RegistrationStatus.NO_SHOW));
+        analytics.put("registrationStatusBreakdown", regStatus);
+
+        // 8. Top locations
+        List<Map<String, Object>> topLocations = new ArrayList<>();
+        for (Object[] row : eventRepository.findTopLocations(6)) {
+            Map<String, Object> item = new HashMap<>();
+            item.put("location", row[0]);
+            item.put("count", ((Number) row[1]).intValue());
+            topLocations.add(item);
+        }
+        analytics.put("topLocations", topLocations);
+
+        // 9. Recent activity
+        List<Map<String, Object>> recentActivity = new ArrayList<>();
+        for (Object[] row : registrationRepository.findRecentActivity()) {
+            Map<String, Object> item = new HashMap<>();
+            item.put("userName", row[0]);
+            item.put("eventTitle", row[1]);
+            item.put("status", row[2]);
+            item.put("time", row[3] != null ? row[3].toString() : null);
+            recentActivity.add(item);
+        }
+        analytics.put("recentActivity", recentActivity);
+
+        // 10. Summary stats
+        long totalEvents = eventRepository.count();
+        long totalRegistrations = registrationRepository.count();
+        long totalUsers = userRepository.count();
+        long confirmedRegs = registrationRepository.countByStatus(RegistrationStatus.CONFIRMED);
+        analytics.put("totalEvents", totalEvents);
+        analytics.put("totalRegistrations", totalRegistrations);
+        analytics.put("totalUsers", totalUsers);
+        analytics.put("confirmedRegistrations", confirmedRegs);
+
+        return ResponseEntity.ok(analytics);
     }
 }

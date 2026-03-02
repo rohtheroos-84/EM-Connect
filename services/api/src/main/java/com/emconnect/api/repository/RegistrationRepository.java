@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -58,4 +59,25 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
             @Param("userId") Long userId,
             @Param("status") RegistrationStatus status
     );
+
+    // ── Analytics queries ──
+
+    @Query(value = "SELECT CAST(registered_at AS DATE) as reg_date, COUNT(*) as cnt " +
+                   "FROM registrations WHERE registered_at >= :since " +
+                   "GROUP BY CAST(registered_at AS DATE) ORDER BY reg_date", nativeQuery = true)
+    List<Object[]> countDailyRegistrations(@Param("since") LocalDateTime since);
+
+    @Query(value = "SELECT EXTRACT(HOUR FROM registered_at)::int as hr, COUNT(*) as cnt " +
+                   "FROM registrations GROUP BY hr ORDER BY hr", nativeQuery = true)
+    List<Object[]> countRegistrationsByHour();
+
+    @Query(value = "SELECT EXTRACT(DOW FROM registered_at)::int as dow, COUNT(*) as cnt " +
+                   "FROM registrations GROUP BY dow ORDER BY dow", nativeQuery = true)
+    List<Object[]> countRegistrationsByDayOfWeek();
+
+    @Query(value = "SELECT u.name as user_name, e.title as event_title, r.status, r.registered_at " +
+                   "FROM registrations r JOIN users u ON r.user_id = u.id " +
+                   "JOIN events e ON r.event_id = e.id " +
+                   "ORDER BY r.registered_at DESC LIMIT 10", nativeQuery = true)
+    List<Object[]> findRecentActivity();
 }

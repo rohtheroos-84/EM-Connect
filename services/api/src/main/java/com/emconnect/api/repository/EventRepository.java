@@ -12,7 +12,7 @@ import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.Lock;
 
 import java.time.LocalDateTime;
-//import java.util.List;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -50,4 +50,21 @@ public interface EventRepository extends JpaRepository<Event, Long> {
     // Find upcoming published events
     @Query("SELECT e FROM Event e WHERE e.status = 'PUBLISHED' AND e.startDate > :now ORDER BY e.startDate ASC")
     Page<Event> findUpcomingPublishedEvents(@Param("now") LocalDateTime now, Pageable pageable);
+
+    // ── Analytics queries ──
+
+    @Query(value = "SELECT e.title, COUNT(r.id) as reg_count, e.capacity " +
+                   "FROM events e LEFT JOIN registrations r ON e.id = r.event_id AND r.status = 'CONFIRMED' " +
+                   "WHERE e.status IN ('PUBLISHED', 'COMPLETED') " +
+                   "GROUP BY e.id, e.title, e.capacity " +
+                   "ORDER BY reg_count DESC LIMIT :lim", nativeQuery = true)
+    List<Object[]> findPopularEvents(@Param("lim") int lim);
+
+    @Query(value = "SELECT e.location, COUNT(*) as cnt FROM events e " +
+                   "WHERE e.location IS NOT NULL AND e.location != '' " +
+                   "AND e.status IN ('PUBLISHED', 'COMPLETED') " +
+                   "GROUP BY e.location ORDER BY cnt DESC LIMIT :lim", nativeQuery = true)
+    List<Object[]> findTopLocations(@Param("lim") int lim);
+
+    long countByStatus(EventStatus status);
 }
