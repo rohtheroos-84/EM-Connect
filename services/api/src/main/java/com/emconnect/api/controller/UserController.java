@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
-@SuppressWarnings("null")
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
@@ -60,6 +59,7 @@ public class UserController {
         return ResponseEntity.ok(updated);
     }
 
+    @SuppressWarnings("null")
     @GetMapping("/avatars/{filename}")
     public ResponseEntity<Resource> getAvatar(@PathVariable String filename) throws IOException {
         Path path = userService.getAvatarPath(filename);
