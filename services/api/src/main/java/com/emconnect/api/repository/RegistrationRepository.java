@@ -67,11 +67,11 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
                    "GROUP BY CAST(registered_at AS DATE) ORDER BY reg_date", nativeQuery = true)
     List<Object[]> countDailyRegistrations(@Param("since") LocalDateTime since);
 
-    @Query(value = "SELECT EXTRACT(HOUR FROM registered_at)::int as hr, COUNT(*) as cnt " +
+    @Query(value = "SELECT CAST(EXTRACT(HOUR FROM registered_at) AS INTEGER) as hr, COUNT(*) as cnt " +
                    "FROM registrations GROUP BY hr ORDER BY hr", nativeQuery = true)
     List<Object[]> countRegistrationsByHour();
 
-    @Query(value = "SELECT EXTRACT(DOW FROM registered_at)::int as dow, COUNT(*) as cnt " +
+    @Query(value = "SELECT CAST(EXTRACT(DOW FROM registered_at) AS INTEGER) as dow, COUNT(*) as cnt " +
                    "FROM registrations GROUP BY dow ORDER BY dow", nativeQuery = true)
     List<Object[]> countRegistrationsByDayOfWeek();
 
