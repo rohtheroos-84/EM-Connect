@@ -222,6 +222,10 @@ export async function getAdminDashboard() {
   return request('/admin/dashboard');
 }
 
+export async function getAnalytics() {
+  return request('/admin/analytics');
+}
+
 export async function getAllUsers() {
   return request('/admin/users');
 }
