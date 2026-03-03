@@ -44,7 +44,13 @@ public class EventResponse {
         this.updatedAt = event.getUpdatedAt();
         this.category = event.getCategory() != null ? event.getCategory().name() : null;
         this.tags = event.getTagList();
-        this.bannerUrl = event.getBannerUrl();
+        // Transform file-system path to API URL path
+        if (event.getBannerUrl() != null) {
+            String raw = event.getBannerUrl();
+            int slash = raw.lastIndexOf('/');
+            String fname = slash >= 0 ? raw.substring(slash + 1) : raw;
+            this.bannerUrl = "/events/banners/" + fname;
+        }
     }
 
     // Nested class for organizer info (avoids exposing full User)

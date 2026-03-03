@@ -25,6 +25,7 @@ import {
   Download,
 } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
+import { generateBauhausBanner } from '../services/bauhausBanner';
 import { downloadICS, getGoogleCalendarUrl } from '../services/calendar';
 import TicketModal from '../components/TicketModal';
 import { useAuth } from '../context/AuthContext';
@@ -253,18 +254,14 @@ export default function EventDetail() {
 
         {/* Main card */}
         <div className="bg-bauhaus-white border border-[#1F2937]/20 overflow-hidden shadow-sm">
-          {/* Banner hero or accent bar */}
-          {event.bannerUrl ? (
-            <div className="h-48 sm:h-64 overflow-hidden bg-[#E5E7EB]">
-              <img
-                src={`/api${event.bannerUrl}`}
-                alt=""
-                className="w-full h-full object-cover"
-              />
-            </div>
-          ) : (
-            <div className="h-1" style={{ backgroundColor: status.bg }} />
-          )}
+          {/* Banner hero */}
+          <div className="h-48 sm:h-64 overflow-hidden bg-[#E5E7EB]">
+            <img
+              src={event.bannerUrl ? `/api${event.bannerUrl}` : generateBauhausBanner(event.title, event.id)}
+              alt=""
+              className="w-full h-full object-cover"
+            />
+          </div>
 
           <div className="p-6 sm:p-8">
             {/* Status + Category + Organizer line */}

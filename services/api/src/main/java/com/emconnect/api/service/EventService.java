@@ -245,17 +245,18 @@ public class EventService {
      * Search events by title with optional category and tag filters
      */
     public Page<Event> searchEvents(String query, String category, String tag, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("startDate").ascending());
-
         String keyword = (query != null) ? query.trim() : "";
         String cat = (category != null) ? category.trim() : "";
         String t = (tag != null) ? tag.trim() : "";
 
-        // If no filters at all, return published events
+        // If no filters at all, return published events (JPQL — uses Java property names)
         if (keyword.isEmpty() && cat.isEmpty() && t.isEmpty()) {
+            Pageable pageable = PageRequest.of(page, size, Sort.by("startDate").ascending());
             return eventRepository.findByStatus(EventStatus.PUBLISHED, pageable);
         }
 
+        // Native SQL query — must use actual column names for sort
+        Pageable pageable = PageRequest.of(page, size, Sort.by("start_date").ascending());
         return eventRepository.searchEvents(
                 EventStatus.PUBLISHED.name(), keyword, cat, t, pageable);
     }

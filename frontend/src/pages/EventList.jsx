@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { searchEvents, getActiveCategories } from '../services/api';
-import { Search, MapPin, Clock, Users, ChevronLeft, ChevronRight, AlertCircle, Calendar, X, Tag } from 'lucide-react';
+import { Search, MapPin, Clock, Users, ChevronLeft, ChevronRight, AlertCircle, Calendar, X } from 'lucide-react';
+import { generateBauhausBanner } from '../services/bauhausBanner';
 import AppLayout from '../components/AppLayout';
 
 function fmtDate(iso) {
@@ -168,14 +169,13 @@ export default function EventList() {
           )}
 
           {/* Tag filter */}
-          <div className="relative ml-auto">
-            <Tag className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#9CA3AF]" />
+          <div className="ml-auto">
             <input
               type="text"
               value={tagFilter}
               onChange={(e) => setTagFilter(e.target.value)}
               placeholder="Filter by tag…"
-              className="pl-8 pr-3 h-8 w-44 bg-bauhaus-white/80 border border-[#D1D5DB] text-xs text-bauhaus-fg placeholder:text-[#BCBCBC] placeholder:italic focus:border-bauhaus-blue transition-colors"
+              className="px-3 h-8 w-44 bg-bauhaus-white/80 border border-[#D1D5DB] text-xs text-bauhaus-fg placeholder:text-[#BCBCBC] placeholder:italic focus:border-bauhaus-blue transition-colors"
             />
           </div>
         </div>
@@ -185,7 +185,7 @@ export default function EventList() {
           <div className="mb-6 flex items-center gap-3 bg-[#FEF2F2] border-l-[3px] border-bauhaus-red px-4 py-3">
             <AlertCircle className="w-4 h-4 text-bauhaus-red shrink-0" />
             <p className="text-sm text-bauhaus-red">{error}</p>
-            <button onClick={() => fetchEvents(search.trim(), page)} className="ml-auto text-sm font-bold text-bauhaus-red underline cursor-pointer">
+            <button onClick={() => fetchEvents(search.trim(), page, categoryFilter, tagFilter.trim())} className="ml-auto text-sm font-bold text-bauhaus-red underline cursor-pointer">
               Retry
             </button>
           </div>
@@ -282,17 +282,13 @@ function EventCard({ event }) {
       className="block bg-bauhaus-white/80 border border-[#1F2937]/20 overflow-hidden hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,0.7)] hover:border-bauhaus-fg transition-all duration-150 group"
     >
       {/* Banner image */}
-      {event.bannerUrl ? (
-        <div className="h-36 overflow-hidden bg-[#E5E7EB]">
-          <img
-            src={`/api${event.bannerUrl}`}
-            alt=""
-            className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
-          />
-        </div>
-      ) : (
-        <div className="h-0.75" style={{ backgroundColor: status.bg }} />
-      )}
+      <div className="h-36 overflow-hidden bg-[#E5E7EB]">
+        <img
+          src={event.bannerUrl ? `/api${event.bannerUrl}` : generateBauhausBanner(event.title, event.id)}
+          alt=""
+          className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
+        />
+      </div>
 
       <div className="p-5">
         {/* Status + category + date */}
