@@ -71,14 +71,14 @@ Organized by priority (P0 = Critical, P1 = High, P2 = Medium, P3 = Nice to Have)
   - [ ] 1h reminder  
   - [ ] Scheduled message handling  
 
-- [ ] Event Categories & Tags  
-  - [ ] Categorization  
-  - [ ] Filtering and search  
-  - [ ] Tag-based discovery  
+- [x] Event Categories & Tags  
+  - [x] Categorization  
+  - [x] Filtering and search  
+  - [x] Tag-based discovery  
  
-- [ ] Event Image / Banner Upload  
-  - [ ] File upload endpoint
-  - [ ] Display banner on event page  
+- [x] Event Image / Banner Upload  
+  - [x] File upload endpoint
+  - [x] Display banner on event page  
 
 - [x] User Profile Page  
   - [x] Edit name  
