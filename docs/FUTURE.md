@@ -75,10 +75,9 @@ Organized by priority (P0 = Critical, P1 = High, P2 = Medium, P3 = Nice to Have)
   - [ ] Categorization  
   - [ ] Filtering and search  
   - [ ] Tag-based discovery  
-
+ 
 - [ ] Event Image / Banner Upload  
-  - [ ] File upload endpoint  
-  - [ ] Cloud storage integration  
+  - [ ] File upload endpoint
   - [ ] Display banner on event page  
 
 - [x] User Profile Page  
@@ -108,11 +107,11 @@ Organized by priority (P0 = Critical, P1 = High, P2 = Medium, P3 = Nice to Have)
 
 ## 🟢 P3 – Advanced & Experience Enhancements
 
-- [ ] Analytics Dashboard  
-  - [ ] Registration trends  
-  - [ ] Popular events  
-  - [ ] Peak registration hours  
-  - [ ] Charts integration  
+- [x] Analytics Dashboard  
+  - [x] Registration trends  
+  - [x] Popular events  
+  - [x] Peak registration hours  
+  - [x] Charts integration  
 
 <!-- - [ ] Event Comments / Discussion  
   - [ ] Real-time comment threads  
