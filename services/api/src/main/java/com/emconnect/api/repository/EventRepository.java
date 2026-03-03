@@ -1,6 +1,7 @@
 package com.emconnect.api.repository;
 
 import com.emconnect.api.entity.Event;
+import com.emconnect.api.entity.EventCategory;
 import com.emconnect.api.entity.EventStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -38,6 +39,57 @@ public interface EventRepository extends JpaRepository<Event, Long> {
             @Param("keyword") String keyword,
             Pageable pageable
     );
+
+    // Search events by title with optional category filter
+    @Query("SELECT e FROM Event e WHERE e.status = :status " +
+           "AND LOWER(e.title) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+           "AND (:category IS NULL OR e.category = :category)")
+    Page<Event> searchByTitleAndCategory(
+            @Param("status") EventStatus status,
+            @Param("keyword") String keyword,
+            @Param("category") EventCategory category,
+            Pageable pageable
+    );
+
+    // Find published events by category
+    @Query("SELECT e FROM Event e WHERE e.status = :status AND e.category = :category")
+    Page<Event> findByStatusAndCategory(
+            @Param("status") EventStatus status,
+            @Param("category") EventCategory category,
+            Pageable pageable
+    );
+
+    // Search events by tag (case-insensitive LIKE on comma-separated tags column)
+    @Query(value = "SELECT * FROM events e WHERE e.status = :status " +
+                   "AND LOWER(e.tags) LIKE LOWER(CONCAT('%', :tag, '%'))",
+           nativeQuery = true)
+    Page<Event> findByStatusAndTag(
+            @Param("status") String status,
+            @Param("tag") String tag,
+            Pageable pageable
+    );
+
+    // Search events by title, category, and tag
+    @Query(value = "SELECT * FROM events e WHERE e.status = :status " +
+                   "AND (:keyword = '' OR LOWER(e.title) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+                   "AND (:category = '' OR e.category = :category) " +
+                   "AND (:tag = '' OR LOWER(e.tags) LIKE LOWER(CONCAT('%', :tag, '%')))",
+           countQuery = "SELECT COUNT(*) FROM events e WHERE e.status = :status " +
+                        "AND (:keyword = '' OR LOWER(e.title) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+                        "AND (:category = '' OR e.category = :category) " +
+                        "AND (:tag = '' OR LOWER(e.tags) LIKE LOWER(CONCAT('%', :tag, '%')))",
+           nativeQuery = true)
+    Page<Event> searchEvents(
+            @Param("status") String status,
+            @Param("keyword") String keyword,
+            @Param("category") String category,
+            @Param("tag") String tag,
+            Pageable pageable
+    );
+
+    // Get all distinct categories for published events
+    @Query("SELECT DISTINCT e.category FROM Event e WHERE e.status = 'PUBLISHED' AND e.category IS NOT NULL")
+    List<EventCategory> findDistinctCategories();
 
     // Count events by organizer
     long countByOrganizerId(Long organizerId);

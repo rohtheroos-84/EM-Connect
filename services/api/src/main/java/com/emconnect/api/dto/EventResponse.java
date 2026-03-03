@@ -2,6 +2,7 @@ package com.emconnect.api.dto;
 
 import com.emconnect.api.entity.Event;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public class EventResponse {
 
@@ -16,6 +17,9 @@ public class EventResponse {
     private OrganizerInfo organizer;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private String category;
+    private List<String> tags;
+    private String bannerUrl;
 
     // Default constructor
     public EventResponse() {
@@ -38,6 +42,9 @@ public class EventResponse {
         );
         this.createdAt = event.getCreatedAt();
         this.updatedAt = event.getUpdatedAt();
+        this.category = event.getCategory() != null ? event.getCategory().name() : null;
+        this.tags = event.getTagList();
+        this.bannerUrl = event.getBannerUrl();
     }
 
     // Nested class for organizer info (avoids exposing full User)
@@ -152,5 +159,29 @@ public class EventResponse {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
+    }
+
+    public List<String> getTags() {
+        return tags;
+    }
+
+    public void setTags(List<String> tags) {
+        this.tags = tags;
+    }
+
+    public String getBannerUrl() {
+        return bannerUrl;
+    }
+
+    public void setBannerUrl(String bannerUrl) {
+        this.bannerUrl = bannerUrl;
     }
 }

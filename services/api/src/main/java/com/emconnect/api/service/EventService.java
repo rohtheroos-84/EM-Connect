@@ -3,6 +3,7 @@ package com.emconnect.api.service;
 import com.emconnect.api.dto.CreateEventRequest;
 import com.emconnect.api.dto.UpdateEventRequest;
 import com.emconnect.api.entity.Event;
+import com.emconnect.api.entity.EventCategory;
 import com.emconnect.api.entity.EventStatus;
 import com.emconnect.api.entity.RegistrationStatus;
 import com.emconnect.api.entity.User;
@@ -21,9 +22,17 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
-//import java.util.List;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 @SuppressWarnings("null")
 @Service
 public class EventService {
@@ -34,6 +43,12 @@ public class EventService {
     private final UserRepository userRepository;
     private final RegistrationRepository registrationRepository;
     private final EventPublisher eventPublisher;
+
+    private static final String BANNER_DIR = "banners";
+    private static final Set<String> ALLOWED_IMAGE_TYPES = Set.of(
+        "image/jpeg", "image/png", "image/gif", "image/webp"
+    );
+    private static final long MAX_BANNER_SIZE = 5 * 1024 * 1024; // 5 MB
 
     public EventService(EventRepository eventRepository, 
                         UserRepository userRepository,
@@ -62,6 +77,20 @@ public class EventService {
         event.setCapacity(request.getCapacity());
         event.setOrganizer(organizer);
         event.setStatus(EventStatus.DRAFT);
+
+        // Set category if provided
+        if (request.getCategory() != null && !request.getCategory().isBlank()) {
+            try {
+                event.setCategory(EventCategory.valueOf(request.getCategory().toUpperCase()));
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("Invalid category: " + request.getCategory());
+            }
+        }
+
+        // Set tags if provided
+        if (request.getTags() != null) {
+            event.setTagList(request.getTags());
+        }
 
         return eventRepository.save(event);
     }
@@ -96,6 +125,20 @@ public class EventService {
         }
         if (request.getCapacity() != null) {
             event.setCapacity(request.getCapacity());
+        }
+        if (request.getCategory() != null) {
+            if (request.getCategory().isBlank()) {
+                event.setCategory(null);
+            } else {
+                try {
+                    event.setCategory(EventCategory.valueOf(request.getCategory().toUpperCase()));
+                } catch (IllegalArgumentException e) {
+                    throw new IllegalArgumentException("Invalid category: " + request.getCategory());
+                }
+            }
+        }
+        if (request.getTags() != null) {
+            event.setTagList(request.getTags());
         }
 
         return eventRepository.save(event);
@@ -199,15 +242,90 @@ public class EventService {
     }
 
     /**
-     * Search events by title
+     * Search events by title with optional category and tag filters
      */
-    public Page<Event> searchEvents(String query, int page, int size) {
-        if (query == null || query.trim().isEmpty()) {
-            return getPublishedEvents(page, size);
+    public Page<Event> searchEvents(String query, String category, String tag, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("startDate").ascending());
+
+        String keyword = (query != null) ? query.trim() : "";
+        String cat = (category != null) ? category.trim() : "";
+        String t = (tag != null) ? tag.trim() : "";
+
+        // If no filters at all, return published events
+        if (keyword.isEmpty() && cat.isEmpty() && t.isEmpty()) {
+            return eventRepository.findByStatus(EventStatus.PUBLISHED, pageable);
         }
 
-        Pageable pageable = PageRequest.of(page, size, Sort.by("startDate").ascending());
-        return eventRepository.searchByTitle(EventStatus.PUBLISHED, query.trim(), pageable);
+        return eventRepository.searchEvents(
+                EventStatus.PUBLISHED.name(), keyword, cat, t, pageable);
+    }
+
+    /**
+     * Search events by title (backwards-compatible)
+     */
+    public Page<Event> searchEvents(String query, int page, int size) {
+        return searchEvents(query, null, null, page, size);
+    }
+
+    /**
+     * Get available categories for published events
+     */
+    public List<EventCategory> getAvailableCategories() {
+        return eventRepository.findDistinctCategories();
+    }
+
+    /**
+     * Upload a banner image for an event
+     */
+    @Transactional
+    public Event uploadBanner(Long eventId, String userEmail, MultipartFile file) throws IOException {
+        Event event = getEventForOrganizer(eventId, userEmail);
+
+        if (file.isEmpty()) {
+            throw new IllegalArgumentException("File is empty");
+        }
+        if (file.getSize() > MAX_BANNER_SIZE) {
+            throw new IllegalArgumentException("File size exceeds 5 MB limit");
+        }
+        String contentType = file.getContentType();
+        if (contentType == null || !ALLOWED_IMAGE_TYPES.contains(contentType)) {
+            throw new IllegalArgumentException("Only JPEG, PNG, GIF, and WebP images are allowed");
+        }
+
+        // Create banner directory if it doesn't exist
+        Path bannerDir = Paths.get(BANNER_DIR);
+        if (!Files.exists(bannerDir)) {
+            Files.createDirectories(bannerDir);
+        }
+
+        // Delete old banner if exists
+        if (event.getBannerUrl() != null) {
+            Path oldFile = Paths.get(event.getBannerUrl());
+            Files.deleteIfExists(oldFile);
+        }
+
+        // Generate unique filename
+        String ext = getExtension(file.getOriginalFilename());
+        String filename = "banner-" + eventId + "-" + UUID.randomUUID().toString().substring(0, 8) + ext;
+        Path target = bannerDir.resolve(filename);
+
+        // Save file
+        Files.copy(file.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
+
+        // Update event
+        event.setBannerUrl(BANNER_DIR + "/" + filename);
+        return eventRepository.save(event);
+    }
+
+    /**
+     * Get path for serving banner images
+     */
+    public Path getBannerPath(String filename) {
+        Path path = Paths.get(BANNER_DIR).resolve(filename).normalize();
+        if (!path.startsWith(Paths.get(BANNER_DIR))) {
+            throw new IllegalArgumentException("Invalid path");
+        }
+        return path;
     }
 
     /**
@@ -259,5 +377,11 @@ public class EventService {
         }
 
         return event;
+    }
+
+    private String getExtension(String filename) {
+        if (filename == null) return ".jpg";
+        int dot = filename.lastIndexOf('.');
+        return dot >= 0 ? filename.substring(dot) : ".jpg";
     }
 }

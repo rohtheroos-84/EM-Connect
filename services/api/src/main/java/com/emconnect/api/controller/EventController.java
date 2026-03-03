@@ -4,16 +4,26 @@ import com.emconnect.api.dto.CreateEventRequest;
 import com.emconnect.api.dto.EventResponse;
 import com.emconnect.api.dto.UpdateEventRequest;
 import com.emconnect.api.entity.Event;
+import com.emconnect.api.entity.EventCategory;
 import com.emconnect.api.service.EventService;
 import jakarta.validation.Valid;
+import org.springframework.core.io.UrlResource;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/events")
@@ -65,16 +75,36 @@ public class EventController {
         return ResponseEntity.ok(response);
     }
 
-    // Search events
+    // Search events with optional category and tag filters
     @GetMapping("/search")
     public ResponseEntity<Page<EventResponse>> searchEvents(
-            @RequestParam String keyword,
+            @RequestParam(defaultValue = "") String keyword,
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String tag,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         
-        Page<Event> events = eventService.searchEvents(keyword, page, size);
+        Page<Event> events = eventService.searchEvents(keyword, category, tag, page, size);
         Page<EventResponse> response = events.map(EventResponse::new);
         return ResponseEntity.ok(response);
+    }
+
+    // Get available categories (distinct from published events)
+    @GetMapping("/categories")
+    public ResponseEntity<List<String>> getCategories() {
+        List<String> categories = Arrays.stream(EventCategory.values())
+                .map(Enum::name)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(categories);
+    }
+
+    // Get categories that have published events
+    @GetMapping("/categories/active")
+    public ResponseEntity<List<String>> getActiveCategories() {
+        List<String> active = eventService.getAvailableCategories().stream()
+                .map(Enum::name)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(active);
     }
 
     // Update event
@@ -143,5 +173,32 @@ public class EventController {
         response.put("participantCount", count);
         response.put("capacity", event.getCapacity());
         return ResponseEntity.ok(response);
+    }
+
+    // Upload banner image for an event
+    @PostMapping("/{id}/banner")
+    public ResponseEntity<EventResponse> uploadBanner(
+            @PathVariable Long id,
+            @RequestParam("file") MultipartFile file,
+            Authentication authentication) throws IOException {
+        
+        Event event = eventService.uploadBanner(id, authentication.getName(), file);
+        return ResponseEntity.ok(new EventResponse(event));
+    }
+
+    // Serve banner images (public)
+    @GetMapping("/banners/{filename}")
+    public ResponseEntity<?> serveBanner(@PathVariable String filename) throws IOException {
+        Path filePath = eventService.getBannerPath(filename);
+        if (!Files.exists(filePath)) {
+            return ResponseEntity.notFound().build();
+        }
+        @SuppressWarnings("null")
+        UrlResource resource = new UrlResource(filePath.toUri());
+        String contentType = Files.probeContentType(filePath);
+        if (contentType == null) contentType = "application/octet-stream";
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(contentType))
+                .body(resource);
     }
 }

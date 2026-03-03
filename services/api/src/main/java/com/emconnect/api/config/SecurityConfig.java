@@ -60,13 +60,16 @@ public class SecurityConfig {
                 // Public event endpoints (GET only)
                 .requestMatchers("GET", "/api/events").permitAll()
                 .requestMatchers("GET", "/api/events/search").permitAll()
+                .requestMatchers("GET", "/api/events/categories").permitAll()
+                .requestMatchers("GET", "/api/events/categories/active").permitAll()
                 .requestMatchers("GET", "/api/events/{id}").permitAll()
                 
                 // Public ticket validation endpoint (for event check-in)
                 .requestMatchers("GET", "/api/registrations/ticket/**").permitAll()
                 
-                // Public avatar serving
+                // Public avatar and banner serving
                 .requestMatchers("GET", "/api/users/avatars/**").permitAll()
+                .requestMatchers("GET", "/api/events/banners/**").permitAll()
                 
                 // Admin-only endpoints
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")

@@ -2,6 +2,10 @@ package com.emconnect.api.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Entity
 @Table(name = "events")
@@ -32,6 +36,16 @@ public class Event {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private EventStatus status = EventStatus.DRAFT;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 50)
+    private EventCategory category;
+
+    @Column(columnDefinition = "TEXT")
+    private String tags;
+
+    @Column(name = "banner_url", length = 500)
+    private String bannerUrl;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "organizer_id", nullable = false)
@@ -142,5 +156,55 @@ public class Event {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public EventCategory getCategory() {
+        return category;
+    }
+
+    public void setCategory(EventCategory category) {
+        this.category = category;
+    }
+
+    public String getTags() {
+        return tags;
+    }
+
+    public void setTags(String tags) {
+        this.tags = tags;
+    }
+
+    /**
+     * Returns tags as a list (splits comma-separated string).
+     */
+    public List<String> getTagList() {
+        if (tags == null || tags.isBlank()) return Collections.emptyList();
+        return Arrays.stream(tags.split(","))
+                .map(String::trim)
+                .filter(t -> !t.isEmpty())
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Sets tags from a list (joins into comma-separated lowercase string).
+     */
+    public void setTagList(List<String> tagList) {
+        if (tagList == null || tagList.isEmpty()) {
+            this.tags = null;
+        } else {
+            this.tags = tagList.stream()
+                    .map(t -> t.trim().toLowerCase())
+                    .filter(t -> !t.isEmpty())
+                    .distinct()
+                    .collect(Collectors.joining(","));
+        }
+    }
+
+    public String getBannerUrl() {
+        return bannerUrl;
+    }
+
+    public void setBannerUrl(String bannerUrl) {
+        this.bannerUrl = bannerUrl;
     }
 }

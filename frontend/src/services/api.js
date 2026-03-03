@@ -114,8 +114,19 @@ export async function getEvent(id) {
   return request(`/events/${id}`);
 }
 
-export async function searchEvents(keyword, page = 0, size = 10) {
-  return request(`/events/search?keyword=${encodeURIComponent(keyword)}&page=${page}&size=${size}`);
+export async function searchEvents(keyword, page = 0, size = 10, category = '', tag = '') {
+  const params = new URLSearchParams({ keyword: keyword || '', page, size });
+  if (category) params.set('category', category);
+  if (tag) params.set('tag', tag);
+  return request(`/events/search?${params.toString()}`);
+}
+
+export async function getCategories() {
+  return request('/events/categories');
+}
+
+export async function getActiveCategories() {
+  return request('/events/categories/active');
 }
 
 export async function getMyEvents(page = 0, size = 10) {
@@ -144,6 +155,26 @@ export async function cancelEvent(id) {
 
 export async function completeEvent(id) {
   return request(`/events/${id}/complete`, { method: 'POST' });
+}
+
+export async function uploadEventBanner(eventId, file) {
+  const token = localStorage.getItem('em_token');
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await fetch(`${API_BASE}/events/${eventId}/banner`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    const message = body.message || body.error || `Upload failed (${response.status})`;
+    throw new Error(message);
+  }
+
+  return response.json();
 }
 
 /* ── Registrations ── */
