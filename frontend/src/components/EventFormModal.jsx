@@ -1,5 +1,29 @@
-import { useState, useEffect } from 'react';
-import { X, Loader2 } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { X, Loader2, Upload, Image as ImageIcon } from 'lucide-react';
+
+const EVENT_CATEGORIES = [
+  'TECHNOLOGY',
+  'SOCIAL',
+  'SPORTS',
+  'MUSIC',
+  'EDUCATION',
+  'BUSINESS',
+  'HEALTH',
+  'ART',
+  'OTHER',
+];
+
+const CATEGORY_COLORS = {
+  TECHNOLOGY: '#1040C0',
+  SOCIAL: '#D02020',
+  SPORTS: '#16A34A',
+  MUSIC: '#9333EA',
+  EDUCATION: '#F0C020',
+  BUSINESS: '#0D3399',
+  HEALTH: '#059669',
+  ART: '#E11D48',
+  OTHER: '#6B7280',
+};
 
 function toLocalDatetimeString(iso) {
   if (!iso) return '';
@@ -10,6 +34,7 @@ function toLocalDatetimeString(iso) {
 
 export default function EventFormModal({ event, onSubmit, onClose }) {
   const isEdit = !!event;
+  const fileInputRef = useRef(null);
   const [form, setForm] = useState({
     title: '',
     description: '',
@@ -17,7 +42,11 @@ export default function EventFormModal({ event, onSubmit, onClose }) {
     startDate: '',
     endDate: '',
     capacity: 100,
+    category: '',
+    tags: '',
   });
+  const [bannerFile, setBannerFile] = useState(null);
+  const [bannerPreview, setBannerPreview] = useState(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
@@ -30,13 +59,46 @@ export default function EventFormModal({ event, onSubmit, onClose }) {
         startDate: toLocalDatetimeString(event.startDate),
         endDate: toLocalDatetimeString(event.endDate),
         capacity: event.capacity || 100,
+        category: event.category || '',
+        tags: Array.isArray(event.tags) ? event.tags.join(', ') : '',
       });
+      if (event.bannerUrl) {
+        setBannerPreview(`/api${event.bannerUrl}`);
+      }
     }
   }, [event]);
+
+  // Cleanup blob URL on unmount
+  useEffect(() => {
+    return () => {
+      if (bannerPreview && bannerPreview.startsWith('blob:')) {
+        URL.revokeObjectURL(bannerPreview);
+      }
+    };
+  }, [bannerPreview]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: name === 'capacity' ? Number(value) : value }));
+  };
+
+  const handleBannerSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Banner image must be under 5 MB');
+      return;
+    }
+    if (!['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(file.type)) {
+      setError('Only JPEG, PNG, GIF, or WebP images are allowed');
+      return;
+    }
+    setBannerFile(file);
+    if (bannerPreview && bannerPreview.startsWith('blob:')) {
+      URL.revokeObjectURL(bannerPreview);
+    }
+    setBannerPreview(URL.createObjectURL(file));
+    setError(null);
   };
 
   const handleSubmit = async (e) => {
@@ -44,13 +106,16 @@ export default function EventFormModal({ event, onSubmit, onClose }) {
     setError(null);
     setSaving(true);
     try {
-      // Convert local datetime strings to ISO format
+      const tagsArray = form.tags
+        ? form.tags.split(',').map((t) => t.trim()).filter(Boolean)
+        : [];
       const payload = {
         ...form,
+        tags: tagsArray,
         startDate: form.startDate ? new Date(form.startDate).toISOString() : null,
         endDate: form.endDate ? new Date(form.endDate).toISOString() : null,
       };
-      await onSubmit(payload);
+      await onSubmit(payload, bannerFile);
     } catch (err) {
       setError(err.message || 'Failed to save event');
     } finally {
@@ -187,6 +252,95 @@ export default function EventFormModal({ event, onSubmit, onClose }) {
               max={100000}
               className="w-full px-3 h-10 bg-bauhaus-white/80 border border-[#D1D5DB] text-sm text-bauhaus-fg focus:border-bauhaus-blue transition-colors"
             />
+          </div>
+
+          {/* Category */}
+          <div>
+            <label className="block text-[11px] font-bold text-bauhaus-fg/50 uppercase tracking-[0.15em] mb-1.5">
+              Category
+            </label>
+            <select
+              name="category"
+              value={form.category}
+              onChange={handleChange}
+              className="w-full px-3 h-10 bg-bauhaus-white/80 border border-[#D1D5DB] text-sm text-bauhaus-fg focus:border-bauhaus-blue transition-colors appearance-none cursor-pointer"
+            >
+              <option value="">— No category —</option>
+              {EVENT_CATEGORIES.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat.charAt(0) + cat.slice(1).toLowerCase()}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Tags */}
+          <div>
+            <label className="block text-[11px] font-bold text-bauhaus-fg/50 uppercase tracking-[0.15em] mb-1.5">
+              Tags
+            </label>
+            <input
+              type="text"
+              name="tags"
+              value={form.tags}
+              onChange={handleChange}
+              maxLength={500}
+              placeholder="e.g. workshop, ai, beginner"
+              className="w-full px-3 h-10 bg-bauhaus-white/80 border border-[#D1D5DB] text-sm text-bauhaus-fg placeholder:text-[#BCBCBC] placeholder:italic focus:border-bauhaus-blue transition-colors"
+            />
+            <p className="text-[10px] text-bauhaus-fg/30 mt-1">Separate tags with commas</p>
+          </div>
+
+          {/* Banner Upload */}
+          <div>
+            <label className="block text-[11px] font-bold text-bauhaus-fg/50 uppercase tracking-[0.15em] mb-1.5">
+              Banner Image
+            </label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/gif,image/webp"
+              onChange={handleBannerSelect}
+              className="hidden"
+            />
+            {bannerPreview ? (
+              <div className="relative border border-[#D1D5DB] overflow-hidden">
+                <img
+                  src={bannerPreview}
+                  alt="Banner preview"
+                  className="w-full h-32 object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBannerFile(null);
+                    if (bannerPreview.startsWith('blob:')) URL.revokeObjectURL(bannerPreview);
+                    setBannerPreview(null);
+                    if (fileInputRef.current) fileInputRef.current.value = '';
+                  }}
+                  className="absolute top-1.5 right-1.5 w-6 h-6 flex items-center justify-center bg-black/60 text-white hover:bg-black/80 transition-colors cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="absolute bottom-1.5 right-1.5 px-2.5 py-1 bg-black/60 text-white text-[10px] font-bold uppercase tracking-wider hover:bg-black/80 transition-colors cursor-pointer"
+                >
+                  Change
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full h-24 border-2 border-dashed border-[#D1D5DB] flex flex-col items-center justify-center gap-1.5 text-[#9CA3AF] hover:border-bauhaus-blue hover:text-bauhaus-blue transition-colors cursor-pointer"
+              >
+                <Upload className="w-5 h-5" />
+                <span className="text-[10px] font-bold uppercase tracking-wider">Upload Banner</span>
+                <span className="text-[9px]">JPEG, PNG, GIF, WebP · Max 5 MB</span>
+              </button>
+            )}
           </div>
 
           {/* Actions */}

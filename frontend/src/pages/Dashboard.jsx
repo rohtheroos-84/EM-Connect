@@ -43,6 +43,18 @@ const STATUS_ACCENT = {
   COMPLETED: '#1040C0',
 };
 
+const CATEGORY_COLORS = {
+  TECHNOLOGY: '#1040C0',
+  SOCIAL: '#D02020',
+  SPORTS: '#16A34A',
+  MUSIC: '#9333EA',
+  EDUCATION: '#F0C020',
+  BUSINESS: '#0D3399',
+  HEALTH: '#059669',
+  ART: '#E11D48',
+  OTHER: '#6B7280',
+};
+
 export default function Dashboard() {
   const { user } = useAuth();
   const [stats, setStats] = useState({ events: 0, registrations: 0, tickets: 0, liveNow: 0 });
@@ -175,9 +187,19 @@ export default function Dashboard() {
                   >
                     <div className="h-0.75" style={{ backgroundColor: STATUS_ACCENT[ev.status] || '#9CA3AF' }} />
                     <div className="p-4">
-                      <p className="text-[13px] font-bold text-bauhaus-fg uppercase tracking-tight truncate">
-                        {ev.title}
-                      </p>
+                      <div className="flex items-center gap-1.5 mb-1.5">
+                        <p className="text-[13px] font-bold text-bauhaus-fg uppercase tracking-tight truncate">
+                          {ev.title}
+                        </p>
+                        {ev.category && (
+                          <span
+                            className="px-1.5 py-0.5 text-[8px] font-bold text-white uppercase tracking-wider shrink-0"
+                            style={{ backgroundColor: CATEGORY_COLORS[ev.category] || '#6B7280' }}
+                          >
+                            {ev.category}
+                          </span>
+                        )}
+                      </div>
                       <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-[#9CA3AF] mt-1.5">
                         {ev.location && (
                           <span className="flex items-center gap-1">

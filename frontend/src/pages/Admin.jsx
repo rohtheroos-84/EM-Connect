@@ -34,6 +34,7 @@ import {
   cancelEvent,
   completeEvent,
   getEventRegistrations,
+  uploadEventBanner,
 } from '../services/api';
 import AppLayout from '../components/AppLayout';
 import EventFormModal from '../components/EventFormModal';
@@ -65,6 +66,18 @@ const STATUS_STYLE = {
 const ROLE_STYLE = {
   ADMIN: { bg: '#F0C020', text: '#121212' },
   USER: { bg: '#1040C0', text: '#FFFFFF' },
+};
+
+const CATEGORY_COLORS = {
+  TECHNOLOGY: '#1040C0',
+  SOCIAL: '#D02020',
+  SPORTS: '#16A34A',
+  MUSIC: '#9333EA',
+  EDUCATION: '#F0C020',
+  BUSINESS: '#0D3399',
+  HEALTH: '#059669',
+  ART: '#E11D48',
+  OTHER: '#6B7280',
 };
 
 const TABS = [
@@ -274,14 +287,20 @@ function EventsTab() {
   };
 
   /* ── Event actions ── */
-  const handleCreateEvent = async (data) => {
-    await createEvent(data);
+  const handleCreateEvent = async (data, bannerFile) => {
+    const created = await createEvent(data);
+    if (bannerFile && created?.id) {
+      try { await uploadEventBanner(created.id, bannerFile); } catch { /* banner upload is optional */ }
+    }
     setShowModal(false);
     fetchEvents(page, statusFilter);
   };
 
-  const handleEditEvent = async (data) => {
+  const handleEditEvent = async (data, bannerFile) => {
     await updateEvent(editingEvent.id, data);
+    if (bannerFile) {
+      try { await uploadEventBanner(editingEvent.id, bannerFile); } catch { /* banner upload is optional */ }
+    }
     setEditingEvent(null);
     fetchEvents(page, statusFilter);
   };
@@ -423,6 +442,14 @@ function EventsTab() {
                         >
                           {status.label}
                         </span>
+                        {ev.category && (
+                          <span
+                            className="px-2 py-0.5 text-[9px] font-bold text-white uppercase tracking-wider shrink-0"
+                            style={{ backgroundColor: CATEGORY_COLORS[ev.category] || '#6B7280' }}
+                          >
+                            {ev.category}
+                          </span>
+                        )}
                         <span className="text-[10px] text-[#9CA3AF] font-mono">ID: {ev.id}</span>
                       </div>
                       <Link

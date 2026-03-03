@@ -56,6 +56,18 @@ const STATUS_STYLE = {
   COMPLETED: { bg: '#1040C0', label: 'Completed' },
 };
 
+const CATEGORY_COLORS = {
+  TECHNOLOGY: '#1040C0',
+  SOCIAL: '#D02020',
+  SPORTS: '#16A34A',
+  MUSIC: '#9333EA',
+  EDUCATION: '#F0C020',
+  BUSINESS: '#0D3399',
+  HEALTH: '#059669',
+  ART: '#E11D48',
+  OTHER: '#6B7280',
+};
+
 export default function EventDetail() {
   const { id } = useParams();
   const { isAuthenticated } = useAuth();
@@ -241,17 +253,36 @@ export default function EventDetail() {
 
         {/* Main card */}
         <div className="bg-bauhaus-white border border-[#1F2937]/20 overflow-hidden shadow-sm">
-          <div className="h-1" style={{ backgroundColor: status.bg }} />
+          {/* Banner hero or accent bar */}
+          {event.bannerUrl ? (
+            <div className="h-48 sm:h-64 overflow-hidden bg-[#E5E7EB]">
+              <img
+                src={`/api${event.bannerUrl}`}
+                alt=""
+                className="w-full h-full object-cover"
+              />
+            </div>
+          ) : (
+            <div className="h-1" style={{ backgroundColor: status.bg }} />
+          )}
 
           <div className="p-6 sm:p-8">
-            {/* Status + Organizer line */}
-            <div className="flex items-center gap-3 mb-4">
+            {/* Status + Category + Organizer line */}
+            <div className="flex items-center flex-wrap gap-2 mb-4">
               <span
                 className="px-2 py-0.5 text-[10px] font-bold text-white uppercase tracking-wider"
                 style={{ backgroundColor: status.bg }}
               >
                 {status.label}
               </span>
+              {event.category && (
+                <span
+                  className="px-2 py-0.5 text-[10px] font-bold text-white uppercase tracking-wider"
+                  style={{ backgroundColor: CATEGORY_COLORS[event.category] || '#6B7280' }}
+                >
+                  {event.category}
+                </span>
+              )}
               {event.organizer && (
                 <span className="text-[11px] text-[#9CA3AF]">
                   by {event.organizer.name || event.organizer.email}
@@ -317,13 +348,27 @@ export default function EventDetail() {
 
             {/* Description */}
             {event.description && (
-              <div className="mb-8">
+              <div className="mb-6">
                 <h2 className="text-xs font-bold text-bauhaus-fg uppercase tracking-wider mb-3">
                   About this event
                 </h2>
                 <p className="text-sm text-[#374151] leading-relaxed whitespace-pre-wrap">
                   {event.description}
                 </p>
+              </div>
+            )}
+
+            {/* Tags */}
+            {event.tags && event.tags.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mb-8">
+                {event.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="px-2 py-0.5 text-[10px] font-bold text-bauhaus-fg/60 uppercase tracking-wider border border-[#D1D5DB] bg-bauhaus-bg/50"
+                  >
+                    {tag}
+                  </span>
+                ))}
               </div>
             )}
 

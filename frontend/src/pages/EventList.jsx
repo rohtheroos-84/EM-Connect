@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { searchEvents } from '../services/api';
-import { Search, MapPin, Clock, Users, ChevronLeft, ChevronRight, AlertCircle, Calendar, X } from 'lucide-react';
+import { searchEvents, getActiveCategories } from '../services/api';
+import { Search, MapPin, Clock, Users, ChevronLeft, ChevronRight, AlertCircle, Calendar, X, Tag } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
 
 function fmtDate(iso) {
@@ -23,6 +23,18 @@ const STATUS_STYLE = {
   COMPLETED: { bg: '#1040C0', label: 'Completed' },
 };
 
+const CATEGORY_COLORS = {
+  TECHNOLOGY: '#1040C0',
+  SOCIAL: '#D02020',
+  SPORTS: '#16A34A',
+  MUSIC: '#9333EA',
+  EDUCATION: '#F0C020',
+  BUSINESS: '#0D3399',
+  HEALTH: '#059669',
+  ART: '#E11D48',
+  OTHER: '#6B7280',
+};
+
 export default function EventList() {
   const [events, setEvents] = useState([]);
   const [page, setPage] = useState(0);
@@ -31,16 +43,23 @@ export default function EventList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [tagFilter, setTagFilter] = useState('');
+  const [activeCategories, setActiveCategories] = useState([]);
   const debounceRef = useRef(null);
 
   const PAGE_SIZE = 15;
 
-  const fetchEvents = useCallback(async (keyword, pg) => {
+  // Fetch active categories on mount
+  useEffect(() => {
+    getActiveCategories().then(setActiveCategories).catch(() => {});
+  }, []);
+
+  const fetchEvents = useCallback(async (keyword, pg, category = '', tag = '') => {
     setLoading(true);
     setError(null);
     try {
-      // Always use search endpoint — empty keyword returns all published events
-      const data = await searchEvents(keyword || '', pg, PAGE_SIZE);
+      const data = await searchEvents(keyword || '', pg, PAGE_SIZE, category, tag);
       setEvents(data.content || []);
       setTotalPages(data.totalPages || 0);
       setTotalElements(data.totalElements || 0);
@@ -59,21 +78,29 @@ export default function EventList() {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       setPage(0);
-      fetchEvents(search.trim(), 0);
+      fetchEvents(search.trim(), 0, categoryFilter, tagFilter.trim());
     }, 400);
     return () => clearTimeout(debounceRef.current);
-  }, [search, fetchEvents]);
+  }, [search, categoryFilter, tagFilter, fetchEvents]);
 
   // Page change
   const changePage = (newPage) => {
     setPage(newPage);
-    fetchEvents(search.trim(), newPage);
+    fetchEvents(search.trim(), newPage, categoryFilter, tagFilter.trim());
   };
 
   const clearSearch = () => {
     setSearch('');
+    setCategoryFilter('');
+    setTagFilter('');
     setPage(0);
     fetchEvents('', 0);
+  };
+
+  const handleCategoryClick = (cat) => {
+    const next = categoryFilter === cat ? '' : cat;
+    setCategoryFilter(next);
+    setPage(0);
   };
 
   return (
@@ -107,6 +134,49 @@ export default function EventList() {
                 <X className="w-3.5 h-3.5" />
               </button>
             )}
+          </div>
+        </div>
+
+        {/* Filters row */}
+        <div className="flex flex-wrap items-center gap-3 mb-8">
+          {/* Category filter pills */}
+          {activeCategories.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {activeCategories.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => handleCategoryClick(cat)}
+                  className={`px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider border transition-colors cursor-pointer ${
+                    categoryFilter === cat
+                      ? 'text-white border-transparent'
+                      : 'text-bauhaus-fg/50 border-[#D1D5DB] hover:border-bauhaus-fg/30 bg-bauhaus-white/60'
+                  }`}
+                  style={categoryFilter === cat ? { backgroundColor: CATEGORY_COLORS[cat] || '#6B7280' } : {}}
+                >
+                  {cat.charAt(0) + cat.slice(1).toLowerCase()}
+                </button>
+              ))}
+              {categoryFilter && (
+                <button
+                  onClick={() => { setCategoryFilter(''); setPage(0); }}
+                  className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-bauhaus-red hover:underline cursor-pointer"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Tag filter */}
+          <div className="relative ml-auto">
+            <Tag className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#9CA3AF]" />
+            <input
+              type="text"
+              value={tagFilter}
+              onChange={(e) => setTagFilter(e.target.value)}
+              placeholder="Filter by tag…"
+              className="pl-8 pr-3 h-8 w-44 bg-bauhaus-white/80 border border-[#D1D5DB] text-xs text-bauhaus-fg placeholder:text-[#BCBCBC] placeholder:italic focus:border-bauhaus-blue transition-colors"
+            />
           </div>
         </div>
 
@@ -211,17 +281,37 @@ function EventCard({ event }) {
       to={`/events/${event.id}`}
       className="block bg-bauhaus-white/80 border border-[#1F2937]/20 overflow-hidden hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,0.7)] hover:border-bauhaus-fg transition-all duration-150 group"
     >
-      <div className="h-0.75" style={{ backgroundColor: status.bg }} />
+      {/* Banner image */}
+      {event.bannerUrl ? (
+        <div className="h-36 overflow-hidden bg-[#E5E7EB]">
+          <img
+            src={`/api${event.bannerUrl}`}
+            alt=""
+            className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
+          />
+        </div>
+      ) : (
+        <div className="h-0.75" style={{ backgroundColor: status.bg }} />
+      )}
+
       <div className="p-5">
-        {/* Status + date */}
-        <div className="flex items-center justify-between mb-3">
+        {/* Status + category + date */}
+        <div className="flex items-center flex-wrap gap-1.5 mb-3">
           <span
             className="px-2 py-0.5 text-[10px] font-bold text-white uppercase tracking-wider"
             style={{ backgroundColor: status.bg }}
           >
             {status.label}
           </span>
-          <span className="text-[11px] text-[#9CA3AF]">{fmtDate(event.startDate)}</span>
+          {event.category && (
+            <span
+              className="px-2 py-0.5 text-[10px] font-bold text-white uppercase tracking-wider"
+              style={{ backgroundColor: CATEGORY_COLORS[event.category] || '#6B7280' }}
+            >
+              {event.category}
+            </span>
+          )}
+          <span className="text-[11px] text-[#9CA3AF] ml-auto">{fmtDate(event.startDate)}</span>
         </div>
 
         {/* Title */}
@@ -234,6 +324,23 @@ function EventCard({ event }) {
           <p className="text-sm text-[#6B7280] leading-relaxed mb-4 line-clamp-2">
             {event.description}
           </p>
+        )}
+
+        {/* Tags */}
+        {event.tags && event.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1 mb-3">
+            {event.tags.slice(0, 4).map((tag) => (
+              <span
+                key={tag}
+                className="px-1.5 py-0.5 text-[9px] font-bold text-bauhaus-fg/50 uppercase tracking-wider border border-[#D1D5DB] bg-bauhaus-bg/50"
+              >
+                {tag}
+              </span>
+            ))}
+            {event.tags.length > 4 && (
+              <span className="px-1.5 py-0.5 text-[9px] text-[#9CA3AF]">+{event.tags.length - 4}</span>
+            )}
+          </div>
         )}
 
         {/* Meta */}
