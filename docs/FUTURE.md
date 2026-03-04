@@ -61,10 +61,10 @@ Organized by priority (P0 = Critical, P1 = High, P2 = Medium, P3 = Nice to Have)
   - [ ] Mark attendance status  
   - [ ] Prevent duplicate check-ins  
 
-- [ ] Waitlist System  
+<!-- - [ ] Waitlist System  
   - [ ] Allow waitlist when capacity full  
   - [ ] Auto-promote on cancellation  
-  - [ ] Notify promoted users  
+  - [ ] Notify promoted users   -->
 
 - [ ] Event Reminders  
   - [ ] 24h reminder  
