@@ -47,9 +47,9 @@ export default function AppLayout({ children }) {
                 <div className="w-2.5 h-2.5 bg-bauhaus-yellow" />
                 <div className="w-2.5 h-2.5 bg-bauhaus-blue" />
               </div>
-              <span className="text-base font-black text-white tracking-tight uppercase">
+              <Link to="/dashboard" className="text-base font-black text-white tracking-tight uppercase hover:text-white/80 transition-colors">
                 EM-Connect
-              </span>
+              </Link>
               {connected && (
                 <span className="flex items-center gap-1">
                   <span className="w-1.5 h-1.5 bg-[#16A34A] rounded-full animate-live-pulse" />
@@ -85,10 +85,11 @@ export default function AppLayout({ children }) {
             <div className="flex items-center gap-3">
               {isAuthenticated ? (
                 <>
-                  <span className="hidden md:block text-sm text-white/50">{user?.email}</span>
+                  <span className="hidden md:block text-sm text-white/50">{user?.name || user?.email}</span>
                   {isAdmin && (
-                    <span className="hidden md:block px-2 py-0.5 bg-bauhaus-yellow text-bauhaus-fg text-[10px] font-bold uppercase tracking-wider">
-                      Admin
+                    <span className="hidden md:flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 bg-bauhaus-yellow rounded-full" />
+                      <span className="text-[9px] font-bold text-bauhaus-yellow uppercase tracking-wider">Admin</span>
                     </span>
                   )}
                   <button
