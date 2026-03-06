@@ -15,6 +15,7 @@ import {
   QrCode,
   CalendarPlus,
   Download,
+  Filter,
 } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
 import TicketModal from '../components/TicketModal';
@@ -45,6 +46,14 @@ const REG_STATUS_STYLE = {
   NO_SHOW: { bg: '#9CA3AF', label: 'No Show' },
 };
 
+const STATUS_FILTERS = [
+  { value: '', label: 'All' },
+  { value: 'CONFIRMED', label: 'Confirmed' },
+  { value: 'CANCELLED', label: 'Cancelled' },
+  { value: 'ATTENDED', label: 'Attended' },
+  { value: 'NO_SHOW', label: 'No Show' },
+];
+
 export default function MyRegistrations() {
   const [registrations, setRegistrations] = useState([]);
   const [page, setPage] = useState(0);
@@ -52,7 +61,7 @@ export default function MyRegistrations() {
   const [totalElements, setTotalElements] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeOnly, setActiveOnly] = useState(false);
+  const [statusFilter, setStatusFilter] = useState('');
   const [cancelling, setCancelling] = useState(null); // registration id being cancelled
   const [actionMsg, setActionMsg] = useState(null);
   const [ticketModal, setTicketModal] = useState(null); // { ticketCode, event }
@@ -63,7 +72,7 @@ export default function MyRegistrations() {
     setLoading(true);
     setError(null);
     try {
-      const data = await getMyRegistrations(page, PAGE_SIZE, activeOnly);
+      const data = await getMyRegistrations(page, PAGE_SIZE, statusFilter);
       setRegistrations(data.content || []);
       setTotalPages(data.totalPages || 0);
       setTotalElements(data.totalElements || 0);
@@ -72,7 +81,7 @@ export default function MyRegistrations() {
     } finally {
       setLoading(false);
     }
-  }, [page, activeOnly]);
+  }, [page, statusFilter]);
 
   useEffect(() => {
     fetchRegistrations();
@@ -92,8 +101,8 @@ export default function MyRegistrations() {
     }
   };
 
-  const toggleFilter = () => {
-    setActiveOnly((prev) => !prev);
+  const handleStatusFilterChange = (value) => {
+    setStatusFilter(value);
     setPage(0);
   };
 
@@ -107,20 +116,24 @@ export default function MyRegistrations() {
               My Registrations
             </h1>
             <p className="text-sm text-[#6B7280] mt-1">
-              {loading ? 'Loading…' : `${totalElements} registration${totalElements !== 1 ? 's' : ''}`}
+              {loading ? 'Loading…' : `${totalElements} registration${totalElements !== 1 ? 's' : ''}${statusFilter ? ` · ${STATUS_FILTERS.find(f => f.value === statusFilter)?.label}` : ''}`}
             </p>
           </div>
 
-          <button
-            onClick={toggleFilter}
-            className={`px-4 h-10 text-xs font-bold uppercase tracking-wider border transition-colors cursor-pointer ${
-              activeOnly
-                ? 'bg-bauhaus-blue text-white border-bauhaus-blue'
-                : 'bg-bauhaus-white/80 text-[#6B7280] border-[#D1D5DB] hover:bg-bauhaus-bg'
-            }`}
-          >
-            {activeOnly ? 'Active Only' : 'Show All'}
-          </button>
+          {/* Status filter dropdown */}
+          <div className="flex items-center gap-2">
+            <Filter className="w-3.5 h-3.5 text-[#6B7280]" />
+            <select
+              value={statusFilter}
+              onChange={(e) => handleStatusFilterChange(e.target.value)}
+              className="h-10 px-3 pr-8 text-xs font-bold uppercase tracking-wider border border-[#D1D5DB] bg-bauhaus-white/80 text-bauhaus-fg cursor-pointer appearance-none focus:outline-none focus:border-bauhaus-blue transition-colors"
+              style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center' }}
+            >
+              {STATUS_FILTERS.map(({ value, label }) => (
+                <option key={value} value={value}>{label}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {/* Action message */}
@@ -174,11 +187,11 @@ export default function MyRegistrations() {
           <div className="text-center py-20">
             <CalendarX className="w-12 h-12 text-[#D1D5DB] mx-auto mb-4" />
             <h3 className="text-lg font-bold text-bauhaus-fg uppercase tracking-tight">
-              {activeOnly ? 'No active registrations' : 'No registrations yet'}
+              {statusFilter ? `No ${STATUS_FILTERS.find(f => f.value === statusFilter)?.label.toLowerCase()} registrations` : 'No registrations yet'}
             </h3>
             <p className="text-sm text-[#6B7280] mt-1">
-              {activeOnly
-                ? 'You have no active registrations. Try showing all registrations.'
+              {statusFilter
+                ? 'Try selecting a different filter or view all registrations.'
                 : 'Browse events and register to see them here.'}
             </p>
             <Link

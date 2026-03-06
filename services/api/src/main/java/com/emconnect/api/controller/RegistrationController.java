@@ -2,6 +2,7 @@ package com.emconnect.api.controller;
 
 import com.emconnect.api.dto.RegistrationResponse;
 import com.emconnect.api.entity.Registration;
+import com.emconnect.api.entity.RegistrationStatus;
 import com.emconnect.api.service.RegistrationService;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -60,16 +61,29 @@ public class RegistrationController {
     /**
      * Get my registrations
      * GET /api/registrations/my-registrations
+     * Optional query params: status (CONFIRMED, CANCELLED, ATTENDED, NO_SHOW), activeOnly (legacy)
      */
     @GetMapping("/registrations/my-registrations")
     public ResponseEntity<Page<RegistrationResponse>> getMyRegistrations(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String status,
             @RequestParam(defaultValue = "false") boolean activeOnly,
             Authentication authentication) {
         
         Page<Registration> registrations;
-        if (activeOnly) {
+        if (status != null && !status.isEmpty()) {
+            try {
+                RegistrationStatus regStatus = RegistrationStatus.valueOf(status.toUpperCase());
+                registrations = registrationService.getUserRegistrationsByStatus(
+                    authentication.getName(), regStatus, page, size
+                );
+            } catch (IllegalArgumentException e) {
+                registrations = registrationService.getUserRegistrations(
+                    authentication.getName(), page, size
+                );
+            }
+        } else if (activeOnly) {
             registrations = registrationService.getUserActiveRegistrations(
                 authentication.getName(), page, size
             );

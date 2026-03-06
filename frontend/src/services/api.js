@@ -187,8 +187,10 @@ export async function cancelRegistration(registrationId) {
   return request(`/registrations/${registrationId}/cancel`, { method: 'POST' });
 }
 
-export async function getMyRegistrations(page = 0, size = 10, activeOnly = false) {
-  return request(`/registrations/my-registrations?page=${page}&size=${size}&activeOnly=${activeOnly}`);
+export async function getMyRegistrations(page = 0, size = 10, status = '') {
+  let url = `/registrations/my-registrations?page=${page}&size=${size}`;
+  if (status) url += `&status=${status}`;
+  return request(url);
 }
 
 export async function getRegistration(id) {

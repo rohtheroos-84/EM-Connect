@@ -190,6 +190,17 @@ public class RegistrationService {
     }
 
     /**
+     * Get user's registrations filtered by status
+     */
+    public Page<Registration> getUserRegistrationsByStatus(String userEmail, RegistrationStatus status, int page, int size) {
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("registeredAt").descending());
+        return registrationRepository.findByUserIdAndStatus(user.getId(), status, pageable);
+    }
+
+    /**
      * Get registrations for an event
      */
     public Page<Registration> getEventRegistrations(Long eventId, int page, int size) {
