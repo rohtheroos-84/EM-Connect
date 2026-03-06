@@ -11,6 +11,7 @@ import {
   ChevronRight,
   Loader2,
   QrCode,
+  ClipboardList,
 } from 'lucide-react';
 import { searchEvents, getMyRegistrations, getMyTickets } from '../services/api';
 import AppLayout from '../components/AppLayout';
@@ -70,7 +71,7 @@ export default function Dashboard() {
       try {
         const [evData, regData, tickets] = await Promise.all([
           searchEvents('', 0, 5).catch(() => ({ content: [], totalElements: 0 })),
-          getMyRegistrations(0, 5, false).catch(() => ({ content: [], totalElements: 0 })),
+          getMyRegistrations(0, 5).catch(() => ({ content: [], totalElements: 0 })),
           getMyTickets().catch(() => []),
         ]);
 
@@ -174,8 +175,16 @@ export default function Dashboard() {
                 <Loader2 className="w-5 h-5 text-[#9CA3AF] animate-spin" />
               </div>
             ) : recentEvents.length === 0 ? (
-              <div className="bg-bauhaus-white/80 border border-[#1F2937]/20 p-6 text-center">
-                <p className="text-sm text-[#9CA3AF]">No published events yet.</p>
+              <div className="bg-bauhaus-white/80 border border-[#1F2937]/20 p-8 text-center">
+                <Calendar className="w-10 h-10 text-[#D1D5DB] mx-auto mb-3" />
+                <h4 className="text-sm font-bold text-bauhaus-fg uppercase tracking-tight mb-1">No upcoming events</h4>
+                <p className="text-xs text-[#9CA3AF] mb-3">Events will show up here once they are published.</p>
+                <Link
+                  to="/events"
+                  className="inline-block px-3 py-1.5 bg-bauhaus-blue text-white text-[10px] font-bold uppercase tracking-wider hover:bg-[#0D3399] transition-colors"
+                >
+                  Browse Events
+                </Link>
               </div>
             ) : (
               <div className="space-y-2">
@@ -238,11 +247,13 @@ export default function Dashboard() {
                 <Loader2 className="w-5 h-5 text-[#9CA3AF] animate-spin" />
               </div>
             ) : recentRegs.length === 0 ? (
-              <div className="bg-bauhaus-white/80 border border-[#1F2937]/20 p-6 text-center">
-                <p className="text-sm text-[#9CA3AF]">No registrations yet.</p>
+              <div className="bg-bauhaus-white/80 border border-[#1F2937]/20 p-8 text-center">
+                <ClipboardList className="w-10 h-10 text-[#D1D5DB] mx-auto mb-3" />
+                <h4 className="text-sm font-bold text-bauhaus-fg uppercase tracking-tight mb-1">No registrations yet</h4>
+                <p className="text-xs text-[#9CA3AF] mb-3">Register for an event to see your tickets here.</p>
                 <Link
                   to="/events"
-                  className="mt-2 inline-block text-xs font-bold text-bauhaus-blue uppercase tracking-wider hover:underline"
+                  className="inline-block px-3 py-1.5 bg-bauhaus-blue text-white text-[10px] font-bold uppercase tracking-wider hover:bg-[#0D3399] transition-colors"
                 >
                   Browse Events
                 </Link>

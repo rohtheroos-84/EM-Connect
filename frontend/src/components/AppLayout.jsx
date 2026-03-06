@@ -1,7 +1,8 @@
+import { useState, useRef, useEffect } from 'react';
 import { NavLink, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useWebSocket } from '../context/WebSocketContext';
-import { LogOut, LayoutDashboard, Calendar, ClipboardList, LogIn, UserCircle, ShieldCheck, TrendingUp } from 'lucide-react';
+import { LogOut, LayoutDashboard, Calendar, ClipboardList, LogIn, UserCircle, ShieldCheck, TrendingUp, MoreHorizontal } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 
 const PUBLIC_NAV = [
@@ -28,6 +29,25 @@ export default function AppLayout({ children }) {
   const navItems = isAuthenticated
     ? (isAdmin ? [...AUTH_NAV, ...ADMIN_NAV_ITEMS] : AUTH_NAV)
     : PUBLIC_NAV;
+
+  // Mobile overflow menu
+  const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
+  const mobileMoreRef = useRef(null);
+  const MAX_MOBILE_TABS = 4;
+  const showMobileOverflow = navItems.length > MAX_MOBILE_TABS;
+  const mobileVisibleItems = showMobileOverflow ? navItems.slice(0, 3) : navItems;
+  const mobileOverflowItems = showMobileOverflow ? navItems.slice(3) : [];
+
+  useEffect(() => {
+    if (!mobileMoreOpen) return;
+    const handleClickOutside = (e) => {
+      if (mobileMoreRef.current && !mobileMoreRef.current.contains(e.target)) {
+        setMobileMoreOpen(false);
+      }
+    };
+    document.addEventListener('pointerdown', handleClickOutside);
+    return () => document.removeEventListener('pointerdown', handleClickOutside);
+  }, [mobileMoreOpen]);
 
   const handleLogout = () => {
     logout();
@@ -121,21 +141,55 @@ export default function AppLayout({ children }) {
       </nav>
 
       {/* ── Mobile nav ── */}
-      <div className="sm:hidden flex bg-bauhaus-nav border-t border-white/10 shrink-0">
-        {navItems.map(({ to, label, icon: Icon }) => (
-          <NavLink
-            key={to}
-            to={to}
-            className={({ isActive }) =>
-              `flex-1 flex flex-col items-center gap-0.5 py-2 text-[10px] font-bold uppercase tracking-wider transition-colors ${
-                isActive ? 'text-white bg-white/10' : 'text-white/35'
-              }`
-            }
-          >
-            <Icon className="w-4 h-4" />
-            {label}
-          </NavLink>
-        ))}
+      <div className="sm:hidden relative shrink-0" ref={mobileMoreRef}>
+        {/* Overflow popup */}
+        {mobileMoreOpen && mobileOverflowItems.length > 0 && (
+          <div className="absolute bottom-full left-0 right-0 bg-bauhaus-nav border-t border-white/10 shadow-[0_-4px_12px_rgba(0,0,0,0.3)] z-50">
+            {mobileOverflowItems.map(({ to, label, icon: Icon }) => (
+              <NavLink
+                key={to}
+                to={to}
+                onClick={() => setMobileMoreOpen(false)}
+                className={({ isActive }) =>
+                  `flex items-center gap-3 px-5 py-3 text-[11px] font-bold uppercase tracking-wider transition-colors ${
+                    isActive ? 'text-white bg-white/10' : 'text-white/50 hover:text-white/70'
+                  }`
+                }
+              >
+                <Icon className="w-4 h-4" />
+                {label}
+              </NavLink>
+            ))}
+          </div>
+        )}
+        <div className="flex bg-bauhaus-nav border-t border-white/10">
+          {mobileVisibleItems.map(({ to, label, icon: Icon }) => (
+            <NavLink
+              key={to}
+              to={to}
+              onClick={() => setMobileMoreOpen(false)}
+              className={({ isActive }) =>
+                `flex-1 flex flex-col items-center gap-0.5 py-2 text-[10px] font-bold uppercase tracking-wider transition-colors ${
+                  isActive ? 'text-white bg-white/10' : 'text-white/35'
+                }`
+              }
+            >
+              <Icon className="w-4 h-4" />
+              {label}
+            </NavLink>
+          ))}
+          {showMobileOverflow && (
+            <button
+              onClick={() => setMobileMoreOpen((prev) => !prev)}
+              className={`flex-1 flex flex-col items-center gap-0.5 py-2 text-[10px] font-bold uppercase tracking-wider transition-colors cursor-pointer ${
+                mobileMoreOpen ? 'text-white bg-white/10' : 'text-white/35'
+              }`}
+            >
+              <MoreHorizontal className="w-4 h-4" />
+              More
+            </button>
+          )}
+        </div>
       </div>
 
       {/* ── Main ── */}

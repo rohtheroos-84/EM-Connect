@@ -138,8 +138,8 @@ export default function EventList() {
           </div>
         </div>
 
-        {/* Filters row */}
-        <div className="flex flex-wrap items-center gap-3 mb-8">
+        {/* Filters row — sticky */}
+        <div className="sticky top-0 z-10 bg-bauhaus-bg -mx-6 px-6 lg:-mx-8 lg:px-8 py-3 mb-6 border-b border-[#E0E0E0] dark:border-white/10 flex flex-wrap items-center gap-3">
           {/* Category filter pills */}
           {activeCategories.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
