@@ -47,7 +47,7 @@ export default function AppLayout({ children }) {
                 <div className="w-2.5 h-2.5 bg-bauhaus-yellow" />
                 <div className="w-2.5 h-2.5 bg-bauhaus-blue" />
               </div>
-              <Link to="/dashboard" className="text-base font-black text-white tracking-tight uppercase hover:text-white/80 transition-colors">
+              <Link to={isAuthenticated ? '/dashboard' : '/events'} className="text-base font-black text-white tracking-tight uppercase hover:text-white/80 transition-colors">
                 EM-Connect
               </Link>
               {connected && (
