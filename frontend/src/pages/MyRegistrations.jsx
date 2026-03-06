@@ -16,6 +16,7 @@ import {
   CalendarPlus,
   Download,
   Filter,
+  Search,
 } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
 import TicketModal from '../components/TicketModal';
@@ -37,6 +38,24 @@ function fmtTime(iso) {
     minute: '2-digit',
     hour12: true,
   });
+}
+
+function timeAgo(iso) {
+  if (!iso) return '';
+  const now = new Date();
+  const date = new Date(iso);
+  const seconds = Math.floor((now - date) / 1000);
+  if (seconds < 60) return 'just now';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days === 1) return 'yesterday';
+  if (days < 7) return `${days}d ago`;
+  if (days < 30) return `${Math.floor(days / 7)}w ago`;
+  if (days < 365) return `${Math.floor(days / 30)}mo ago`;
+  return `${Math.floor(days / 365)}y ago`;
 }
 
 const REG_STATUS_STYLE = {
@@ -65,6 +84,8 @@ export default function MyRegistrations() {
   const [cancelling, setCancelling] = useState(null); // registration id being cancelled
   const [actionMsg, setActionMsg] = useState(null);
   const [ticketModal, setTicketModal] = useState(null); // { ticketCode, event }
+  const [cancelConfirm, setCancelConfirm] = useState(null); // registration id to confirm cancel
+  const [searchQuery, setSearchQuery] = useState('');
 
   const PAGE_SIZE = 10;
 
@@ -87,7 +108,14 @@ export default function MyRegistrations() {
     fetchRegistrations();
   }, [fetchRegistrations]);
 
-  const handleCancel = async (regId) => {
+  const handleCancelClick = (regId) => {
+    setCancelConfirm(regId);
+  };
+
+  const handleCancelConfirm = async () => {
+    if (!cancelConfirm) return;
+    const regId = cancelConfirm;
+    setCancelConfirm(null);
     setCancelling(regId);
     setActionMsg(null);
     try {
@@ -101,6 +129,18 @@ export default function MyRegistrations() {
     }
   };
 
+  // Client-side search filter on loaded registrations
+  const filteredRegistrations = registrations.filter((reg) => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.trim().toLowerCase();
+    const ev = reg.event || {};
+    return (
+      (ev.title && ev.title.toLowerCase().includes(q)) ||
+      (ev.location && ev.location.toLowerCase().includes(q)) ||
+      (reg.ticketCode && reg.ticketCode.toLowerCase().includes(q))
+    );
+  });
+
   const handleStatusFilterChange = (value) => {
     setStatusFilter(value);
     setPage(0);
@@ -109,30 +149,44 @@ export default function MyRegistrations() {
   return (
     <AppLayout>
       <div className="max-w-5xl mx-auto px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
-          <div>
-            <h1 className="text-2xl font-black text-bauhaus-fg tracking-tight uppercase">
-              My Registrations
-            </h1>
-            <p className="text-sm text-[#6B7280] mt-1">
-              {loading ? 'Loading…' : `${totalElements} registration${totalElements !== 1 ? 's' : ''}${statusFilter ? ` · ${STATUS_FILTERS.find(f => f.value === statusFilter)?.label}` : ''}`}
-            </p>
-          </div>
+        {/* Title */}
+        <div className="mb-4">
+          <h1 className="text-2xl font-black text-bauhaus-fg tracking-tight uppercase">
+            My Registrations
+          </h1>
+          <p className="text-sm text-[#6B7280] mt-1">
+            {loading ? 'Loading…' : `${totalElements} registration${totalElements !== 1 ? 's' : ''}${statusFilter ? ` · ${STATUS_FILTERS.find(f => f.value === statusFilter)?.label}` : ''}`}
+          </p>
+        </div>
 
-          {/* Status filter dropdown */}
-          <div className="flex items-center gap-2">
-            <Filter className="w-3.5 h-3.5 text-[#6B7280]" />
-            <select
-              value={statusFilter}
-              onChange={(e) => handleStatusFilterChange(e.target.value)}
-              className="h-10 px-3 pr-8 text-xs font-bold uppercase tracking-wider border border-[#D1D5DB] bg-bauhaus-white/80 text-bauhaus-fg cursor-pointer appearance-none focus:outline-none focus:border-bauhaus-blue transition-colors"
-              style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center' }}
-            >
-              {STATUS_FILTERS.map(({ value, label }) => (
-                <option key={value} value={value}>{label}</option>
-              ))}
-            </select>
+        {/* Sticky filter bar */}
+        <div className="sticky top-0 z-10 bg-bauhaus-bg -mx-6 px-6 lg:-mx-8 lg:px-8 py-3 mb-6 border-b border-[#E0E0E0] dark:border-white/10">
+          <div className="flex items-center gap-3">
+            {/* Search */}
+            <div className="relative flex-1 max-w-xs">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#9CA3AF]" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search by name, location, or ticket…"
+                className="w-full pl-8 pr-3 h-9 text-xs bg-bauhaus-white/80 border border-[#D1D5DB] text-bauhaus-fg placeholder:text-[#BCBCBC] placeholder:italic focus:border-bauhaus-blue focus:outline-none transition-colors"
+              />
+            </div>
+            {/* Status filter dropdown */}
+            <div className="flex items-center gap-2">
+              <Filter className="w-3.5 h-3.5 text-[#6B7280] hidden sm:block" />
+              <select
+                value={statusFilter}
+                onChange={(e) => handleStatusFilterChange(e.target.value)}
+                className="h-9 px-3 pr-8 text-xs font-bold uppercase tracking-wider border border-[#D1D5DB] bg-bauhaus-white/80 text-bauhaus-fg cursor-pointer appearance-none focus:outline-none focus:border-bauhaus-blue transition-colors"
+                style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center' }}
+              >
+                {STATUS_FILTERS.map(({ value, label }) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
 
@@ -167,16 +221,32 @@ export default function MyRegistrations() {
           </div>
         )}
 
-        {/* Loading */}
+        {/* Loading skeleton */}
         {loading && (
           <div className="space-y-3">
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="bg-bauhaus-white/80 border border-[#1F2937]/20 p-5 animate-pulse">
-                <div className="flex gap-4">
-                  <div className="h-5 bg-[#E5E7EB] rounded w-1/4" />
-                  <div className="h-5 bg-[#E5E7EB] rounded w-1/6" />
+              <div key={i} className="bg-bauhaus-white/80 border border-[#1F2937]/20 overflow-hidden animate-pulse">
+                <div className="h-0.75 bg-[#E0E0E0]" />
+                <div className="p-5">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="h-5 w-20 bg-[#E5E7EB]" />
+                        <div className="h-4 w-24 bg-[#E5E7EB]" />
+                      </div>
+                      <div className="h-5 w-48 bg-[#E5E7EB] mb-2" />
+                      <div className="flex gap-4 mt-2">
+                        <div className="h-3 w-24 bg-[#E5E7EB]" />
+                        <div className="h-3 w-32 bg-[#E5E7EB]" />
+                      </div>
+                      <div className="h-3 w-28 bg-[#E5E7EB] mt-2" />
+                    </div>
+                    <div className="flex gap-2">
+                      <div className="h-9 w-20 bg-[#E5E7EB]" />
+                      <div className="h-9 w-16 bg-[#E5E7EB]" />
+                    </div>
+                  </div>
                 </div>
-                <div className="h-4 bg-[#E5E7EB] rounded w-1/3 mt-3" />
               </div>
             ))}
           </div>
@@ -206,17 +276,24 @@ export default function MyRegistrations() {
         {/* Registration list */}
         {!loading && registrations.length > 0 && (
           <>
+            {filteredRegistrations.length === 0 ? (
+              <div className="text-center py-12">
+                <Search className="w-8 h-8 text-[#D1D5DB] mx-auto mb-3" />
+                <p className="text-sm text-[#6B7280]">No registrations match "{searchQuery}"</p>
+              </div>
+            ) : (
             <div className="space-y-3">
-              {registrations.map((reg) => (
+              {filteredRegistrations.map((reg) => (
                 <RegistrationRow
                   key={reg.id}
                   registration={reg}
-                  onCancel={handleCancel}
+                  onCancel={handleCancelClick}
                   cancelling={cancelling}
                   onViewTicket={(tc, ev) => setTicketModal({ ticketCode: tc, event: ev })}
                 />
               ))}
             </div>
+            )}
 
             {/* Pagination */}
             {totalPages > 1 && (
@@ -253,6 +330,40 @@ export default function MyRegistrations() {
           event={ticketModal.event}
           onClose={() => setTicketModal(null)}
         />
+      )}
+
+      {/* Cancel Confirmation Dialog */}
+      {cancelConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setCancelConfirm(null)}>
+          <div
+            className="bg-bauhaus-white border-2 border-bauhaus-fg shadow-[6px_6px_0px_0px_rgba(0,0,0,0.8)] p-6 max-w-sm mx-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-8 h-8 bg-bauhaus-red flex items-center justify-center">
+                <AlertCircle className="w-4 h-4 text-white" />
+              </div>
+              <h3 className="text-base font-black text-bauhaus-fg uppercase tracking-tight">Cancel Registration?</h3>
+            </div>
+            <p className="text-sm text-[#6B7280] mb-6 leading-relaxed">
+              This action cannot be undone. You will lose your spot and ticket for this event.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setCancelConfirm(null)}
+                className="px-4 py-2 text-xs font-bold uppercase tracking-wider border border-[#D1D5DB] bg-bauhaus-white/80 text-bauhaus-fg hover:bg-bauhaus-bg transition-colors cursor-pointer"
+              >
+                Keep Registration
+              </button>
+              <button
+                onClick={handleCancelConfirm}
+                className="px-4 py-2 text-xs font-bold uppercase tracking-wider bg-bauhaus-red text-white hover:bg-[#B01010] transition-colors cursor-pointer"
+              >
+                Yes, Cancel
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </AppLayout>
   );
@@ -308,8 +419,8 @@ function RegistrationRow({ registration: reg, onCancel, cancelling, onViewTicket
             </div>
 
             <p className="text-[11px] text-[#9CA3AF] mt-1">
-              Registered {fmtDate(reg.registeredAt)}
-              {reg.cancelledAt && ` · Cancelled ${fmtDate(reg.cancelledAt)}`}
+              <span title={fmtDate(reg.registeredAt)}>Registered {timeAgo(reg.registeredAt)}</span>
+              {reg.cancelledAt && <span title={fmtDate(reg.cancelledAt)}> · Cancelled {timeAgo(reg.cancelledAt)}</span>}
             </p>
           </div>
 
