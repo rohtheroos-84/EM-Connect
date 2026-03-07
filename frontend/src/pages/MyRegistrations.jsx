@@ -165,7 +165,6 @@ export default function MyRegistrations() {
           <div className="flex items-center gap-3">
             {/* Search */}
             <div className="relative flex-1 max-w-xs">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#9CA3AF]" />
               <input
                 type="text"
                 value={searchQuery}
