@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
-import { NavLink, Link, useNavigate } from 'react-router-dom';
+import { NavLink, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useWebSocket } from '../context/WebSocketContext';
-import { LogOut, LayoutDashboard, Calendar, ClipboardList, LogIn, UserCircle, ShieldCheck, TrendingUp, MoreHorizontal } from 'lucide-react';
+import { LogOut, LayoutDashboard, Calendar, ClipboardList, LogIn, UserCircle, ShieldCheck, TrendingUp, MoreHorizontal, ChevronDown } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 
 const PUBLIC_NAV = [
@@ -12,8 +12,7 @@ const PUBLIC_NAV = [
 const AUTH_NAV = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/events', label: 'Events', icon: Calendar },
-  { to: '/my-registrations', label: 'My Registrations', icon: ClipboardList },
-  { to: '/profile', label: 'Profile', icon: UserCircle },
+  { to: '/my-registrations', label: 'Registrations', icon: ClipboardList },
 ];
 
 const ADMIN_NAV_ITEMS = [
@@ -25,10 +24,15 @@ export default function AppLayout({ children }) {
   const { user, logout, isAuthenticated } = useAuth();
   const { connected } = useWebSocket();
   const navigate = useNavigate();
+  const location = useLocation();
   const isAdmin = user?.role === 'ADMIN';
   const navItems = isAuthenticated
     ? (isAdmin ? [...AUTH_NAV, ...ADMIN_NAV_ITEMS] : AUTH_NAV)
     : PUBLIC_NAV;
+
+  // User dropdown
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef(null);
 
   // Mobile overflow menu
   const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
@@ -38,16 +42,25 @@ export default function AppLayout({ children }) {
   const mobileVisibleItems = showMobileOverflow ? navItems.slice(0, 3) : navItems;
   const mobileOverflowItems = showMobileOverflow ? navItems.slice(3) : [];
 
+  // Close dropdowns on outside click
   useEffect(() => {
-    if (!mobileMoreOpen) return;
     const handleClickOutside = (e) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target)) {
+        setUserMenuOpen(false);
+      }
       if (mobileMoreRef.current && !mobileMoreRef.current.contains(e.target)) {
         setMobileMoreOpen(false);
       }
     };
     document.addEventListener('pointerdown', handleClickOutside);
     return () => document.removeEventListener('pointerdown', handleClickOutside);
-  }, [mobileMoreOpen]);
+  }, []);
+
+  // Close menus on navigation
+  useEffect(() => {
+    setUserMenuOpen(false);
+    setMobileMoreOpen(false);
+  }, [location.pathname]);
 
   const handleLogout = () => {
     logout();
@@ -58,37 +71,37 @@ export default function AppLayout({ children }) {
     <div className="h-screen flex flex-col overflow-hidden bg-bauhaus-bg">
       {/* ── Navbar ── */}
       <nav className="bg-bauhaus-nav shrink-0">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 flex items-center justify-between h-14">
+        <div className="max-w-6xl mx-auto px-6 lg:px-8 flex items-center justify-between h-12">
           {/* Left: brand + nav links */}
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-3">
-              <div className="flex gap-1">
-                <div className="w-2.5 h-2.5 bg-bauhaus-red" />
-                <div className="w-2.5 h-2.5 bg-bauhaus-yellow" />
-                <div className="w-2.5 h-2.5 bg-bauhaus-blue" />
+          <div className="flex items-center gap-8">
+            <div className="flex items-center gap-2.5">
+              <div className="flex gap-0.75">
+                <div className="w-2 h-2 bg-bauhaus-red" />
+                <div className="w-2 h-2 bg-bauhaus-yellow" />
+                <div className="w-2 h-2 bg-bauhaus-blue" />
               </div>
-              <Link to={isAuthenticated ? '/dashboard' : '/events'} className="text-base font-black text-white tracking-tight uppercase hover:text-white/80 transition-colors">
+              <Link to={isAuthenticated ? '/dashboard' : '/events'} className="text-sm font-black text-white tracking-tight uppercase hover:text-white/80 transition-colors">
                 EM-Connect
               </Link>
               {connected && (
-                <span className="flex items-center gap-1">
+                <span className="flex items-center gap-1 ml-0.5">
                   <span className="w-1.5 h-1.5 bg-[#16A34A] rounded-full animate-live-pulse" />
-                  <span className="text-[9px] font-bold text-[#16A34A] uppercase tracking-wider">Live</span>
+                  <span className="text-[8px] font-bold text-[#16A34A] uppercase tracking-wider">Live</span>
                 </span>
               )}
             </div>
 
-            {/* Nav links */}
-            <div className="hidden sm:flex items-center gap-1">
+            {/* Nav links — bottom-border active indicator */}
+            <div className="hidden sm:flex items-center gap-0.5">
               {navItems.map(({ to, label, icon: Icon }) => (
                 <NavLink
                   key={to}
                   to={to}
                   className={({ isActive }) =>
-                    `flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider transition-colors duration-150 ${
+                    `flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider transition-all duration-150 border-b-2 ${
                       isActive
-                        ? 'bg-white/15 text-white'
-                        : 'text-white/40 hover:text-white/70'
+                        ? 'text-white border-white'
+                        : 'text-white/50 hover:text-white/80 border-transparent'
                     }`
                   }
                 >
@@ -99,37 +112,67 @@ export default function AppLayout({ children }) {
             </div>
           </div>
 
-          {/* Right: theme toggle + user actions */}
-          <div className="flex items-center gap-4">
+          {/* Right: theme toggle + user dropdown */}
+          <div className="flex items-center gap-3">
             <ThemeToggle />
-            <div className="flex items-center gap-3">
-              {isAuthenticated ? (
-                <>
-                  <span className="hidden md:block text-sm text-white/50">{user?.name || user?.email}</span>
+            {isAuthenticated ? (
+              <div className="relative" ref={userMenuRef}>
+                <button
+                  onClick={() => setUserMenuOpen((p) => !p)}
+                  className="flex items-center gap-2 px-2 py-1 text-white/70 hover:text-white transition-colors cursor-pointer"
+                >
+                  <div className="w-6 h-6 bg-bauhaus-blue flex items-center justify-center text-white text-[10px] font-black uppercase">
+                    {(user?.name || user?.email || 'U').charAt(0)}
+                  </div>
+                  <span className="hidden md:block text-[11px] font-semibold text-white/70 max-w-30 truncate">
+                    {user?.name || user?.email}
+                  </span>
                   {isAdmin && (
                     <span className="hidden md:flex items-center gap-1">
                       <span className="w-1.5 h-1.5 bg-bauhaus-yellow rounded-full" />
-                      <span className="text-[9px] font-bold text-bauhaus-yellow uppercase tracking-wider">Admin</span>
+                      <span className="text-[8px] font-bold text-bauhaus-yellow uppercase tracking-wider">Admin</span>
                     </span>
                   )}
-                  <button
-                    onClick={handleLogout}
-                    className="flex items-center gap-1.5 px-2 py-1 text-bauhaus-red text-xs font-semibold uppercase tracking-wider hover:opacity-70 transition-opacity duration-150 cursor-pointer"
-                  >
-                    <LogOut className="w-3.5 h-3.5" />
-                    Logout
-                  </button>
-                </>
-              ) : (
-                <Link
-                  to="/login"
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-bauhaus-blue text-white text-xs font-bold uppercase tracking-wider hover:bg-[#0D3399] transition-colors duration-150"
-                >
-                  <LogIn className="w-3.5 h-3.5" />
-                  Login
-                </Link>
-              )}
-            </div>
+                  <ChevronDown className={`w-3 h-3 text-white/40 transition-transform duration-150 ${userMenuOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {/* Dropdown */}
+                {userMenuOpen && (
+                  <div className="absolute right-0 top-full mt-1 w-52 bg-bauhaus-white border-2 border-bauhaus-fg shadow-[4px_4px_0px_0px_rgba(0,0,0,0.8)] z-50 overflow-hidden">
+                    <div className="px-4 py-3 border-b border-[#E0E0E0]">
+                      <p className="text-xs font-bold text-bauhaus-fg truncate">{user?.name || 'User'}</p>
+                      <p className="text-[10px] text-[#9CA3AF] truncate">{user?.email}</p>
+                      {isAdmin && (
+                        <span className="inline-flex items-center gap-1 mt-1">
+                          <span className="w-1.5 h-1.5 bg-bauhaus-yellow rounded-full" />
+                          <span className="text-[9px] font-bold text-bauhaus-yellow uppercase tracking-wider">Administrator</span>
+                        </span>
+                      )}
+                    </div>
+                    <Link
+                      to="/profile"
+                      className="flex items-center gap-2 px-4 py-2.5 text-[11px] font-bold text-bauhaus-fg uppercase tracking-wider hover:bg-bauhaus-bg transition-colors"
+                    >
+                      <UserCircle className="w-3.5 h-3.5" /> Profile
+                    </Link>
+                    <button
+                      onClick={handleLogout}
+                      className="w-full flex items-center gap-2 px-4 py-2.5 text-[11px] font-bold text-bauhaus-red uppercase tracking-wider hover:bg-[#FEF2F2] transition-colors cursor-pointer border-t border-[#E0E0E0]"
+                    >
+                      <LogOut className="w-3.5 h-3.5" /> Logout
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <Link
+                to="/login"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-bauhaus-blue text-white text-[11px] font-bold uppercase tracking-wider hover:bg-[#0D3399] transition-colors duration-150"
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                Login
+              </Link>
+            )}
           </div>
         </div>
         {/* Accent bar */}
@@ -149,7 +192,6 @@ export default function AppLayout({ children }) {
               <NavLink
                 key={to}
                 to={to}
-                onClick={() => setMobileMoreOpen(false)}
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-5 py-3 text-[11px] font-bold uppercase tracking-wider transition-colors ${
                     isActive ? 'text-white bg-white/10' : 'text-white/50 hover:text-white/70'
@@ -167,7 +209,6 @@ export default function AppLayout({ children }) {
             <NavLink
               key={to}
               to={to}
-              onClick={() => setMobileMoreOpen(false)}
               className={({ isActive }) =>
                 `flex-1 flex flex-col items-center gap-0.5 py-2 text-[10px] font-bold uppercase tracking-wider transition-colors ${
                   isActive ? 'text-white bg-white/10' : 'text-white/35'
@@ -199,12 +240,12 @@ export default function AppLayout({ children }) {
 
       {/* ── Footer ── */}
       <footer className="shrink-0 bg-bauhaus-nav">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 py-3 flex items-center justify-between">
-          <span className="text-[11px] text-white/25 font-medium">EM-Connect © 2026</span>
-          <div className="flex gap-1">
-            <div className="w-2 h-2 bg-bauhaus-red" />
-            <div className="w-2 h-2 bg-bauhaus-yellow" />
-            <div className="w-2 h-2 bg-bauhaus-blue" />
+        <div className="max-w-6xl mx-auto px-6 lg:px-8 py-2.5 flex items-center justify-between">
+          <span className="text-[10px] text-white/20 font-medium">EM-Connect © 2026</span>
+          <div className="flex gap-0.75">
+            <div className="w-1.5 h-1.5 bg-bauhaus-red" />
+            <div className="w-1.5 h-1.5 bg-bauhaus-yellow" />
+            <div className="w-1.5 h-1.5 bg-bauhaus-blue" />
           </div>
         </div>
       </footer>
