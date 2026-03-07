@@ -245,7 +245,7 @@ export default function Analytics() {
 
   return (
     <AppLayout>
-      <div className="max-w-7xl mx-auto px-6 lg:px-8 pb-12">
+      <div className="max-w-6xl mx-auto px-6 lg:px-8 pb-12">
 
         {/* ── Page header ── */}
         <div className="pt-8 pb-6 border-b border-bauhaus-fg/6">

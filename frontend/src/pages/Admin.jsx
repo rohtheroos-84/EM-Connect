@@ -92,7 +92,7 @@ export default function Admin() {
 
   return (
     <AppLayout>
-      <div className="max-w-7xl mx-auto px-6 lg:px-8">
+      <div className="max-w-6xl mx-auto px-6 lg:px-8">
         {/* Header */}
         <div className="pt-8 pb-6 border-b border-[#E0E0E0]">
           <p className="text-[11px] font-bold text-bauhaus-fg/35 uppercase tracking-[0.15em]">
