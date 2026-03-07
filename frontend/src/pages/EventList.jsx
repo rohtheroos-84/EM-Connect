@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { searchEvents, getActiveCategories } from '../services/api';
-import { Search, MapPin, Clock, Users, ChevronLeft, ChevronRight, AlertCircle, Calendar, X } from 'lucide-react';
+import { Search, MapPin, Clock, Users, ChevronLeft, ChevronRight, AlertCircle, Calendar, X, SlidersHorizontal, ArrowUpDown, Tag } from 'lucide-react';
 import { generateBauhausBanner } from '../services/bauhausBanner';
 import AppLayout from '../components/AppLayout';
 
@@ -36,6 +36,12 @@ const CATEGORY_COLORS = {
   OTHER: '#6B7280',
 };
 
+const SORT_OPTIONS = [
+  { value: 'newest', label: 'Newest First' },
+  { value: 'oldest', label: 'Oldest First' },
+  { value: 'title', label: 'Title A–Z' },
+];
+
 export default function EventList() {
   const [events, setEvents] = useState([]);
   const [page, setPage] = useState(0);
@@ -46,6 +52,7 @@ export default function EventList() {
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [tagFilter, setTagFilter] = useState('');
+  const [sortBy, setSortBy] = useState('newest');
   const [activeCategories, setActiveCategories] = useState([]);
   const debounceRef = useRef(null);
 
@@ -104,80 +111,127 @@ export default function EventList() {
     setPage(0);
   };
 
+  // Client-side sort (server doesn't support sort param)
+  const sortedEvents = [...events].sort((a, b) => {
+    if (sortBy === 'oldest') return new Date(a.startDate || 0) - new Date(b.startDate || 0);
+    if (sortBy === 'title') return (a.title || '').localeCompare(b.title || '');
+    return new Date(b.startDate || 0) - new Date(a.startDate || 0); // newest
+  });
+
+  const hasActiveFilters = search.trim() || categoryFilter || tagFilter.trim();
+
   return (
     <AppLayout>
-      <div className="max-w-6xl mx-auto px-6 lg:px-8 pt-10 pb-8">
+      <div className="max-w-6xl mx-auto px-6 lg:px-8 pt-8 pb-8">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 mb-10">
-          <div>
-            <h1 className="text-2xl font-black text-bauhaus-fg tracking-tight uppercase">
-              Events
-            </h1>
-            <p className="text-sm text-[#6B7280] mt-1">
-              {loading ? 'Loading…' : `${totalElements} event${totalElements !== 1 ? 's' : ''} available`}
-            </p>
-          </div>
+        <div className="mb-6">
+          <h1 className="text-xl font-black text-bauhaus-fg tracking-tight uppercase">
+            Events
+          </h1>
+          <p className="text-xs text-[#6B7280] mt-1">
+            {loading ? 'Loading…' : `${totalElements} event${totalElements !== 1 ? 's' : ''} available`}
+          </p>
+        </div>
 
-          {/* Search */}
-          <div className="relative">
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search events…"
-              className="pl-9 pr-9 h-10 w-72 rounded-lg bg-bauhaus-white/80 border border-[#D1D5DB] text-sm text-bauhaus-fg placeholder:text-[#BCBCBC] placeholder:italic focus:border-bauhaus-blue focus:shadow-[0_0_0_3px_rgba(16,64,192,0.08)] transition-all duration-150"
-            />
-            {search && (
+        {/* ── Unified Toolbar — sticky ── */}
+        <div className="sticky top-0 z-10 bg-bauhaus-bg -mx-6 px-6 lg:-mx-8 lg:px-8 py-3 mb-6 border-b border-[#E0E0E0] dark:border-white/10 space-y-3">
+          {/* Row 1: Search + Category dropdown + Tag input + Sort */}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Search */}
+            <div className="relative flex-1 min-w-[200px] max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#9CA3AF]" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search events…"
+                className="w-full pl-9 pr-8 h-9 bg-bauhaus-white/80 border border-[#D1D5DB] text-xs text-bauhaus-fg placeholder:text-[#BCBCBC] placeholder:italic focus:border-bauhaus-blue focus:outline-none transition-colors"
+              />
+              {search && (
+                <button
+                  onClick={() => setSearch('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 flex items-center justify-center text-[#9CA3AF] hover:text-bauhaus-fg cursor-pointer"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              )}
+            </div>
+
+            {/* Category dropdown */}
+            {activeCategories.length > 0 && (
+              <div className="flex items-center gap-1.5">
+                <SlidersHorizontal className="w-3.5 h-3.5 text-[#6B7280] hidden sm:block" />
+                <select
+                  value={categoryFilter}
+                  onChange={(e) => { setCategoryFilter(e.target.value); setPage(0); }}
+                  className="h-9 px-3 pr-8 text-[11px] font-bold uppercase tracking-wider border border-[#D1D5DB] bg-bauhaus-white/80 text-bauhaus-fg cursor-pointer appearance-none focus:outline-none focus:border-bauhaus-blue transition-colors"
+                  style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center' }}
+                >
+                  <option value="">All Categories</option>
+                  {activeCategories.map((cat) => (
+                    <option key={cat} value={cat}>{cat.charAt(0) + cat.slice(1).toLowerCase()}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Tag filter */}
+            <div className="relative">
+              <Tag className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-[#9CA3AF]" />
+              <input
+                type="text"
+                value={tagFilter}
+                onChange={(e) => setTagFilter(e.target.value)}
+                placeholder="Filter by tag…"
+                className="pl-7 pr-3 h-9 w-40 bg-bauhaus-white/80 border border-[#D1D5DB] text-xs text-bauhaus-fg placeholder:text-[#BCBCBC] placeholder:italic focus:border-bauhaus-blue focus:outline-none transition-colors"
+              />
+            </div>
+
+            {/* Sort */}
+            <div className="flex items-center gap-1.5 ml-auto">
+              <ArrowUpDown className="w-3.5 h-3.5 text-[#6B7280] hidden sm:block" />
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="h-9 px-3 pr-8 text-[11px] font-bold uppercase tracking-wider border border-[#D1D5DB] bg-bauhaus-white/80 text-bauhaus-fg cursor-pointer appearance-none focus:outline-none focus:border-bauhaus-blue transition-colors"
+                style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center' }}
+              >
+                {SORT_OPTIONS.map(({ value, label }) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Clear all */}
+            {hasActiveFilters && (
               <button
                 onClick={clearSearch}
-                className="absolute right-2 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center text-[#9CA3AF] hover:text-bauhaus-fg cursor-pointer"
+                className="h-9 px-3 text-[10px] font-bold uppercase tracking-wider text-bauhaus-red hover:bg-[#FEF2F2] border border-transparent hover:border-bauhaus-red/20 transition-colors cursor-pointer"
               >
-                <X className="w-3.5 h-3.5" />
+                Clear All
               </button>
             )}
           </div>
-        </div>
 
-        {/* Filters row — sticky */}
-        <div className="sticky top-0 z-10 bg-bauhaus-bg -mx-6 px-6 lg:-mx-8 lg:px-8 py-3 mb-6 border-b border-[#E0E0E0] dark:border-white/10 flex flex-wrap items-center gap-3">
-          {/* Category filter pills */}
+          {/* Row 2: Category pills (quick toggles) */}
           {activeCategories.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
               {activeCategories.map((cat) => (
                 <button
                   key={cat}
                   onClick={() => handleCategoryClick(cat)}
-                  className={`px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider border transition-colors cursor-pointer ${
+                  className={`px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider border transition-colors cursor-pointer ${
                     categoryFilter === cat
                       ? 'text-white border-transparent'
-                      : 'text-bauhaus-fg/50 border-[#D1D5DB] hover:border-bauhaus-fg/30 bg-bauhaus-white/60'
+                      : 'text-bauhaus-fg/40 border-[#E0E0E0] hover:border-bauhaus-fg/30 bg-bauhaus-white/60'
                   }`}
                   style={categoryFilter === cat ? { backgroundColor: CATEGORY_COLORS[cat] || '#6B7280' } : {}}
                 >
                   {cat.charAt(0) + cat.slice(1).toLowerCase()}
                 </button>
               ))}
-              {categoryFilter && (
-                <button
-                  onClick={() => { setCategoryFilter(''); setPage(0); }}
-                  className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-bauhaus-red hover:underline cursor-pointer"
-                >
-                  Clear
-                </button>
-              )}
             </div>
           )}
-
-          {/* Tag filter */}
-          <div className="ml-auto">
-            <input
-              type="text"
-              value={tagFilter}
-              onChange={(e) => setTagFilter(e.target.value)}
-              placeholder="Filter by tag…"
-              className="px-3 h-8 w-44 bg-bauhaus-white/80 border border-[#D1D5DB] text-xs text-bauhaus-fg placeholder:text-[#BCBCBC] placeholder:italic focus:border-bauhaus-blue transition-colors"
-            />
-          </div>
         </div>
 
         {/* Error */}
@@ -232,10 +286,10 @@ export default function EventList() {
         )}
 
         {/* Event grid */}
-        {!loading && events.length > 0 && (
+        {!loading && sortedEvents.length > 0 && (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {events.map((event) => (
+              {sortedEvents.map((event) => (
                 <EventCard key={event.id} event={event} />
               ))}
             </div>
