@@ -138,8 +138,7 @@ export default function EventList() {
           {/* Row 1: Search + Category dropdown + Tag input + Sort */}
           <div className="flex flex-wrap items-center gap-2">
             {/* Search */}
-            <div className="relative flex-1 min-w-[200px] max-w-sm">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#9CA3AF]" />
+            <div className="relative flex-1 min-w-50 max-w-sm">
               <input
                 type="text"
                 value={search}
@@ -177,7 +176,6 @@ export default function EventList() {
 
             {/* Tag filter */}
             <div className="relative">
-              <Tag className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-[#9CA3AF]" />
               <input
                 type="text"
                 value={tagFilter}
