@@ -17,6 +17,7 @@ import {
   Download,
   Filter,
   Search,
+  Eye,
 } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
 import TicketModal from '../components/TicketModal';
@@ -59,10 +60,10 @@ function timeAgo(iso) {
 }
 
 const REG_STATUS_STYLE = {
-  CONFIRMED: { bg: '#16A34A', label: 'Confirmed' },
-  CANCELLED: { bg: '#D02020', label: 'Cancelled' },
-  ATTENDED: { bg: '#1040C0', label: 'Attended' },
-  NO_SHOW: { bg: '#9CA3AF', label: 'No Show' },
+  CONFIRMED: { bg: '#DCFCE7', text: '#166534', dot: '#16A34A', label: 'Confirmed' },
+  CANCELLED: { bg: '#FEE2E2', text: '#991B1B', dot: '#D02020', label: 'Cancelled' },
+  ATTENDED:  { bg: '#DBEAFE', text: '#1E40AF', dot: '#1040C0', label: 'Attended' },
+  NO_SHOW:   { bg: '#F3F4F6', text: '#6B7280', dot: '#9CA3AF', label: 'No Show' },
 };
 
 const STATUS_FILTERS = [
@@ -151,10 +152,10 @@ export default function MyRegistrations() {
       <div className="max-w-5xl mx-auto px-6 lg:px-8 py-8">
         {/* Title */}
         <div className="mb-4">
-          <h1 className="text-2xl font-black text-bauhaus-fg tracking-tight uppercase">
+          <h1 className="text-xl font-black text-bauhaus-fg tracking-tight uppercase">
             My Registrations
           </h1>
-          <p className="text-sm text-[#6B7280] mt-1">
+          <p className="text-xs text-[#6B7280] mt-1">
             {loading ? 'Loading…' : `${totalElements} registration${totalElements !== 1 ? 's' : ''}${statusFilter ? ` · ${STATUS_FILTERS.find(f => f.value === statusFilter)?.label}` : ''}`}
           </p>
         </div>
@@ -179,7 +180,7 @@ export default function MyRegistrations() {
               <select
                 value={statusFilter}
                 onChange={(e) => handleStatusFilterChange(e.target.value)}
-                className="h-9 px-3 pr-8 text-xs font-bold uppercase tracking-wider border border-[#D1D5DB] bg-bauhaus-white/80 text-bauhaus-fg cursor-pointer appearance-none focus:outline-none focus:border-bauhaus-blue transition-colors"
+                className="h-9 px-3 pr-8 text-[11px] font-bold uppercase tracking-wider border border-[#D1D5DB] bg-bauhaus-white/80 text-bauhaus-fg cursor-pointer appearance-none focus:outline-none focus:border-bauhaus-blue transition-colors"
                 style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center' }}
               >
                 {STATUS_FILTERS.map(({ value, label }) => (
@@ -221,28 +222,27 @@ export default function MyRegistrations() {
           </div>
         )}
 
-        {/* Loading skeleton */}
+        {/* Loading skeleton — card style */}
         {loading && (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="bg-bauhaus-white/80 border border-[#1F2937]/20 overflow-hidden animate-pulse">
-                <div className="h-0.75 bg-[#E0E0E0]" />
-                <div className="p-5">
-                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="h-5 w-20 bg-[#E5E7EB]" />
-                        <div className="h-4 w-24 bg-[#E5E7EB]" />
+              <div key={i} className="bg-bauhaus-white/80 border border-[#E0E0E0] overflow-hidden animate-pulse">
+                <div className="p-6">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-5">
+                    <div className="flex-1 space-y-3">
+                      <div className="flex items-center gap-3">
+                        <div className="h-5 w-20 bg-[#E5E7EB] rounded-sm" />
+                        <div className="h-4 w-28 bg-[#E5E7EB]" />
                       </div>
-                      <div className="h-5 w-48 bg-[#E5E7EB] mb-2" />
-                      <div className="flex gap-4 mt-2">
-                        <div className="h-3 w-24 bg-[#E5E7EB]" />
-                        <div className="h-3 w-32 bg-[#E5E7EB]" />
+                      <div className="h-5 w-56 bg-[#E5E7EB]" />
+                      <div className="flex gap-5">
+                        <div className="h-3.5 w-28 bg-[#E5E7EB]" />
+                        <div className="h-3.5 w-36 bg-[#E5E7EB]" />
                       </div>
-                      <div className="h-3 w-28 bg-[#E5E7EB] mt-2" />
+                      <div className="h-3 w-24 bg-[#E5E7EB]" />
                     </div>
                     <div className="flex gap-2">
-                      <div className="h-9 w-20 bg-[#E5E7EB]" />
+                      <div className="h-9 w-24 bg-[#E5E7EB]" />
                       <div className="h-9 w-16 bg-[#E5E7EB]" />
                     </div>
                   </div>
@@ -273,7 +273,7 @@ export default function MyRegistrations() {
           </div>
         )}
 
-        {/* Registration list */}
+        {/* Registration list — card style */}
         {!loading && registrations.length > 0 && (
           <>
             {filteredRegistrations.length === 0 ? (
@@ -282,9 +282,9 @@ export default function MyRegistrations() {
                 <p className="text-sm text-[#6B7280]">No registrations match "{searchQuery}"</p>
               </div>
             ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {filteredRegistrations.map((reg) => (
-                <RegistrationRow
+                <RegistrationCard
                   key={reg.id}
                   registration={reg}
                   onCancel={handleCancelClick}
@@ -297,7 +297,7 @@ export default function MyRegistrations() {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-between mt-8 pt-6 border-t border-[#111827]/40">
+              <div className="flex items-center justify-between mt-8 pt-6 border-t border-[#E0E0E0]">
                 <span className="text-xs text-[#6B7280]">
                   Page {page + 1} of {totalPages}
                 </span>
@@ -369,8 +369,8 @@ export default function MyRegistrations() {
   );
 }
 
-/* ── Registration Row ── */
-function RegistrationRow({ registration: reg, onCancel, cancelling, onViewTicket }) {
+/* ── Registration Card ── */
+function RegistrationCard({ registration: reg, onCancel, cancelling, onViewTicket }) {
   const statusInfo = REG_STATUS_STYLE[reg.status] || REG_STATUS_STYLE.CONFIRMED;
   const event = reg.event || {};
   const isPast = event.endDate && new Date(event.endDate) < new Date();
@@ -378,93 +378,113 @@ function RegistrationRow({ registration: reg, onCancel, cancelling, onViewTicket
   const isCancelling = cancelling === reg.id;
 
   return (
-    <div className="bg-bauhaus-white/80 border border-[#1F2937]/20 overflow-hidden hover:border-bauhaus-fg/60 transition-colors">
-      <div className="h-0.75" style={{ backgroundColor: statusInfo.bg }} />
-      <div className="p-5">
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-          {/* Left — Event info */}
+    <div className="bg-bauhaus-white/80 border border-[#E0E0E0] overflow-hidden hover:border-bauhaus-fg/40 transition-colors">
+      <div className="p-5 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-start gap-5">
+          {/* Left — Info */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-3 mb-2">
+            {/* Status badge + ticket ID */}
+            <div className="flex items-center flex-wrap gap-2.5 mb-2.5">
               <span
-                className="px-2 py-0.5 text-[10px] font-bold text-white uppercase tracking-wider shrink-0"
-                style={{ backgroundColor: statusInfo.bg }}
+                className="inline-flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-sm"
+                style={{ backgroundColor: statusInfo.bg, color: statusInfo.text }}
               >
+                <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: statusInfo.dot }} />
                 {statusInfo.label}
               </span>
               {reg.ticketCode && (
-                <span className="flex items-center gap-1 text-[11px] text-[#6B7280] font-mono">
-                  <Ticket className="w-3 h-3" /> {reg.ticketCode}
+                <span className="flex items-center gap-1.5 text-[11px] text-[#6B7280] font-mono">
+                  <Ticket className="w-3 h-3 text-[#9CA3AF]" />
+                  {reg.ticketCode}
                 </span>
               )}
             </div>
 
+            {/* Event title */}
             <Link
               to={`/events/${event.id}`}
-              className="text-[15px] font-bold text-bauhaus-fg uppercase tracking-tight hover:text-bauhaus-blue transition-colors"
+              className="text-sm font-bold text-bauhaus-fg uppercase tracking-tight hover:text-bauhaus-blue transition-colors leading-snug"
             >
               {event.title || 'Event'}
             </Link>
 
-            <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-[#9CA3AF] mt-2">
-              {event.location && (
-                <span className="flex items-center gap-1">
-                  <MapPin className="w-3 h-3" /> {event.location}
+            {/* Metadata row */}
+            <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-[#6B7280] mt-2.5">
+              {event.startDate && (
+                <span className="flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-[#9CA3AF]" />
+                  {fmtDate(event.startDate)} · {fmtTime(event.startDate)}
                 </span>
               )}
-              {event.startDate && (
-                <span className="flex items-center gap-1">
-                  <Clock className="w-3 h-3" /> {fmtDate(event.startDate)} at {fmtTime(event.startDate)}
+              {event.location && (
+                <span className="flex items-center gap-1.5">
+                  <MapPin className="w-3.5 h-3.5 text-[#9CA3AF]" />
+                  {event.location}
                 </span>
               )}
             </div>
 
-            <p className="text-[11px] text-[#9CA3AF] mt-1">
-              <span title={fmtDate(reg.registeredAt)}>Registered {timeAgo(reg.registeredAt)}</span>
-              {reg.cancelledAt && <span title={fmtDate(reg.cancelledAt)}> · Cancelled {timeAgo(reg.cancelledAt)}</span>}
+            {/* Registration timestamp */}
+            <p className="text-[11px] text-[#9CA3AF] mt-2">
+              <span title={reg.registeredAt ? `${fmtDate(reg.registeredAt)} at ${fmtTime(reg.registeredAt)}` : ''}>
+                Registered {timeAgo(reg.registeredAt)}
+              </span>
+              {reg.cancelledAt && (
+                <span title={reg.cancelledAt ? `${fmtDate(reg.cancelledAt)} at ${fmtTime(reg.cancelledAt)}` : ''}>
+                  {' · '}Cancelled {timeAgo(reg.cancelledAt)}
+                </span>
+              )}
             </p>
           </div>
 
-          {/* Right — Actions */}
-          <div className="flex items-center gap-2 shrink-0">
+          {/* Right — Actions with clear hierarchy */}
+          <div className="flex items-center gap-2 shrink-0 flex-wrap sm:flex-nowrap">
+            {/* Primary: Ticket */}
             {reg.ticketCode && reg.status === 'CONFIRMED' && (
               <button
                 onClick={() => onViewTicket(reg.ticketCode, event)}
-                className="px-4 h-9 flex items-center gap-1.5 bg-bauhaus-white/80 border border-[#D1D5DB] text-xs font-bold text-bauhaus-fg uppercase tracking-wider hover:bg-bauhaus-bg transition-colors cursor-pointer"
+                className="px-4 h-9 flex items-center gap-1.5 bg-bauhaus-blue text-white text-[11px] font-bold uppercase tracking-wider hover:bg-[#0D3399] transition-colors cursor-pointer"
               >
                 <QrCode className="w-3.5 h-3.5" /> Ticket
               </button>
             )}
+
+            {/* Secondary: View */}
+            <Link
+              to={`/events/${event.id}`}
+              className="px-3 h-9 flex items-center gap-1.5 bg-bauhaus-white/80 border border-[#D1D5DB] text-[11px] font-bold text-bauhaus-fg uppercase tracking-wider hover:bg-bauhaus-bg transition-colors"
+            >
+              <Eye className="w-3.5 h-3.5" /> View
+            </Link>
+
+            {/* Utility: .ICS + Google */}
             {reg.status === 'CONFIRMED' && (
-              <>
+              <div className="flex items-center gap-1">
                 <button
                   onClick={() => downloadICS(event)}
                   title="Download .ics file"
-                  className="px-3 h-9 flex items-center gap-1 bg-bauhaus-white/80 border border-[#D1D5DB] text-xs font-bold text-bauhaus-fg uppercase tracking-wider hover:bg-bauhaus-bg transition-colors cursor-pointer"
+                  className="px-2.5 h-9 flex items-center gap-1 bg-bauhaus-white/80 border border-[#E0E0E0] text-[10px] font-bold text-[#6B7280] uppercase tracking-wider hover:bg-bauhaus-bg transition-colors cursor-pointer"
                 >
-                  <Download className="w-3.5 h-3.5" /> .ics
+                  <Download className="w-3 h-3" /> .ics
                 </button>
                 <a
                   href={getGoogleCalendarUrl(event)}
                   target="_blank"
                   rel="noopener noreferrer"
                   title="Add to Google Calendar"
-                  className="px-3 h-9 flex items-center gap-1 bg-bauhaus-white/80 border border-[#D1D5DB] text-xs font-bold text-bauhaus-fg uppercase tracking-wider hover:bg-bauhaus-bg transition-colors"
+                  className="px-2 h-9 flex items-center bg-bauhaus-white/80 border border-[#E0E0E0] text-[#6B7280] hover:bg-bauhaus-bg transition-colors"
                 >
                   <CalendarPlus className="w-3.5 h-3.5" />
                 </a>
-              </>
+              </div>
             )}
-            <Link
-              to={`/events/${event.id}`}
-              className="px-4 h-9 flex items-center bg-bauhaus-white/80 border border-[#D1D5DB] text-xs font-bold text-bauhaus-fg uppercase tracking-wider hover:bg-bauhaus-bg transition-colors"
-            >
-              View
-            </Link>
+
+            {/* Cancel — far right, danger style */}
             {canCancel && (
               <button
                 onClick={() => onCancel(reg.id)}
                 disabled={isCancelling}
-                className="px-4 h-9 flex items-center gap-1 bg-bauhaus-white/80 border border-[#D1D5DB] text-xs font-bold text-bauhaus-red uppercase tracking-wider hover:bg-[#FEF2F2] disabled:opacity-50 transition-colors cursor-pointer"
+                className="px-3 h-9 flex items-center gap-1 border border-bauhaus-red/30 text-[11px] font-bold text-bauhaus-red uppercase tracking-wider hover:bg-[#FEF2F2] disabled:opacity-50 transition-colors cursor-pointer ml-1"
               >
                 {isCancelling ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
                 Cancel
