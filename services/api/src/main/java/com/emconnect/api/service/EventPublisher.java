@@ -60,6 +60,42 @@ public class EventPublisher {
                 event.getEventId(), event.getAffectedRegistrations());
     }
 
+    public void publishEventUpdated(EventUpdatedEvent event) {
+        publish(RabbitMQConfig.ROUTING_EVENT_UPDATED, event);
+        logger.info("Published EventUpdatedEvent: eventId={}, eventTitle={}",
+                event.getEventId(), event.getEventTitle());
+    }
+
+    public void publishEventReminder(EventReminderEvent event) {
+        publish(RabbitMQConfig.ROUTING_EVENT_REMINDER, event);
+        logger.info("Published EventReminderEvent: userId={}, eventTitle={}, type={}",
+                event.getUserId(), event.getEventTitle(), event.getReminderType());
+    }
+
+    public void publishUserRegistered(UserRegisteredEvent event) {
+        publish(RabbitMQConfig.ROUTING_USER_REGISTERED, event);
+        logger.info("Published UserRegisteredEvent: userId={}, userEmail={}",
+                event.getUserId(), event.getUserEmail());
+    }
+
+    public void publishUserLogin(UserLoginEvent event) {
+        publish(RabbitMQConfig.ROUTING_USER_LOGIN, event);
+        logger.info("Published UserLoginEvent: userId={}, method={}",
+                event.getUserId(), event.getLoginMethod());
+    }
+
+    public void publishUserPasswordChanged(UserPasswordChangedEvent event) {
+        publish(RabbitMQConfig.ROUTING_USER_PASSWORD_CHANGED, event);
+        logger.info("Published UserPasswordChangedEvent: userId={}",
+                event.getUserId());
+    }
+
+    public void publishCheckIn(CheckInEvent event) {
+        publish(RabbitMQConfig.ROUTING_CHECK_IN, event);
+        logger.info("Published CheckInEvent: registrationId={}, ticketCode={}",
+                event.getRegistrationId(), event.getTicketCode());
+    }
+
     /**
      * Internal method to send message to RabbitMQ.
      */
