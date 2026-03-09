@@ -48,7 +48,7 @@ func Load() *Config {
 			URL:           getEnv("RABBITMQ_URL", "amqp://emconnect:emconnect@localhost:5672/"),
 			Exchange:      getEnv("RABBITMQ_EXCHANGE", "em.events"),
 			Queue:         getEnv("RABBITMQ_QUEUE", "notification.queue"),
-			RoutingKeys:   []string{"registration.*", "event.*"},
+			RoutingKeys:   []string{"registration.*", "event.*", "user.*"},
 			ConsumerTag:   getEnv("RABBITMQ_CONSUMER_TAG", "notification-worker"),
 			PrefetchCount: 10,
 			DLQExchange:   getEnv("RABBITMQ_DLQ_EXCHANGE", "em.events.dlx"),

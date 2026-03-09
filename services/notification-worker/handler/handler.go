@@ -44,6 +44,14 @@ func (h *MessageHandler) HandleMessage(body []byte) error {
 		return h.handleEventCancelled(body)
 	case "EVENT_REMINDER":
 		return h.handleEventReminder(body)
+	case "USER_REGISTERED":
+		return h.handleUserRegistered(body)
+	case "USER_LOGIN":
+		return h.handleUserLogin(body)
+	case "USER_PASSWORD_CHANGED":
+		return h.handleUserPasswordChanged(body)
+	case "CHECK_IN":
+		return h.handleCheckIn(body)
 	default:
 		log.Printf("⚠️  Unknown event type: %s", base.EventType)
 		return nil // Don't error on unknown events
@@ -195,6 +203,119 @@ func (h *MessageHandler) handleEventReminder(body []byte) error {
 	return h.emailService.SendWithRetry(email.Email{
 		To:       event.UserEmail,
 		Subject:  fmt.Sprintf("Reminder: %s is coming up!", event.EventTitle),
+		HTMLBody: htmlBody,
+	})
+}
+
+func (h *MessageHandler) handleUserRegistered(body []byte) error {
+	var event model.UserRegisteredEvent
+	if err := json.Unmarshal(body, &event); err != nil {
+		return fmt.Errorf("failed to unmarshal UserRegisteredEvent: %w", err)
+	}
+
+	log.Printf("🎉 USER REGISTERED")
+	log.Printf("   📧 To: %s (%s)", event.UserEmail, event.UserName)
+
+	htmlBody, err := templates.Render("welcome", templates.TemplateData{
+		Subject:     "Welcome to EM-Connect!",
+		AccentColor: "#1040C0",
+		UserName:    event.UserName,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to render template: %w", err)
+	}
+
+	return h.emailService.SendWithRetry(email.Email{
+		To:       event.UserEmail,
+		Subject:  "Welcome to EM-Connect!",
+		HTMLBody: htmlBody,
+	})
+}
+
+func (h *MessageHandler) handleUserLogin(body []byte) error {
+	var event model.UserLoginEvent
+	if err := json.Unmarshal(body, &event); err != nil {
+		return fmt.Errorf("failed to unmarshal UserLoginEvent: %w", err)
+	}
+
+	log.Printf("🔐 USER LOGIN")
+	log.Printf("   📧 To: %s (%s)", event.UserEmail, event.UserName)
+	log.Printf("   🔑 Method: %s", event.LoginMethod)
+
+	method := "Email & Password"
+	if event.LoginMethod == "GOOGLE" {
+		method = "Google Sign-In"
+	}
+
+	htmlBody, err := templates.Render("login_alert", templates.TemplateData{
+		Subject:     "New sign-in to your account",
+		AccentColor: "#1040C0",
+		UserName:    event.UserName,
+		LoginMethod: method,
+		LoginTime:   event.Timestamp.Format("Monday, January 2, 2006 at 3:04 PM"),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to render template: %w", err)
+	}
+
+	return h.emailService.SendWithRetry(email.Email{
+		To:       event.UserEmail,
+		Subject:  "New sign-in to your EM-Connect account",
+		HTMLBody: htmlBody,
+	})
+}
+
+func (h *MessageHandler) handleUserPasswordChanged(body []byte) error {
+	var event model.UserPasswordChangedEvent
+	if err := json.Unmarshal(body, &event); err != nil {
+		return fmt.Errorf("failed to unmarshal UserPasswordChangedEvent: %w", err)
+	}
+
+	log.Printf("🔒 PASSWORD CHANGED")
+	log.Printf("   📧 To: %s (%s)", event.UserEmail, event.UserName)
+
+	htmlBody, err := templates.Render("password_changed", templates.TemplateData{
+		Subject:     "Your password has been changed",
+		AccentColor: "#F0C020",
+		UserName:    event.UserName,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to render template: %w", err)
+	}
+
+	return h.emailService.SendWithRetry(email.Email{
+		To:       event.UserEmail,
+		Subject:  "Your EM-Connect password has been changed",
+		HTMLBody: htmlBody,
+	})
+}
+
+func (h *MessageHandler) handleCheckIn(body []byte) error {
+	var event model.CheckInEvent
+	if err := json.Unmarshal(body, &event); err != nil {
+		return fmt.Errorf("failed to unmarshal CheckInEvent: %w", err)
+	}
+
+	log.Printf("✅ CHECK-IN")
+	log.Printf("   📧 To: %s (%s)", event.UserEmail, event.UserName)
+	log.Printf("   🎫 Event: %s", event.EventTitle)
+	log.Printf("   🎟️  Ticket: %s", event.TicketCode)
+
+	htmlBody, err := templates.Render("check_in", templates.TemplateData{
+		Subject:       fmt.Sprintf("Checked In: %s", event.EventTitle),
+		AccentColor:   "#16A34A",
+		UserName:      event.UserName,
+		EventTitle:    event.EventTitle,
+		EventLocation: event.EventLocation,
+		TicketCode:    event.TicketCode,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to render template: %w", err)
+	}
+
+	return h.emailService.SendWithRetry(email.Email{
+		To:       event.UserEmail,
+		Subject:  fmt.Sprintf("Checked In: %s", event.EventTitle),
 		HTMLBody: htmlBody,
 	})
 }

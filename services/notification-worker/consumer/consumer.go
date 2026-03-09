@@ -90,8 +90,8 @@ func (c *Consumer) setupQueue() error {
 		return fmt.Errorf("failed to declare queue %s: %w", c.config.RabbitMQ.Queue, err)
 	}
 
-	// Bind queue to exchange — notification queue gets ALL registration and event messages
-	for _, routingKey := range []string{"registration.*", "event.*"} {
+	// Bind queue to exchange — notification queue gets registration, event, and user messages
+	for _, routingKey := range []string{"registration.*", "event.*", "user.*"} {
 		err = c.channel.QueueBind(
 			c.config.RabbitMQ.Queue, routingKey, "em.events", false, nil,
 		)
@@ -100,7 +100,7 @@ func (c *Consumer) setupQueue() error {
 		}
 	}
 
-	log.Printf("📦 Queue declared and bound: %s → em.events (registration.*, event.*)", c.config.RabbitMQ.Queue)
+	log.Printf("📦 Queue declared and bound: %s → em.events (registration.*, event.*, user.*)", c.config.RabbitMQ.Queue)
 	return nil
 }
 
