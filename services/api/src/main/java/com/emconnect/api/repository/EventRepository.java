@@ -119,4 +119,8 @@ public interface EventRepository extends JpaRepository<Event, Long> {
     List<Object[]> findTopLocations(@Param("lim") int lim);
 
     long countByStatus(EventStatus status);
+
+    // Find published events starting in a time window (for reminders)
+    @Query("SELECT e FROM Event e WHERE e.status = 'PUBLISHED' AND e.startDate BETWEEN :from AND :to")
+    List<Event> findPublishedEventsBetween(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
 }

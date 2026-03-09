@@ -4,6 +4,7 @@ import com.emconnect.api.dto.ChangePasswordRequest;
 import com.emconnect.api.dto.UpdateProfileRequest;
 import com.emconnect.api.dto.UserResponse;
 import com.emconnect.api.entity.User;
+import com.emconnect.api.event.UserPasswordChangedEvent;
 import com.emconnect.api.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EventPublisher eventPublisher;
 
     private static final String AVATAR_DIR = "avatars";
     private static final Set<String> ALLOWED_TYPES = Set.of(
@@ -29,9 +31,10 @@ public class UserService {
     );
     private static final long MAX_SIZE = 2 * 1024 * 1024; // 2 MB
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, EventPublisher eventPublisher) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.eventPublisher = eventPublisher;
     }
 
     public UserResponse getProfile(String email) {
@@ -59,6 +62,9 @@ public class UserService {
 
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
+
+        // Publish password changed event
+        eventPublisher.publishUserPasswordChanged(UserPasswordChangedEvent.fromUser(user));
     }
 
     public UserResponse uploadAvatar(String email, MultipartFile file) throws IOException {

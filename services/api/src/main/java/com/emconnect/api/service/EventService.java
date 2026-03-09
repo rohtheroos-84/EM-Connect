@@ -9,6 +9,7 @@ import com.emconnect.api.entity.RegistrationStatus;
 import com.emconnect.api.entity.User;
 import com.emconnect.api.event.EventCancelledEvent;
 import com.emconnect.api.event.EventPublishedEvent;
+import com.emconnect.api.event.EventUpdatedEvent;
 import com.emconnect.api.exception.InvalidStateTransitionException;
 import com.emconnect.api.exception.ResourceNotFoundException;
 import com.emconnect.api.repository.EventRepository;

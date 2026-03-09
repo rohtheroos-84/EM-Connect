@@ -5,6 +5,8 @@ import com.emconnect.api.dto.LoginRequest;
 import com.emconnect.api.dto.RegisterRequest;
 import com.emconnect.api.dto.UserResponse;
 import com.emconnect.api.entity.User;
+import com.emconnect.api.event.UserLoginEvent;
+import com.emconnect.api.event.UserRegisteredEvent;
 import com.emconnect.api.exception.EmailAlreadyExistsException;
 import com.emconnect.api.exception.InvalidCredentialsException;
 import com.emconnect.api.repository.UserRepository;
@@ -24,16 +26,19 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final EventPublisher eventPublisher;
 
     @Value("${google.oauth.client-id:}")
     private String googleClientId;
 
     public AuthService(UserRepository userRepository, 
                        PasswordEncoder passwordEncoder,
-                       JwtService jwtService) {
+                       JwtService jwtService,
+                       EventPublisher eventPublisher) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
+        this.eventPublisher = eventPublisher;
     }
 
     public AuthResponse register(RegisterRequest request) {
@@ -60,6 +65,9 @@ public class AuthService {
             savedUser.getEmail(),
             savedUser.getRole()
         );
+
+        // Publish welcome event
+        eventPublisher.publishUserRegistered(UserRegisteredEvent.fromUser(savedUser));
 
         // Return response with token
         return new AuthResponse(
@@ -94,6 +102,9 @@ public class AuthService {
             user.getEmail(),
             user.getRole()
         );
+
+        // Publish login event
+        eventPublisher.publishUserLogin(UserLoginEvent.fromUser(user, "PASSWORD"));
 
         // Return response with token
         return new AuthResponse(
@@ -136,6 +147,8 @@ public class AuthService {
             user.setOauthProvider("GOOGLE");
             // No password for OAuth users
             user = userRepository.save(user);
+            // Publish welcome event for new Google users
+            eventPublisher.publishUserRegistered(UserRegisteredEvent.fromUser(user));
         } else if (user.getOauthProvider() == null) {
             // Existing regular account — link with Google
             user.setOauthProvider("GOOGLE");
@@ -151,6 +164,9 @@ public class AuthService {
             user.getEmail(),
             user.getRole()
         );
+
+        // Publish Google login event
+        eventPublisher.publishUserLogin(UserLoginEvent.fromUser(user, "GOOGLE"));
 
         return new AuthResponse(
             "Google login successful",

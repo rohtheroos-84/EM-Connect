@@ -6,6 +6,7 @@ import com.emconnect.api.entity.Event;
 import com.emconnect.api.entity.Registration;
 import com.emconnect.api.entity.RegistrationStatus;
 import com.emconnect.api.entity.User;
+import com.emconnect.api.event.CheckInEvent;
 import com.emconnect.api.repository.RegistrationRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
@@ -26,11 +27,14 @@ import java.util.stream.Collectors;
 public class TicketService {
 
     private final RegistrationRepository registrationRepository;
+    private final EventPublisher eventPublisher;
     private final Path qrStoragePath;
 
     public TicketService(RegistrationRepository registrationRepository,
+                         EventPublisher eventPublisher,
                          @Value("${ticket.qr.storage-path:../ticket-worker/tickets/qr}") String qrStoragePath) {
         this.registrationRepository = registrationRepository;
+        this.eventPublisher = eventPublisher;
         this.qrStoragePath = Paths.get(qrStoragePath).toAbsolutePath().normalize();
     }
 
@@ -142,6 +146,9 @@ public class TicketService {
         // Step 5: All checks passed! Mark as used
         registration.setCheckedInAt(LocalDateTime.now());
         registrationRepository.save(registration);
+
+        // Publish check-in event for confirmation email
+        eventPublisher.publishCheckIn(CheckInEvent.fromRegistration(registration));
 
         return TicketValidationResponse.success(
                 ticketCode,
