@@ -81,7 +81,7 @@ export default function MyRegistrations() {
   const [totalElements, setTotalElements] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [statusFilter, setStatusFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('CONFIRMED');
   const [cancelling, setCancelling] = useState(null); // registration id being cancelled
   const [actionMsg, setActionMsg] = useState(null);
   const [ticketModal, setTicketModal] = useState(null); // { ticketCode, event }
