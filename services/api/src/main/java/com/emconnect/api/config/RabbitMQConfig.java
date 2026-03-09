@@ -34,10 +34,17 @@ public class RabbitMQConfig {
     public static final String ROUTING_REGISTRATION_CANCELLED = "registration.cancelled";
     public static final String ROUTING_EVENT_PUBLISHED = "event.published";
     public static final String ROUTING_EVENT_CANCELLED = "event.cancelled";
+    public static final String ROUTING_EVENT_UPDATED = "event.updated";
+    public static final String ROUTING_EVENT_REMINDER = "event.reminder";
+    public static final String ROUTING_USER_REGISTERED = "user.registered";
+    public static final String ROUTING_USER_LOGIN = "user.login";
+    public static final String ROUTING_USER_PASSWORD_CHANGED = "user.password_changed";
+    public static final String ROUTING_CHECK_IN = "registration.checkedin";
 
     // Wildcard patterns for bindings
     public static final String ROUTING_REGISTRATION_ALL = "registration.*";
     public static final String ROUTING_EVENT_ALL = "event.*";
+    public static final String ROUTING_USER_ALL = "user.*";
 
     // ==================== Exchanges ====================
 
@@ -107,6 +114,15 @@ public class RabbitMQConfig {
                 .bind(notificationQueue())
                 .to(eventsExchange())
                 .with(ROUTING_EVENT_ALL);
+    }
+
+    // Notification queue also gets user.* messages (welcome, login, password change)
+    @Bean
+    public Binding notificationUserBinding() {
+        return BindingBuilder
+                .bind(notificationQueue())
+                .to(eventsExchange())
+                .with(ROUTING_USER_ALL);
     }
 
     // Ticket queue only gets registration.confirmed
