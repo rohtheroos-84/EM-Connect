@@ -361,6 +361,194 @@ const eventReminderBody = `
 </tr>
 `
 
+// ── Welcome email for new user registration ────────────────────────────
+
+const welcomeBody = `
+<!-- MAIN CARD -->
+<tr>
+  <td style="background-color:#ffffff;padding:36px 32px;" class="card">
+    <!-- Badge -->
+    <table role="presentation" cellpadding="0" cellspacing="0" style="margin-bottom:24px;"><tr>
+      <td style="background-color:#1040C0;padding:4px 12px;">
+        <span style="font-size:10px;font-weight:800;color:#ffffff;text-transform:uppercase;letter-spacing:1.5px;">Welcome</span>
+      </td>
+    </tr></table>
+
+    <p style="font-size:16px;color:#121212;margin:0 0 8px;" class="text-primary">
+      Hello <strong>{{.UserName}}</strong>,
+    </p>
+    <p style="font-size:14px;color:#6b7280;margin:0 0 28px;line-height:1.6;" class="text-secondary">
+      Welcome to <strong>EM-Connect</strong>! Your account has been created successfully.
+    </p>
+
+    <!-- Features card -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f9fafb;border:1px solid #e5e7eb;margin-bottom:24px;">
+      <tr><td style="height:3px;background-color:#1040C0;"></td></tr>
+      <tr><td style="padding:20px 24px;">
+        <p style="font-size:11px;font-weight:700;color:rgba(18,18,18,0.35);text-transform:uppercase;letter-spacing:1.5px;margin:0 0 12px;">What You Can Do</p>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+          <tr>
+            <td style="padding:8px 0;font-size:14px;color:#121212;line-height:1.5;">
+              <span style="color:#D02020;font-weight:900;margin-right:8px;">&#9632;</span> Browse and register for events
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:8px 0;font-size:14px;color:#121212;line-height:1.5;">
+              <span style="color:#F0C020;font-weight:900;margin-right:8px;">&#9632;</span> Get QR-code tickets for instant check-in
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:8px 0;font-size:14px;color:#121212;line-height:1.5;">
+              <span style="color:#1040C0;font-weight:900;margin-right:8px;">&#9632;</span> Receive reminders before events start
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:8px 0;font-size:14px;color:#121212;line-height:1.5;">
+              <span style="color:#D02020;font-weight:900;margin-right:8px;">&#9632;</span> Create and manage your own events
+            </td>
+          </tr>
+        </table>
+      </td></tr>
+    </table>
+
+    <p style="font-size:14px;color:#6b7280;margin:0;line-height:1.6;" class="text-secondary">
+      Start exploring events now and never miss out on what matters to you!
+    </p>
+  </td>
+</tr>
+`
+
+// ── Login alert email ──────────────────────────────────────────────────
+
+const loginAlertBody = `
+<!-- MAIN CARD -->
+<tr>
+  <td style="background-color:#ffffff;padding:36px 32px;" class="card">
+    <!-- Badge -->
+    <table role="presentation" cellpadding="0" cellspacing="0" style="margin-bottom:24px;"><tr>
+      <td style="background-color:#1040C0;padding:4px 12px;">
+        <span style="font-size:10px;font-weight:800;color:#ffffff;text-transform:uppercase;letter-spacing:1.5px;">Security Notice</span>
+      </td>
+    </tr></table>
+
+    <p style="font-size:16px;color:#121212;margin:0 0 8px;" class="text-primary">
+      Hello <strong>{{.UserName}}</strong>,
+    </p>
+    <p style="font-size:14px;color:#6b7280;margin:0 0 28px;line-height:1.6;" class="text-secondary">
+      We detected a new sign-in to your EM-Connect account.
+    </p>
+
+    <!-- Login details card -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f9fafb;border:1px solid #e5e7eb;margin-bottom:24px;">
+      <tr><td style="height:3px;background-color:#1040C0;"></td></tr>
+      <tr><td style="padding:20px 24px;">
+        <p style="font-size:11px;font-weight:700;color:rgba(18,18,18,0.35);text-transform:uppercase;letter-spacing:1.5px;margin:0 0 8px;">Sign-In Details</p>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+          <tr>
+            <td style="padding:6px 0;font-size:12px;font-weight:700;color:rgba(18,18,18,0.4);text-transform:uppercase;letter-spacing:1px;width:90px;vertical-align:top;">Method</td>
+            <td style="padding:6px 0;font-size:14px;color:#121212;">{{.LoginMethod}}</td>
+          </tr>
+          <tr>
+            <td style="padding:6px 0;font-size:12px;font-weight:700;color:rgba(18,18,18,0.4);text-transform:uppercase;letter-spacing:1px;width:90px;vertical-align:top;">Time</td>
+            <td style="padding:6px 0;font-size:14px;color:#121212;">{{.LoginTime}}</td>
+          </tr>
+        </table>
+      </td></tr>
+    </table>
+
+    <p style="font-size:14px;color:#6b7280;margin:0;line-height:1.6;" class="text-secondary">
+      If this was you, no action is needed. If you didn't sign in, please change your password immediately.
+    </p>
+  </td>
+</tr>
+`
+
+// ── Password changed email ─────────────────────────────────────────────
+
+const passwordChangedBody = `
+<!-- MAIN CARD -->
+<tr>
+  <td style="background-color:#ffffff;padding:36px 32px;" class="card">
+    <!-- Badge -->
+    <table role="presentation" cellpadding="0" cellspacing="0" style="margin-bottom:24px;"><tr>
+      <td style="background-color:#F0C020;padding:4px 12px;">
+        <span style="font-size:10px;font-weight:800;color:#121212;text-transform:uppercase;letter-spacing:1.5px;">Password Updated</span>
+      </td>
+    </tr></table>
+
+    <p style="font-size:16px;color:#121212;margin:0 0 8px;" class="text-primary">
+      Hello <strong>{{.UserName}}</strong>,
+    </p>
+    <p style="font-size:14px;color:#6b7280;margin:0 0 28px;line-height:1.6;" class="text-secondary">
+      Your password has been changed successfully.
+    </p>
+
+    <!-- Security notice -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#fef2f2;border:1px solid #fecaca;margin-bottom:24px;">
+      <tr><td style="height:3px;background-color:#D02020;"></td></tr>
+      <tr><td style="padding:20px 24px;">
+        <p style="font-size:14px;color:#121212;margin:0;line-height:1.6;">
+          <strong>Didn&rsquo;t make this change?</strong><br/>
+          If you didn&rsquo;t change your password, your account may be compromised. Please secure your account immediately.
+        </p>
+      </td></tr>
+    </table>
+
+    <p style="font-size:14px;color:#6b7280;margin:0;line-height:1.6;" class="text-secondary">
+      For your security, you may be asked to sign in again on your devices.
+    </p>
+  </td>
+</tr>
+`
+
+// ── Check-in confirmation email ────────────────────────────────────────
+
+const checkInBody = `
+<!-- MAIN CARD -->
+<tr>
+  <td style="background-color:#ffffff;padding:36px 32px;" class="card">
+    <!-- Badge -->
+    <table role="presentation" cellpadding="0" cellspacing="0" style="margin-bottom:24px;"><tr>
+      <td style="background-color:#16A34A;padding:4px 12px;">
+        <span style="font-size:10px;font-weight:800;color:#ffffff;text-transform:uppercase;letter-spacing:1.5px;">Checked In</span>
+      </td>
+    </tr></table>
+
+    <p style="font-size:16px;color:#121212;margin:0 0 8px;" class="text-primary">
+      Hello <strong>{{.UserName}}</strong>,
+    </p>
+    <p style="font-size:14px;color:#6b7280;margin:0 0 28px;line-height:1.6;" class="text-secondary">
+      You have been successfully checked in! Enjoy the event.
+    </p>
+
+    <!-- Event details card -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f9fafb;border:1px solid #e5e7eb;margin-bottom:24px;">
+      <tr><td style="height:3px;background-color:#16A34A;"></td></tr>
+      <tr><td style="padding:20px 24px;">
+        <p style="font-size:11px;font-weight:700;color:rgba(18,18,18,0.35);text-transform:uppercase;letter-spacing:1.5px;margin:0 0 8px;">Event</p>
+        <p style="font-size:18px;font-weight:900;color:#121212;text-transform:uppercase;letter-spacing:0.5px;margin:0 0 16px;">{{.EventTitle}}</p>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+          {{if .EventLocation}}
+          <tr>
+            <td style="padding:6px 0;font-size:12px;font-weight:700;color:rgba(18,18,18,0.4);text-transform:uppercase;letter-spacing:1px;width:90px;vertical-align:top;">Location</td>
+            <td style="padding:6px 0;font-size:14px;color:#121212;">{{.EventLocation}}</td>
+          </tr>
+          {{end}}
+          <tr>
+            <td style="padding:6px 0;font-size:12px;font-weight:700;color:rgba(18,18,18,0.4);text-transform:uppercase;letter-spacing:1px;width:90px;vertical-align:top;">Ticket</td>
+            <td style="padding:6px 0;font-size:14px;color:#121212;font-family:'Courier New',monospace;font-weight:700;">{{.TicketCode}}</td>
+          </tr>
+        </table>
+      </td></tr>
+    </table>
+
+    <p style="font-size:14px;color:#6b7280;margin:0;line-height:1.6;" class="text-secondary">
+      Thank you for attending. We hope you have a great experience!
+    </p>
+  </td>
+</tr>
+`
+
 // ── Template registry ──────────────────────────────────────────────────
 
 // TemplateData holds the data passed to every template.
@@ -378,6 +566,9 @@ type TemplateData struct {
 	// event_cancelled extras
 	OriginalDate          string
 	AffectedRegistrations int
+	// login alert extras
+	LoginMethod string
+	LoginTime   string
 }
 
 var registry map[string]*template.Template
@@ -391,6 +582,10 @@ func init() {
 		"event_published":        eventPublishedBody,
 		"event_cancelled":        eventCancelledBody,
 		"event_reminder":         eventReminderBody,
+		"welcome":                welcomeBody,
+		"login_alert":            loginAlertBody,
+		"password_changed":       passwordChangedBody,
+		"check_in":               checkInBody,
 	}
 
 	for name, body := range templates {

@@ -154,4 +154,45 @@ type EventReminderEvent struct {
 	EventLocation  string        `json:"eventLocation"`
 	EventStartDate LocalDateTime `json:"eventStartDate"`
 	TicketCode     string        `json:"ticketCode"`
+	ReminderType   string        `json:"reminderType"` // "24H" or "1H"
+}
+
+// UserRegisteredEvent is published when a new user signs up
+type UserRegisteredEvent struct {
+	BaseEvent
+	UserID        int64  `json:"userId"`
+	UserEmail     string `json:"userEmail"`
+	UserName      string `json:"userName"`
+	OauthProvider string `json:"oauthProvider"`
+}
+
+// UserLoginEvent is published when a user logs in
+type UserLoginEvent struct {
+	BaseEvent
+	UserID      int64  `json:"userId"`
+	UserEmail   string `json:"userEmail"`
+	UserName    string `json:"userName"`
+	LoginMethod string `json:"loginMethod"` // "PASSWORD" or "GOOGLE"
+}
+
+// UserPasswordChangedEvent is published when a user changes their password
+type UserPasswordChangedEvent struct {
+	BaseEvent
+	UserID    int64  `json:"userId"`
+	UserEmail string `json:"userEmail"`
+	UserName  string `json:"userName"`
+}
+
+// CheckInEvent is published when an attendee checks in at an event
+type CheckInEvent struct {
+	BaseEvent
+	RegistrationID int64         `json:"registrationId"`
+	UserID         int64         `json:"userId"`
+	UserEmail      string        `json:"userEmail"`
+	UserName       string        `json:"userName"`
+	EventID        int64         `json:"eventId"`
+	EventTitle     string        `json:"eventTitle"`
+	EventLocation  string        `json:"eventLocation"`
+	EventStartDate LocalDateTime `json:"eventStartDate"`
+	TicketCode     string        `json:"ticketCode"`
 }
