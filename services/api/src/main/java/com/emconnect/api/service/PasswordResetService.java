@@ -19,7 +19,7 @@ import java.util.Optional;
 public class PasswordResetService {
 
     private static final Logger logger = LoggerFactory.getLogger(PasswordResetService.class);
-    private static final int CODE_LENGTH = 6;
+    // private static final int CODE_LENGTH = 6;
     private static final int CODE_EXPIRY_MINUTES = 15;
 
     private final UserRepository userRepository;
