@@ -196,3 +196,12 @@ type CheckInEvent struct {
 	EventStartDate LocalDateTime `json:"eventStartDate"`
 	TicketCode     string        `json:"ticketCode"`
 }
+
+// PasswordResetRequestedEvent is published when a user requests a password reset
+type PasswordResetRequestedEvent struct {
+	BaseEvent
+	UserID    int64  `json:"userId"`
+	UserEmail string `json:"userEmail"`
+	UserName  string `json:"userName"`
+	ResetCode string `json:"resetCode"`
+}

@@ -551,6 +551,53 @@ const checkInBody = `
 
 // ── Template registry ──────────────────────────────────────────────────
 
+// ── Password reset code email ──────────────────────────────────────────
+
+const passwordResetCodeBody = `
+<!-- MAIN CARD -->
+<tr>
+  <td style="background-color:#ffffff;padding:36px 32px;" class="card">
+    <!-- Badge -->
+    <table role="presentation" cellpadding="0" cellspacing="0" style="margin-bottom:24px;"><tr>
+      <td style="background-color:#D02020;padding:4px 12px;">
+        <span style="font-size:10px;font-weight:800;color:#ffffff;text-transform:uppercase;letter-spacing:1.5px;">Password Reset</span>
+      </td>
+    </tr></table>
+
+    <p style="font-size:16px;color:#121212;margin:0 0 8px;" class="text-primary">
+      Hello <strong>{{.UserName}}</strong>,
+    </p>
+    <p style="font-size:14px;color:#6b7280;margin:0 0 28px;line-height:1.6;" class="text-secondary">
+      We received a request to reset your password. Use the code below to proceed:
+    </p>
+
+    <!-- Reset Code -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
+      <tr><td align="center" style="padding:28px;border:2px dashed #D02020;background-color:#fef2f2;">
+        <p style="font-size:11px;font-weight:700;color:rgba(18,18,18,0.4);text-transform:uppercase;letter-spacing:1.5px;margin:0 0 10px;">Your Reset Code</p>
+        <p style="font-size:36px;font-weight:900;color:#D02020;letter-spacing:8px;margin:0 0 10px;font-family:'Courier New',monospace;">{{.ResetCode}}</p>
+        <p style="font-size:11px;color:#9ca3af;margin:0;">This code expires in 15 minutes</p>
+      </td></tr>
+    </table>
+
+    <!-- Security notice -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f9fafb;border:1px solid #e5e7eb;margin-bottom:24px;">
+      <tr><td style="height:3px;background-color:#F0C020;"></td></tr>
+      <tr><td style="padding:20px 24px;">
+        <p style="font-size:14px;color:#121212;margin:0;line-height:1.6;">
+          <strong>Didn&rsquo;t request this?</strong><br/>
+          If you didn&rsquo;t request a password reset, you can safely ignore this email. Your password will not be changed.
+        </p>
+      </td></tr>
+    </table>
+
+    <p style="font-size:14px;color:#6b7280;margin:0;line-height:1.6;" class="text-secondary">
+      For security, never share this code with anyone.
+    </p>
+  </td>
+</tr>
+`
+
 // TemplateData holds the data passed to every template.
 type TemplateData struct {
 	Subject       string
@@ -569,6 +616,8 @@ type TemplateData struct {
 	// login alert extras
 	LoginMethod string
 	LoginTime   string
+	// password reset extras
+	ResetCode string
 }
 
 var registry map[string]*template.Template
@@ -586,6 +635,7 @@ func init() {
 		"login_alert":            loginAlertBody,
 		"password_changed":       passwordChangedBody,
 		"check_in":               checkInBody,
+		"password_reset_code":    passwordResetCodeBody,
 	}
 
 	for name, body := range templates {

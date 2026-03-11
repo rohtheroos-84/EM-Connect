@@ -52,6 +52,8 @@ func (h *MessageHandler) HandleMessage(body []byte) error {
 		return h.handleUserPasswordChanged(body)
 	case "CHECK_IN":
 		return h.handleCheckIn(body)
+	case "PASSWORD_RESET_REQUESTED":
+		return h.handlePasswordResetRequested(body)
 	default:
 		log.Printf("⚠️  Unknown event type: %s", base.EventType)
 		return nil // Don't error on unknown events
@@ -316,6 +318,32 @@ func (h *MessageHandler) handleCheckIn(body []byte) error {
 	return h.emailService.SendWithRetry(email.Email{
 		To:       event.UserEmail,
 		Subject:  fmt.Sprintf("Checked In: %s", event.EventTitle),
+		HTMLBody: htmlBody,
+	})
+}
+
+func (h *MessageHandler) handlePasswordResetRequested(body []byte) error {
+	var event model.PasswordResetRequestedEvent
+	if err := json.Unmarshal(body, &event); err != nil {
+		return fmt.Errorf("failed to unmarshal PasswordResetRequestedEvent: %w", err)
+	}
+
+	log.Printf("🔑 PASSWORD RESET REQUESTED")
+	log.Printf("   📧 To: %s (%s)", event.UserEmail, event.UserName)
+
+	htmlBody, err := templates.Render("password_reset_code", templates.TemplateData{
+		Subject:     "Password Reset Code",
+		AccentColor: "#D02020",
+		UserName:    event.UserName,
+		ResetCode:   event.ResetCode,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to render template: %w", err)
+	}
+
+	return h.emailService.SendWithRetry(email.Email{
+		To:       event.UserEmail,
+		Subject:  "Your EM-Connect Password Reset Code",
 		HTMLBody: htmlBody,
 	})
 }
