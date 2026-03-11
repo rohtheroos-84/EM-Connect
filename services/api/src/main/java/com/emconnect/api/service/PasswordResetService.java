@@ -3,6 +3,7 @@ package com.emconnect.api.service;
 import com.emconnect.api.entity.PasswordResetCode;
 import com.emconnect.api.entity.User;
 import com.emconnect.api.event.PasswordResetRequestedEvent;
+import com.emconnect.api.event.UserPasswordChangedEvent;
 import com.emconnect.api.repository.PasswordResetCodeRepository;
 import com.emconnect.api.repository.UserRepository;
 import org.slf4j.Logger;
@@ -123,6 +124,9 @@ public class PasswordResetService {
 
         // Invalidate any other unused codes
         resetCodeRepository.invalidateAllForUser(user.getId());
+
+        // Notify user about successful password reset
+        eventPublisher.publishUserPasswordChanged(UserPasswordChangedEvent.fromUser(user));
 
         logger.info("Password reset successful for user: {}", user.getId());
     }
