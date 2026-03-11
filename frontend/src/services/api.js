@@ -91,6 +91,27 @@ export async function googleLogin(credential) {
   return data;
 }
 
+export async function forgotPassword(email) {
+  return request('/auth/forgot-password', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  });
+}
+
+export async function verifyResetCode(email, code) {
+  return request('/auth/verify-reset-code', {
+    method: 'POST',
+    body: JSON.stringify({ email, code }),
+  });
+}
+
+export async function resetPassword(email, code, newPassword) {
+  return request('/auth/reset-password', {
+    method: 'POST',
+    body: JSON.stringify({ email, code, newPassword }),
+  });
+}
+
 export function getStoredUser() {
   const raw = localStorage.getItem('em_user');
   return raw ? JSON.parse(raw) : null;
