@@ -96,6 +96,12 @@ public class EventPublisher {
                 event.getRegistrationId(), event.getTicketCode());
     }
 
+    public void publishPasswordResetRequested(PasswordResetRequestedEvent event) {
+        publish(RabbitMQConfig.ROUTING_PASSWORD_RESET, event);
+        logger.info("Published PasswordResetRequestedEvent: userId={}, userEmail={}",
+                event.getUserId(), event.getUserEmail());
+    }
+
     /**
      * Internal method to send message to RabbitMQ.
      */

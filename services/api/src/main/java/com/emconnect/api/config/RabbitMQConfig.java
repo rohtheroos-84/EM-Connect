@@ -40,6 +40,7 @@ public class RabbitMQConfig {
     public static final String ROUTING_USER_LOGIN = "user.login";
     public static final String ROUTING_USER_PASSWORD_CHANGED = "user.password_changed";
     public static final String ROUTING_CHECK_IN = "registration.checkedin";
+    public static final String ROUTING_PASSWORD_RESET = "user.password_reset";
 
     // Wildcard patterns for bindings
     public static final String ROUTING_REGISTRATION_ALL = "registration.*";
