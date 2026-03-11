@@ -136,8 +136,8 @@ export default function Login() {
                     <label htmlFor="login-password" className="text-[12px] font-bold text-bauhaus-fg/70 uppercase tracking-[0.08em]">
                       Password
                     </label>
-                    <span className="text-[11px] text-[#BCBCBC] select-none" title="Coming soon">
-                      Forgot password?
+                    <span className="text-[11px] text-bauhaus-blue font-semibold hover:text-[#0D3399] underline underline-offset-2 transition-colors cursor-pointer select-none">
+                      <Link to="/forgot-password">Forgot password?</Link>
                     </span>
                   </div>
                   <input
