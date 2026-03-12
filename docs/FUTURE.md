@@ -66,10 +66,10 @@ Organized by priority (P0 = Critical, P1 = High, P2 = Medium, P3 = Nice to Have)
   - [ ] Auto-promote on cancellation  
   - [ ] Notify promoted users   -->
 
-- [ ] Event Reminders  
+<!-- - [ ] Event Reminders  
   - [ ] 24h reminder  
   - [ ] 1h reminder  
-  - [ ] Scheduled message handling  
+  - [ ] Scheduled message handling   -->
 
 - [x] Event Categories & Tags  
   - [x] Categorization  
@@ -97,11 +97,10 @@ Organized by priority (P0 = Critical, P1 = High, P2 = Medium, P3 = Nice to Have)
   - [x] Google Calendar support  
   - [x] Outlook support  
 
-- [ ] Forgot Password Flow and Implementation  
-  - [ ] Password reset request page  
-  - [ ] Email with reset link  
-  - [ ] Reset password form  
-  - [ ] Token expiration handling
+- [x] Forgot Password Flow and Implementation  
+  - [x] Password reset request page  
+  - [x] Email with reset link  
+  - [x] Reset password form  
 
 ---
 
@@ -121,25 +120,25 @@ Organized by priority (P0 = Critical, P1 = High, P2 = Medium, P3 = Nice to Have)
 - [x] Dark Mode  
   - [x] Bauhaus dark variant  
   - [x] Persist user preference  
-
+<!-- 
 - [ ] View Customizations  
   - [ ] User-selectable layout preferences  
-  - [ ] Saved dashboard views  
+  - [ ] Saved dashboard views   -->
 
-- [ ] Professional UI Polish  
-  - [ ] Refine spacing system  
-  - [ ] Improve interaction states  
-  - [ ] Ensure consistent component behavior  
+- [x] Professional UI Polish  
+  - [x] Refine spacing system  
+  - [x] Improve interaction states  
+  - [x] Ensure consistent component behavior  
 
 ---
 
-## Long-Term Direction
+<!-- ## Long-Term Direction
 
 - [ ] Full observability dashboard  
 - [ ] Audit logging for admin actions  
 - [ ] Multi-tenant event organizations  
 - [ ] Scalable message retry infrastructure  
-- [ ] Advanced permission management  
+- [ ] Advanced permission management   -->
 
 ---
 
