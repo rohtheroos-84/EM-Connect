@@ -108,9 +108,9 @@ client (react)
     |                 notification-worker     ticket-worker        websocket-hub
     |                        |                     |                     |
     |                        v                     v                     |
-    |                  sendgrid/mailhog      qr + metadata files        |
-    |                                                                  |
-    +---------------- websocket ----------------------------------------+
+    |                  sendgrid/mailhog      qr + metadata files         |
+    |                                                                    |
+    +----------------- websocket ----------------------------------------+
 ```
 
 - spring boot api: core domain logic + auth + persistence + event publishing
