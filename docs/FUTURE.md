@@ -37,12 +37,12 @@ Organized by priority (P0 = Critical, P1 = High, P2 = Medium, P3 = Nice to Have)
   - [ ] Configure reverse proxy (Nginx or similar)  
   - [ ] Set up production environment variables  
 
-- [ ] Background Service Orchestration  
-  - [ ] Docker containers auto-start  
-  - [ ] Spring Boot API auto-start  
-  - [ ] Notification worker auto-start  
-  - [ ] Ticket worker auto-start  
-  - [ ] WebSocket hub auto-start  
+- [x] Background Service Orchestration  
+  - [x] Docker containers auto-start  
+  - [x] Spring Boot API auto-start  
+  - [x] Notification worker auto-start  
+  - [x] Ticket worker auto-start  
+  - [x] WebSocket hub auto-start  
 
 - [x] OAuth Login  
   - [x] Google login    

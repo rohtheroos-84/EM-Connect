@@ -2046,11 +2046,54 @@ node node_modules/vite/bin/vite.js --port 3000
 **Build:** ✅ 1654 modules, 300KB JS (gzip: 88KB), 28KB CSS (gzip: 6KB)
 
 
+## QUICK START GUIDE:
 
+1. one cmd start:
+```powershell
+$root = "C:\Users\rohit\Downloads\EM-Connect"
+Set-Location $root
 
+# 1) infra
+docker compose --profile dev up -d
 
-## FUTURE PHASES (9 & 10)
-<!-- ## Phase 9 Notes
+# 2) logs folder
+New-Item -ItemType Directory -Force -Path "$root\logs" | Out-Null
 
+# 3) app processes
+$procs = @()
+$procs += Start-Process powershell -PassThru -WindowStyle Minimized -ArgumentList "-NoExit","-Command","Set-Location '$root\services\api'; .\mvnw.cmd spring-boot:run *>> '$root\logs\api.log'"
+$procs += Start-Process powershell -PassThru -WindowStyle Minimized -ArgumentList "-NoExit","-Command","Set-Location '$root\services\notification-worker'; go run main.go *>> '$root\logs\notification-worker.log'"
+$procs += Start-Process powershell -PassThru -WindowStyle Minimized -ArgumentList "-NoExit","-Command","Set-Location '$root\services\ticket-worker'; go run main.go *>> '$root\logs\ticket-worker.log'"
+$procs += Start-Process powershell -PassThru -WindowStyle Minimized -ArgumentList "-NoExit","-Command","Set-Location '$root\services\websocket-hub'; go run main.go *>> '$root\logs\websocket-hub.log'"
 
-## Phase 10 Notes -->
+# optional frontend
+$procs += Start-Process powershell -PassThru -WindowStyle Minimized -ArgumentList "-NoExit","-Command","Set-Location '$root\frontend'; npm run dev *>> '$root\logs\frontend.log'"
+
+# 4) save pids for clean shutdown
+$procs.Id | Set-Content "$root\logs\dev-pids.txt"
+
+Write-Host "started. api:8080 frontend:3000 ws:8081 rabbitmq-ui:15672 mailhog:8025"
+```
+
+2. one cmd stop:
+```powershell
+$root = "C:\Users\rohit\Downloads\EM-Connect"
+
+if (Test-Path "$root\logs\dev-pids.txt") {
+  Get-Content "$root\logs\dev-pids.txt" | ForEach-Object {
+    if ($_ -match "^\d+$") {
+      Stop-Process -Id [int]$_ -Force -ErrorAction SilentlyContinue
+    }
+  }
+}
+
+docker compose down
+Write-Host "stopped all dev services"
+```
+
+3. health check API:
+```powershell
+Invoke-WebRequest http://localhost:8080/api/health -UseBasicParsing
+Invoke-WebRequest http://localhost:8081/health -UseBasicParsing
+docker compose ps
+```
