@@ -769,7 +769,7 @@ CHECK (capacity >= 0)
 | Field | Detail |
 |-------|--------|
 | **File** | `services/ticket-worker/go.mod:7` |
-| **Version** | `github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e` (June 2020, 5+ years old) |
+| **Version** | `github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e` (June 2020, nearly 6 years old) |
 
 **Recommendation:** Evaluate actively maintained alternatives or pin to latest available commit.
 
