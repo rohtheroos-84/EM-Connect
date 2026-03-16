@@ -147,12 +147,10 @@ em-connect/
 |- docker-compose.yaml
 |- docs/
 |  |- OVERVIEW.md
-|  |- ARCHITECTURE.md
 |  |- API.md
 |  |- AUTHENTICATION.md
 |  |- DATABASE.md
 |  |- EVENT_STATES.md
-|  |- ADMIN.md
 |  |- CODE.md
 |  |- CONTEXT.md
 |  |- PLAN.md
@@ -320,7 +318,6 @@ full phase-by-phase notes live in [docs/NOTES.md](docs/NOTES.md).
 | [AUTHENTICATION.md](docs/AUTHENTICATION.md) | auth and security internals |
 | [DATABASE.md](docs/DATABASE.md) | schema + migration details |
 | [EVENT_STATES.md](docs/EVENT_STATES.md) | event lifecycle rules |
-| [ADMIN.md](docs/ADMIN.md) | admin capabilities and flows |
 | [CODE.md](docs/CODE.md) | source file inventory |
 | [CONTEXT.md](docs/CONTEXT.md) | full project context for ai/dev handoff |
 | [RABBITMQ_TOPOLOGY_DESIGN.md](docs/RABBITMQ_TOPOLOGY_DESIGN.md) | broker topology design |

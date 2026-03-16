@@ -14,6 +14,7 @@
 5. [Low Severity Findings](#4-low-severity-findings)
 6. [Dependency Vulnerabilities](#5-dependency-vulnerabilities)
 7. [Positive Security Observations](#6-positive-security-observations)
+8. [Remediation Priority](#remediation-priority)
 
 ---
 

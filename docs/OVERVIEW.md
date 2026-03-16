@@ -92,7 +92,6 @@ EM-Connect/
 
 | Document | Description |
 |----------|-------------|
-| [ARCHITECTURE.md](ARCHITECTURE.md) | System architecture and component relationships |
 | [API.md](API.md) | Complete API reference with examples |
 | [DATABASE.md](DATABASE.md) | Database schema and migrations |
 | [AUTHENTICATION.md](AUTHENTICATION.md) | Auth flow and security configuration |

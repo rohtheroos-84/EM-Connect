@@ -6,11 +6,11 @@ Organized by priority (P0 = Critical, P1 = High, P2 = Medium, P3 = Nice to Have)
 
 ## 🔴 P0 – Security & Stability (Highest Priority)
 
-- [ ] Security Hardening  
-  - [ ] Audit and fix all reported vulnerabilities  
-  - [ ] Review authentication, JWT handling, and role enforcement  
-  - [ ] Validate input sanitization across all endpoints  
-  - [ ] Add security headers (CSP, HSTS, etc.)  
+- [x] Security Hardening  
+  - [x] Audit and fix all reported vulnerabilities  
+  - [x] Review authentication, JWT handling, and role enforcement  
+  - [x] Validate input sanitization across all endpoints  
+  - [x] Add security headers (CSP, HSTS, etc.)  
 
 <!-- - [ ] Rate Limiting & Abuse Prevention  
   - [ ] Apply rate limiting on auth endpoints  
@@ -31,11 +31,11 @@ Organized by priority (P0 = Critical, P1 = High, P2 = Medium, P3 = Nice to Have)
   - [x] Configure production email credentials securely  
   - [x] Add retry and failure monitoring  
 
-- [ ] Hosting & Deployment Strategy  
+<!-- - [ ] Hosting & Deployment Strategy  
   - [ ] Decide hosting provider (VPS / cloud)  
   - [ ] Containerize frontend + backend properly  
   - [ ] Configure reverse proxy (Nginx or similar)  
-  - [ ] Set up production environment variables  
+  - [ ] Set up production environment variables   -->
 
 - [x] Background Service Orchestration  
   - [x] Docker containers auto-start  
