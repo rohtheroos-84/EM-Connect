@@ -529,37 +529,7 @@ url: jdbc:postgresql://localhost:5432/emconnect
 
 ---
 
-### M-05: Actuator Health Endpoint Exposes Environment Details
-
-| Field | Detail |
-|-------|--------|
-| **File** | `services/api/src/main/resources/application.yml:54-55` |
-| **Category** | Information Disclosure |
-| **Impact** | `show-details: always` reveals database connectivity, RabbitMQ status, disk space |
-
-```yaml
-endpoint:
-  health:
-    show-details: always
-```
-
-**Recommendation:** Change to `when-authorized` for production.
-
----
-
-### M-06: No Connection Pool Configuration
-
-| Field | Detail |
-|-------|--------|
-| **File** | `services/api/src/main/resources/application.yml:6-10` |
-| **Category** | Resource Exhaustion |
-| **Impact** | HikariCP uses defaults; under heavy load, could exhaust database connections |
-
-**Recommendation:** Configure explicit pool limits (`maximum-pool-size`, `minimum-idle`, `connection-timeout`).
-
----
-
-### M-07: No Storage Quotas for File Uploads
+### M-05: No Storage Quotas for File Uploads
 
 | Field | Detail |
 |-------|--------|
@@ -571,19 +541,7 @@ endpoint:
 
 ---
 
-### M-08: Missing Query Parameter Validation
-
-| Field | Detail |
-|-------|--------|
-| **File** | `services/api/src/main/java/com/emconnect/api/controller/EventController.java:79-90` |
-| **Category** | Input Validation |
-| **Impact** | No size limits on `keyword`, no max on `page` / `size` params — can cause expensive queries |
-
-**Recommendation:** Add `@Size(max=100)` on keyword, `@Max(100)` on size, `@Min(0)` on page.
-
----
-
-### M-09: Ticket Validation Missing Event Time Check
+### M-06: Ticket Validation Missing Event Time Check
 
 | Field | Detail |
 |-------|--------|
@@ -595,31 +553,7 @@ endpoint:
 
 ---
 
-### M-10: Missing Content Security Policy Headers
-
-| Field | Detail |
-|-------|--------|
-| **Files** | `frontend/index.html`, `services/api/src/main/java/com/emconnect/api/config/SecurityConfig.java` |
-| **Category** | Security Headers |
-| **Impact** | No CSP restricts inline scripts, external resources, or frame embedding |
-
-**Recommendation:** Add CSP meta tag or response header: `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'`.
-
----
-
-### M-11: Missing Security Response Headers
-
-| Field | Detail |
-|-------|--------|
-| **File** | `services/api/src/main/java/com/emconnect/api/config/SecurityConfig.java` |
-| **Category** | Security Headers |
-| **Impact** | Missing `X-Frame-Options`, `X-Content-Type-Options`, `Strict-Transport-Security`, `Referrer-Policy` |
-
-**Recommendation:** Configure headers in Spring Security filter chain or use `@Bean` for header writer.
-
----
-
-### M-12: Ticket Worker — World-Readable File Permissions
+### M-07: Ticket Worker — World-Readable File Permissions
 
 | Field | Detail |
 |-------|--------|
@@ -635,19 +569,7 @@ os.WriteFile(filePath, data, 0644)
 
 ---
 
-### M-13: Ticket Worker — Race Condition in Idempotency Check
-
-| Field | Detail |
-|-------|--------|
-| **File** | `services/ticket-worker/ticket/service.go:44-55` |
-| **Category** | Concurrency |
-| **Impact** | TOCTOU race between `Exists()` and `GenerateQR()` could produce duplicate tickets |
-
-**Recommendation:** Use atomic file operations or file locking.
-
----
-
-### M-14: User Entity Password Field Missing @JsonIgnore
+### M-08: User Entity Password Field Missing @JsonIgnore
 
 | Field | Detail |
 |-------|--------|
@@ -656,22 +578,6 @@ os.WriteFile(filePath, data, 0644)
 | **Impact** | If User entity is accidentally serialized directly (bypassing DTO), password hash is exposed |
 
 **Recommendation:** Add `@JsonIgnore` to the password field as defense-in-depth.
-
----
-
-### M-15: Docker Compose — No Network Isolation
-
-| Field | Detail |
-|-------|--------|
-| **File** | `docker-compose.yaml` |
-| **Category** | Network Security |
-| **Impact** | All containers on the default bridge network; compromised container can access all others |
-
-**Recommendation:** Define custom networks to isolate frontend-facing services from backend databases.
-
----
-
-### M-16: Docker Compose — No Resource Limits
 
 | Field | Detail |
 |-------|--------|
