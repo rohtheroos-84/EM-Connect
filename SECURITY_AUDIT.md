@@ -720,29 +720,7 @@ CHECK (capacity >= 0)
 
 ---
 
-### L-04: Organizer Email Displayed Publicly
-
-| Field | Detail |
-|-------|--------|
-| **File** | `frontend/src/pages/EventDetail.jsx:285` |
-| **Impact** | Email harvesting for spam/phishing |
-
-**Recommendation:** Display names only; require authentication to view contact info.
-
----
-
-### L-05: External Font Loaded Without SRI
-
-| Field | Detail |
-|-------|--------|
-| **File** | `frontend/index.html:6-8` |
-| **Impact** | Google Fonts loaded without Subresource Integrity hashes |
-
-**Recommendation:** Self-host fonts or add SRI attributes.
-
----
-
-### L-06: Error Messages Displayed Unsanitized
+### L-04: Error Messages Displayed Unsanitized
 
 | Field | Detail |
 |-------|--------|
@@ -750,28 +728,6 @@ CHECK (capacity >= 0)
 | **Impact** | Backend error messages displayed directly; could leak internal details |
 
 **Recommendation:** Map server errors to user-friendly messages; log details in console for debugging.
-
----
-
-### L-07: No Audit Trail / Soft Deletes
-
-| Field | Detail |
-|-------|--------|
-| **Files** | All database tables |
-| **Impact** | No `deleted_at` column; hard deletes prevent GDPR audit compliance |
-
-**Recommendation:** Add soft delete support with `deleted_at` timestamp columns.
-
----
-
-### L-08: Outdated QR Code Library
-
-| Field | Detail |
-|-------|--------|
-| **File** | `services/ticket-worker/go.mod:7` |
-| **Version** | `github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e` (June 2020, nearly 6 years old) |
-
-**Recommendation:** Evaluate actively maintained alternatives or pin to latest available commit.
 
 ---
 
