@@ -681,29 +681,10 @@ The following security practices are well-implemented:
 
 ## Remediation Priority
 
-### Phase 1 — Immediate (Production Blockers)
-1. **C-01 to C-04:** Move all secrets to environment variables
-2. **C-05:** Upgrade PostgreSQL JDBC driver to 42.7.2+
-3. **C-06:** Remove or profile-gate test endpoints
-4. **C-07, C-08:** Add WebSocket origin validation and authentication
-5. **C-09, C-10:** Fix IDOR in registration endpoints
-6. **C-11:** Bind Docker ports to localhost
-7. **C-12:** Disable SQL logging in production
-8. **H-01, H-02:** Add rate limiting on auth endpoints
+### Phase 1 — Immediate 
 
-### Phase 2 — Short Term (Before Release)
-9. **H-03 to H-05:** Improve token storage, add revocation, reduce expiration
-10. **H-06:** Configure CORS explicitly
-11. **H-08 to H-10:** Fix file upload validation, ticket path traversal, HMAC key
-12. **H-11, H-12:** Fix logging, add password complexity
-13. **H-13 to H-16:** Add @PreAuthorize, fix email defaults, add DB SSL
+### Phase 2 — Short Term 
 
-### Phase 3 — Medium Term (Next Sprint)
-14. **M-01 to M-16:** Address medium-severity items
-15. Set up CI/CD pipeline with automated security scanning
-16. Expand test coverage
+### Phase 3 — Medium/Long Term 
 
-### Phase 4 — Ongoing
-17. **L-01 to L-08:** Address low-severity items
-18. Regular dependency audits
-19. Penetration testing before production launch
+
