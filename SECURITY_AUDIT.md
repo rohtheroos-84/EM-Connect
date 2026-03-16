@@ -637,39 +637,8 @@ CHECK (capacity >= 0)
 
 ---
 
-## 5. Informational / Best Practice
 
-### I-01: No CI/CD Pipeline
-
-No `.github/workflows/`, `.gitlab-ci.yml`, or other CI/CD configuration exists. Automated testing, linting, and security scanning should be implemented.
-
----
-
-### I-02: Only 1 Test File Exists
-
-`services/api/src/test/java/com/emconnect/api/service/RegistrationConcurrencyTest.java` is the only test. No unit tests for services, controllers, or security configuration.
-
----
-
-### I-03: No HTTPS Requirement in SecurityConfig
-
-No `requiresChannel("HTTPS")` configured. In production, all traffic should be redirected to HTTPS.
-
----
-
-### I-04: Client-Side Role Checks Are Bypassable
-
-`frontend/src/components/ProtectedRoute.jsx` relies on `user.role` from localStorage which can be modified. This is only UX protection — backend authorization is the real gate.
-
----
-
-### I-05: No Missing Exception Handlers for JPA/Data Integrity Errors
-
-`GlobalExceptionHandler.java` does not handle `DataIntegrityViolationException` or `JpaObjectRetrievalFailureException`, which may leak database error details.
-
----
-
-## 6. Dependency Vulnerabilities
+## 5. Dependency Vulnerabilities
 
 | Dependency | Version | Ecosystem | Vulnerability | Patched Version | Severity |
 |------------|---------|-----------|---------------|-----------------|----------|
@@ -690,7 +659,7 @@ No `requiresChannel("HTTPS")` configured. In production, all traffic should be r
 
 ---
 
-## 7. Positive Security Observations
+## 6. Positive Security Observations
 
 The following security practices are well-implemented:
 
