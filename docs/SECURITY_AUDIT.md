@@ -681,10 +681,149 @@ The following security practices are well-implemented:
 
 ## Remediation Priority
 
-### Phase 1 — Immediate 
+### Phase 1 — Immediate (1-2 weeks)
 
-### Phase 2 — Short Term 
+**Status:** Blocking for any production deployment. Complete before `azd up` or public release.
 
-### Phase 3 — Medium/Long Term 
+#### Secrets & Credentials (Must rotate immediately after code fix)
+- **C-01**: Remove hardcoded JWT secret → use `${JWT_SECRET}` environment variable + rotate secret immediately
+- **C-02**: Remove hardcoded DB credentials → use `${DB_USER}`, `${DB_PASSWORD}` environment variables
+- **C-03**: Remove hardcoded RabbitMQ credentials → use `${RABBITMQ_USER}`, `${RABBITMQ_PASS}` environment variables
+- **C-04**: Remove default credentials from `docker-compose.yaml` → enforce environment variable substitution with required validation
+- **H-14**: Remove hardcoded personal email from notification worker → use service account via `${EMAIL_FROM_ADDRESS}`
 
+**Estimate:** 2-3 hours | **Owner:** Backend Lead | **Dependency:** None
 
+---
+
+#### Active Code Vulnerabilities
+- **C-05**: Bump PostgreSQL JDBC driver to 42.7.2+ (SQL injection CVE) → add explicit dependency override in pom.xml
+- **H-09**: Path traversal in ticket worker → validate TicketCode against whitelist pattern `^[a-zA-Z0-9_-]+$`
+- **H-10**: Remove weak default HMAC key → require `TICKET_SECRET_KEY` environment variable (fail to start if missing)
+
+**Estimate:** 1-2 hours | **Owner:** Backend Lead | **Dependency:** None
+
+---
+
+#### Security Bypass Issues
+- **C-06**: Remove test endpoints from production build → annotate with `@Profile("test")` or delete entirely
+- **C-12**: Disable SQL query logging in production → set `show-sql: false` and `format_sql: false` (keep enabled only in `dev` Spring profile)
+
+**Estimate:** 1 hour | **Owner:** Backend Lead | **Dependency:** None
+
+---
+
+#### Verification
+- [ ] Run `git log --all --full-history -- services/api/src/main/resources/application.yml` to verify no secrets in history
+- [ ] Run security scanning tool (OWASP Dependency-Check or similar) against new build
+- [ ] Complete credential rotation in production vault/secrets manager after code deployment
+
+---
+
+### Phase 2 — Short Term (1-2 months / Next Sprint)
+
+**Status:** High priority. Should be completed before expanding user base or handling sensitive data at scale.
+
+#### Authentication & Token Security (15 hours)
+- **H-01**: Implement rate limiting on auth endpoints → use Resilience4j with 5 attempts/min for login, 3/hour for forgot-password
+- **H-02**: Strengthen password reset → use 32+ character alphanumeric token instead of 6-digit code, OR add rate limiting with exponential backoff
+- **H-04**: Add token blacklist/revocation → implement Redis-backed blacklist checked in `JwtAuthenticationFilter`, add logout endpoint
+- **H-05**: Reduce JWT expiration → use 15-30 minute access tokens with refresh token rotation mechanism
+- **H-03**: Migrate token storage → replace localStorage with httpOnly cookies (`Secure`, `SameSite=Strict`) to prevent XSS theft
+
+**Estimate:** 10-12 hours | **Owner:** Backend Lead | **Dependency:** H-01 before H-05
+
+---
+
+#### Authorization Issues (10 hours)
+- **C-09**: Add authorization check on event registrations endpoint → verify requester is event organizer or admin
+- **C-10**: Require authentication for ticket lookup → verify requester owns the registration or is admin
+- **H-13**: Add method-level `@PreAuthorize("hasRole('ADMIN')")` on all admin controller methods (defense-in-depth)
+
+**Estimate:** 4-6 hours | **Owner:** Backend Lead | **Dependency:** None
+
+---
+
+#### API Security (8 hours)
+- **H-06**: Implement explicit CORS configuration → create `CorsConfigurationSource` bean with whitelisted origins
+- **H-07**: Move Google OAuth token validation to POST body → use POST instead of query string to avoid URL logging
+- **H-11**: Replace stack traces with structured logging → remove all `System.err.println()` / `ex.printStackTrace()`, use SLF4J/Logback
+- **H-15**: Add email validation in notification worker → validate email format before sending via SendGrid
+
+**Estimate:** 4-6 hours | **Owner:** Backend Lead + Go Lead | **Dependency:** None
+
+---
+
+#### Password Policy (4 hours)
+- **H-12**: Add password complexity requirements → enforce uppercase, lowercase, digits, special chars (e.g., regex: `^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$`)
+- **M-04**: Standardize password length across all flows → enforce minimum 8 characters on ChangePasswordRequest (currently allows 6)
+- **M-08**: Add `@JsonIgnore` on User password field → prevent accidental serialization of password hash
+
+**Estimate:** 2-3 hours | **Owner:** Backend Lead | **Dependency:** None
+
+---
+
+#### File Upload & Data Security (6 hours)
+- **H-08**: Validate file content via magic bytes → check file signature in addition to MIME type and extension
+- **H-16**: Enable SSL/TLS for database connections → add `?ssl=true&sslmode=require` to JDBC URL for production
+
+**Estimate:** 3-4 hours | **Owner:** Backend Lead | **Dependency:** None
+
+---
+
+#### Database & Business Logic (4 hours)
+- **M-06**: Add event time validation for check-in → prevent ticket validation before event start or after event end
+
+**Estimate:** 1-2 hours | **Owner:** Backend Lead | **Dependency:** None
+
+---
+
+#### WebSocket Security (12 hours)
+- **C-07**: Implement WebSocket origin whitelist → restrict to application domain only in `CheckOrigin` function
+- **C-08**: Add JWT authentication to WebSocket → require token in query parameter (`/ws?token=...`), validate before upgrade
+
+**Estimate:** 6-8 hours | **Owner:** Go Lead | **Dependency:** H-04 (token revocation for logout cleanup)
+
+---
+
+**Phase 2 Total Estimate:** ~60 hours (~1.5 sprints for 2-person backend team)
+
+---
+
+### Phase 3 — Medium/Long Term (2-6 months / Backlog)
+
+**Status:** Quality improvements and optimization. Non-blocking for MVP.
+
+#### Denial of Service Prevention (8 hours)
+- **M-02**: Add connection limits to WebSocket hub → reject beyond `maxClients` threshold (e.g., 10,000)
+- **M-03**: Limit subscriptions per client → cap at 100 subscriptions per WebSocket connection
+- **M-05**: Implement file upload storage quotas → enforce per-user quotas (e.g., 100MB) and global disk monitoring
+
+**Estimate:** 6-8 hours | **Owner:** Go Lead | **Dependency:** None
+
+---
+
+#### Access Control & File Permissions (4 hours)
+- **M-07**: Fix ticket metadata file permissions → use `0600` (owner read/write only) instead of `0644` (world-readable)
+- **M-01**: Implement CSRF protection → add `CsrfTokenRepository` bean if token storage migrates to cookies
+
+**Estimate:** 2-4 hours | **Owner:** Backend Lead + Go Lead | **Dependency:** H-03 token storage migration
+
+---
+
+#### Code Quality & Database Integrity (8 hours)
+- **L-01**: Boost BCrypt strength → change `new BCryptPasswordEncoder()` to `new BCryptPasswordEncoder(12)`
+- **L-02**: Add database CHECK constraints → add status enum validation and capacity >= 0 checks at DB layer
+- **L-03**: Add CASCADE DELETE on foreign keys → prevent orphaned events when users are deleted (or implement soft deletes)
+- **L-04**: Map error messages on frontend → sanitize backend error messages, display user-friendly errors (log details locally)
+
+**Estimate:** 4-8 hours | **Owner:** Backend Lead | **Dependency:** None
+
+---
+
+#### Resource Limits in Docker (2 hours)
+- **Docker resource limits**: Add `deploy.resources.limits` (CPU and memory) on each service in docker-compose.yaml to prevent DOS via container runaway
+
+**Estimate:** 1-2 hours | **Owner:** DevOps / Infrastructure | **Dependency:** None
+
+---
