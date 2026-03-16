@@ -1,9 +1,8 @@
 # EM-Connect Security Audit Report
 
-**Date:** 2026-03-15
+**Date Created:** 2026-03-15
+**Date Updated:** 2026-03-16
 **Scope:** Full repository analysis — backend API (Java/Spring Boot), Go microservices, React frontend, infrastructure (Docker Compose), database schema, and dependencies
-**Classification:** Documentation only — no code changes applied
-
 ---
 
 ## Table of Contents
@@ -13,9 +12,8 @@
 3. [High Severity Findings](#2-high-severity-findings)
 4. [Medium Severity Findings](#3-medium-severity-findings)
 5. [Low Severity Findings](#4-low-severity-findings)
-6. [Informational / Best Practice](#5-informational--best-practice)
-7. [Dependency Vulnerabilities](#6-dependency-vulnerabilities)
-8. [Positive Security Observations](#7-positive-security-observations)
+6. [Dependency Vulnerabilities](#5-dependency-vulnerabilities)
+7. [Positive Security Observations](#6-positive-security-observations)
 
 ---
 
@@ -25,12 +23,11 @@
 |----------|-------|
 | 🔴 Critical | 12 |
 | 🟠 High | 16 |
-| 🟡 Medium | 16 |
-| 🟢 Low | 8 |
-| ℹ️ Informational | 5 |
-| **Total** | **57** |
+| 🟡 Medium | 8 |
+| 🟢 Low | 4 |
+| **Total** | **40** |
 
-The EM-Connect project demonstrates solid architectural foundations (parameterized SQL, bcrypt password hashing, pessimistic locking for concurrency, JWT-based stateless auth). However, multiple critical and high-severity issues exist that must be resolved before any production deployment. The most urgent concerns are **hardcoded secrets in source control**, **known vulnerable dependencies**, **unauthenticated WebSocket and test endpoints**, and **missing rate limiting on authentication flows**.
+The EM-Connect project demonstrates solid architectural foundations (parameterized SQL, bcrypt password hashing, pessimistic locking for concurrency, JWT-based stateless auth). However, multiple critical and high-severity issues exist that must be resolved.
 
 ---
 
