@@ -1,0 +1,13 @@
+{
+  "ticketCode": "TKT-9FEE183F",
+  "eventId": 5,
+  "userId": 6,
+  "userName": "daroos",
+  "userEmail": "rohit.math.lover.9565@gmail.com",
+  "eventTitle": "Live Count Test",
+  "eventLocation": "Conference Hall A",
+  "eventStartDate": "2026-12-01T10:00:00",
+  "qrImagePath": "tickets\\qr\\TKT-9FEE183F.png",
+  "generatedAt": "2026-03-20T23:48:48.8305761+05:30",
+  "status": "VALID"
+}
