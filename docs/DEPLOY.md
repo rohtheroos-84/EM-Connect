@@ -154,3 +154,169 @@ env vars:
 
 ---
 
+## 7) code changes needed for live functionality (non-security)
+
+without these, some features will fail in real deployment.
+
+### 7.1 frontend API base URL must be env-driven
+
+current code uses same-origin `/api`, which works in local vite proxy but usually fails when frontend and api are on different hosts.
+
+file to update:
+- `frontend/src/services/api.js`
+
+current:
+- `const API_BASE = '/api';`
+
+recommended:
+- `const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';`
+
+then set in netlify/vercel env:
+- `VITE_API_BASE_URL=https://<your-api>.onrender.com/api`
+
+status:
+- [ ] code changed
+- [ ] env var set
+
+### 7.2 frontend websocket URL must be env-driven
+
+current code derives websocket endpoint from frontend host (`window.location.host`).
+if websocket-hub is on render under another host, realtime updates will fail.
+
+file to update:
+- `frontend/src/context/WebSocketContext.jsx`
+
+recommended:
+- first preference: `import.meta.env.VITE_WS_URL`
+- fallback to current local behavior only for dev
+
+example behavior:
+- production: `wss://<your-websocket-hub>.onrender.com/ws`
+- local: current auto-derived ws URL
+
+set in netlify/vercel env:
+- `VITE_WS_URL=wss://<your-websocket-hub>.onrender.com/ws`
+
+status:
+- [ ] code changed
+- [ ] env var set
+
+### 7.3 ticket qr files and avatar/banner files need durable shared storage
+
+right now files are written to local disk paths:
+- api avatar/banner files under local folders
+- ticket-worker qr/metadata under local folders
+- api ticket service reads qr from local path
+
+on free hosted containers, local disk can be ephemeral and is not shared between services.
+this will break features such as:
+- qr readiness/check/download
+- persistent avatar/banner serving after restarts/redeploys
+
+minimum viable fixes (choose one path):
+
+path a (recommended): move file assets to object storage
+1. use cloudinary free (or equivalent) for avatars + banners + qr images.
+2. store returned public URL in db.
+3. update api/ticket-worker to read/write URLs, not local files.
+
+path b (temporary only): run api + ticket-worker on same host with shared persistent disk
+1. not ideal on free multi-service platforms.
+2. usually not reliable on render free.
+
+status:
+- [ ] decided storage strategy
+- [ ] implemented
+- [ ] tested after redeploy/restart
+
+### 7.4 frontend routing fallback (spa refresh)
+
+for netlify/vercel, deep-link refresh can 404 unless fallback is configured.
+
+- netlify: add redirects rule to serve `index.html`
+- vercel: add rewrite rule to `index.html`
+
+status:
+- [ ] configured
+- [ ] deep-link refresh works (e.g., `/events/123`)
+
+---
+
+## 8) CORS note (functional if cross-origin)
+
+if frontend and api are on different origins, browser requests may fail unless cors is configured.
+
+this is often treated as security, but it is also a functional requirement for hosted frontend + hosted api.
+
+practical plan:
+1. add explicit allowed origins for your netlify/vercel URL(s).
+2. allow methods/headers needed by your frontend.
+3. deploy and verify preflight requests pass.
+
+status:
+- [ ] cors configured
+- [ ] browser network tab shows successful preflight
+
+---
+
+## 9) smoke test after full deploy
+
+run in this order:
+1. open frontend
+2. register/login
+3. create event (admin)
+4. publish event
+5. register for event
+6. verify:
+   - api writes registration
+   - rabbitmq receives event
+   - ticket worker processes message
+   - notification worker sends email
+   - websocket update appears on client
+7. upload avatar/banner and verify still available after service restart/redeploy
+8. open ticket qr endpoint and confirm image loads
+
+- [ ] auth works
+- [ ] events CRUD works
+- [ ] registration works
+- [ ] ticket flow works
+- [ ] notifications work
+- [ ] websocket live updates work
+- [ ] file assets survive restart
+
+---
+
+## 10) known free-tier constraints (important)
+
+- render free services may sleep -> cold starts
+- websocket uptime can be inconsistent on free tiers
+- background worker runtime can be limited
+- cloudamqp free has tight limits
+- if you outgrow this, first upgrade target should be backend/worker hosting
+
+---
+
+## 11) go-live checklist
+
+- [ ] all deploy services are green
+- [ ] frontend env vars set correctly
+- [ ] api env vars set correctly
+- [ ] worker env vars set correctly
+- [ ] migrations are current
+- [ ] rabbitmq queues/exchanges active
+- [ ] end-to-end smoke tests pass
+- [ ] restart/redeploy test done once
+- [ ] rollback notes prepared
+
+---
+
+## needed code changes for live:
+
+yes. at minimum:
+1. env-driven api url in frontend
+2. env-driven websocket url in frontend
+3. durable shared file/object storage strategy for avatar/banner/qr
+4. spa rewrite fallback for netlify/vercel
+5. cors config if frontend and api are on different origins
+
+no skippinng these, or deploying without them, will lead to broken functionality in a live environment.
