@@ -690,7 +690,7 @@ this plan intentionally starts with low-blast-radius changes and defers global a
 - [ ] **Rule B:** each phase ships behind a rollback point (tag/branch/deploy snapshot)
 - [ ] **Rule C:** keep a temporary compatibility window for old+new configs where possible
 
----
+<!-- ---
 
 ### Phase 0 — Prep & Tracking (very low risk)
 
@@ -701,7 +701,7 @@ this plan intentionally starts with low-blast-radius changes and defers global a
 
 **Estimate:** 1-2 hours | **Owner:** Backend Lead
 
----
+--- -->
 
 ### Phase 1 — Localized Hardening First (lowest global impact)
 
