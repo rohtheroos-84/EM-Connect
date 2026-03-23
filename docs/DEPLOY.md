@@ -27,12 +27,12 @@ free-tier reality:
 
 ## 2) preflight checklist (do before any deploy)
 
-- [ ] repo is pushed to github
-- [ ] local frontend build passes (`frontend -> npm run build`)
-- [ ] local api starts (`services/api -> mvnw spring-boot:run`)
-- [ ] local go services start (`go run main.go` in each service)
-- [ ] you have accounts: render, neon, cloudamqp, netlify/vercel
-- [ ] you have a sendgrid sender identity ready (if email flows are needed)
+- [x] repo is pushed to github
+- [x] local frontend build passes (`frontend -> npm run build`)
+- [x] local api starts (`services/api -> mvnw spring-boot:run`)
+- [x] local go services start (`go run main.go` in each service)
+- [x] you have accounts: render, neon, cloudamqp, netlify/vercel
+- [x] you have a sendgrid sender identity ready (if email flows are needed)
 
 ---
 
