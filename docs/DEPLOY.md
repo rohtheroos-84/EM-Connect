@@ -45,9 +45,9 @@ free-tier reality:
 4. keep credentials ready for render api env vars.
 
 tracking:
-- [ ] neon db created
-- [ ] connection string saved
-- [ ] ssl enabled
+- [x] neon db created
+- [x] connection string saved
+- [x] ssl enabled
 
 ### 3.2 cloudamqp rabbitmq
 1. create free cloudamqp instance.

@@ -4,9 +4,9 @@ spring:
 
   # Database Configuration
   datasource:
-    url: jdbc:postgresql://localhost:5432/emconnect?options=-c%20TimeZone=Asia/Kolkata
-    username: emconnect
-    password: emconnect
+    url: jdbc:postgresql://ep-red-bonus-a15a09sv-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require
+    username: neondb_owner
+    password: npg_8og4XcVJQKHC
     driver-class-name: org.postgresql.Driver
 
   # JPA Configuration
