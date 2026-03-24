@@ -25,15 +25,18 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: true
 
-  # RabbitMQ Configuration
+  # RabbitMQ prod config
   rabbitmq:
-    host: localhost
+    host: puffin.rmq2.cloudamqp.com
     port: 5672
-    username: emconnect
-    password: emconnect
+    username: ainhkadl
+    password: y-9ZnVKIQnGHe16ptxU1Kl3L6EACmCH_
+    virtual-host: ainhkadl
+
     connection-timeout: 10000
     publisher-confirm-type: correlated
     publisher-returns: true
+
   servlet:
     multipart:
       max-file-size: 5MB

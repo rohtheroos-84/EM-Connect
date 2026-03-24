@@ -56,9 +56,9 @@ tracking:
 4. note vhost, username, password.
 
 tracking:
-- [ ] cloudamqp instance created
-- [ ] amqp url saved
-- [ ] dashboard access verified
+- [x] cloudamqp instance created
+- [x] amqp url saved
+- [x] dashboard access verified
 
 ---
 
