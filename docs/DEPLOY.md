@@ -86,10 +86,10 @@ api env vars to set in render:
 - `GOOGLE_OAUTH_CLIENT_ID=<if-using-google-login>`
 
 tracking:
-- [ ] api service created
-- [ ] env vars set
-- [ ] health check green
-- [ ] flyway migration completed
+- [x] api service created
+- [x] env vars set
+- [x] health check green
+- [x] flyway migration completed
 
 ---
 
