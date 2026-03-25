@@ -13,8 +13,8 @@ do-this-in-order guide for going live with:
 - netlify/vercel serves react app
 - render web service #1 runs spring api
 - render web service #2 runs websocket-hub
-- render worker #1 runs notification-worker
-- render worker #2 runs ticket-worker
+- render web service #3 runs notification-worker (worker mode via lightweight health endpoint)
+- render web service #4 runs ticket-worker (worker mode via lightweight health endpoint)
 - neon runs postgres
 - cloudamqp runs rabbitmq
 
@@ -64,13 +64,16 @@ tracking:
 
 ## 4) deploy spring api on render
 
+current setup used (recommended for this repo):
 1. create new render web service from github repo.
 2. set root directory to `services/api`.
-3. use:
-   - build command: `./mvnw clean package -DskipTests`
-   - start command: `java -jar target/api-0.0.1-SNAPSHOT.jar`
+3. runtime: docker (uses `services/api/Dockerfile`).
 4. set health check path to `/actuator/health`.
 5. trigger deploy.
+
+note:
+- if using docker runtime, you do not need separate build/start command in render.
+- if using non-docker runtime, you must ensure maven wrapper is executable and java is available.
 
 api env vars to set in render:
 - `SPRING_PROFILES_ACTIVE=prod`
@@ -118,8 +121,12 @@ tracking:
 
 ## 6) deploy workers on render
 
+important free-plan note:
+- render background workers are not available on free plan.
+- deploy both worker processes as web services with a lightweight `/health` endpoint (already added in code).
+
 ### 6.1 notification-worker
-1. create render background worker.
+1. create render web service.
 2. root directory: `services/notification-worker`.
 3. build: `go build -o app .`
 4. start: `./app`
@@ -132,7 +139,7 @@ env vars:
 - `ENVIRONMENT=production`
 
 ### 6.2 ticket-worker
-1. create second render background worker.
+1. create second render web service.
 2. root directory: `services/ticket-worker`.
 3. build: `go build -o app .`
 4. start: `./app`
@@ -160,8 +167,8 @@ tracking:
 5. deploy.
 
 tracking:
-- [ ] site deployed
-- [ ] app loads on generated URL
+- [x] site deployed at [this url](https://tryemconnect.netlify.app)
+- [x] app loads on generated URL
 
 ---
 
@@ -186,9 +193,9 @@ env to set on netlify/vercel:
 - `VITE_API_BASE_URL=https://<api-service>.onrender.com/api`
 
 tracking:
-- [ ] `api.js` updated
-- [ ] frontend env var set
-- [ ] login + events fetch work in hosted frontend
+- [x] `api.js` updated
+- [x] frontend env var set
+- [x] login + events fetch work in hosted frontend
 
 ### 8.2 make frontend websocket url env-driven
 
@@ -207,8 +214,8 @@ env to set:
 - `VITE_WS_URL=wss://<websocket-service>.onrender.com/ws`
 
 tracking:
-- [ ] websocket context updated
-- [ ] `VITE_WS_URL` set
+- [x] websocket context updated
+- [x] `VITE_WS_URL` set
 - [ ] realtime updates received in hosted frontend
 
 ### 8.3 fix hardcoded image URL assembly in frontend
@@ -228,8 +235,8 @@ what to do:
 2. replace all direct `/api${...}` constructions with the helper.
 
 tracking:
-- [ ] helper added
-- [ ] all hardcoded `/api` image joins removed
+- [x] helper added (`frontend/src/services/urls.js`)
+- [x] all hardcoded `/api` image joins removed
 - [ ] avatar/banner images render correctly in hosted frontend
 
 ### 8.4 solve file persistence + cross-service file access
@@ -269,8 +276,8 @@ recommended logic:
 - use `PORT` if present, else `SERVER_PORT`, else `8081`.
 
 tracking:
-- [ ] websocket config supports `PORT`
-- [ ] websocket hub reachable in render without manual port mismatch
+- [x] websocket config supports `PORT`
+- [x] websocket hub reachable in render without manual port mismatch
 
 ### 8.6 configure spa fallback routing
 
@@ -282,7 +289,7 @@ what to add:
 - vercel: rewrite fallback to `/index.html`
 
 tracking:
-- [ ] fallback configured
+- [x] fallback configured (`frontend/netlify.toml`, `frontend/vercel.json`)
 - [ ] route refresh works for nested pages
 
 ### 8.7 configure cors for cross-origin frontend/api (functional requirement)
@@ -297,7 +304,7 @@ what to do:
 3. verify preflight success in browser network tab.
 
 tracking:
-- [ ] cors configured
+- [x] cors configured (api now supports `CORS_ALLOWED_ORIGINS`)
 - [ ] preflight succeeds
 - [ ] authenticated requests work from hosted frontend
 
