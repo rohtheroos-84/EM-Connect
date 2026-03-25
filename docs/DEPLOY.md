@@ -86,7 +86,7 @@ api env vars to set in render:
 - `GOOGLE_OAUTH_CLIENT_ID=<if-using-google-login>`
 
 tracking:
-- [x] api service created
+- [x] api service created([link to the health page](https://emconnect-backend.onrender.com/actuator/health))
 - [x] env vars set
 - [x] health check green
 - [x] flyway migration completed
@@ -110,9 +110,9 @@ required env vars:
 - `ENVIRONMENT=production`
 
 tracking:
-- [ ] websocket service deployed
-- [ ] /health endpoint works
-- [ ] websocket connects from browser (`wss://.../ws`)
+- [x] websocket service deployed([link to the websocket heath page](https://emconnect-websocket.onrender.com/health))
+- [x] /health endpoint works
+- [x] websocket connects from browser (`wss://.../ws`)
 
 ---
 
