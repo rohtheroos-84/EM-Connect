@@ -216,7 +216,7 @@ env to set:
 tracking:
 - [x] websocket context updated
 - [x] `VITE_WS_URL` set
-- [ ] realtime updates received in hosted frontend
+- [x] realtime updates received in hosted frontend
 
 ### 8.3 fix hardcoded image URL assembly in frontend
 
@@ -237,9 +237,9 @@ what to do:
 tracking:
 - [x] helper added (`frontend/src/services/urls.js`)
 - [x] all hardcoded `/api` image joins removed
-- [ ] avatar/banner images render correctly in hosted frontend
+- [x] avatar/banner images render correctly in hosted frontend
 
-### 8.4 solve file persistence + cross-service file access
+<!-- ### 8.4 solve file persistence + cross-service file access
 
 why:
 - current code stores avatars/banners/qr files on local disk.
@@ -261,7 +261,7 @@ tracking:
 - [ ] object storage selected
 - [ ] upload paths migrated
 - [ ] qr retrieval works after redeploy/restart
-- [ ] avatars/banners persist after redeploy/restart
+- [ ] avatars/banners persist after redeploy/restart -->
 
 ### 8.5 make websocket-hub compatible with render port model
 
@@ -290,7 +290,7 @@ what to add:
 
 tracking:
 - [x] fallback configured (`frontend/netlify.toml`, `frontend/vercel.json`)
-- [ ] route refresh works for nested pages
+- [x] route refresh works for nested pages
 
 ### 8.7 configure cors for cross-origin frontend/api (functional requirement)
 
@@ -305,8 +305,8 @@ what to do:
 
 tracking:
 - [x] cors configured (api now supports `CORS_ALLOWED_ORIGINS`)
-- [ ] preflight succeeds
-- [ ] authenticated requests work from hosted frontend
+- [x] preflight succeeds
+- [x] authenticated requests work from hosted frontend
 
 ---
 
@@ -322,26 +322,26 @@ tracking:
 8. only then share live link
 
 tracking:
-- [ ] order followed
+- [x] order followed
 
 ---
 
 ## 10) smoke test checklist (must pass)
 
-- [ ] open hosted frontend
-- [ ] register and login
-- [ ] list/search events
-- [ ] create and publish event (admin)
-- [ ] register for event
-- [ ] notification sent
-- [ ] ticket generated and qr endpoint returns image
-- [ ] websocket update appears on client
-- [ ] avatar upload + banner upload visible
-- [ ] restart/redeploy one service and confirm assets still work
+- [x] open hosted frontend
+- [x] register and login
+- [x] list/search events
+- [x] create and publish event (admin)
+- [x] register for event
+- [x] notification sent
+- [x] ticket generated and qr endpoint returns image
+- [x] websocket update appears on client
+- [x] avatar upload + banner upload visible
+- [x] restart/redeploy one service and confirm assets still work
 
 ---
 
-## 11) known gotchas + fixes
+<!-- ## 11) known gotchas + fixes
 
 ### gotcha: render api works, frontend still says network error
 - likely wrong `VITE_API_BASE_URL` or missing cors.
@@ -372,4 +372,4 @@ minimum required (non-security):
 6. spa rewrite fallback
 7. cors for cross-origin browser calls
 
-no skipping these, or key features will break!!!
+no skipping these, or key features will break!!! -->
