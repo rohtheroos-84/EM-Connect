@@ -145,9 +145,9 @@ env vars:
 - `ENVIRONMENT=production`
 
 tracking:
-- [ ] notification-worker deployed
-- [ ] ticket-worker deployed
-- [ ] both are consuming messages
+- [x] notification-worker deployed at [this address](https://emconnect-notification-worker.onrender.com)
+- [x] ticket-worker deployed at [this address](https://emconnect-ticket-worker.onrender.com)
+- [x] both are consuming messages
 
 ---
 
