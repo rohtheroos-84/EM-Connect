@@ -25,8 +25,7 @@ import {
   BarChart3,
   X,
 } from 'lucide-react';
-
-const API_BASE = '/api';
+import { toApiUrl } from '../services/urls';
 
 function fmtDate(iso) {
   if (!iso) return '—';
@@ -102,7 +101,7 @@ export default function Profile() {
 
   /* ── Avatar URL helper ── */
   const avatarSrc = profile?.avatarUrl
-    ? `${API_BASE}/${profile.avatarUrl.replace(/^avatars\//, 'users/avatars/')}`
+    ? toApiUrl(`/${profile.avatarUrl.replace(/^avatars\//, 'users/avatars/')}`)
     : null;
 
   /* ── Save name ── */

@@ -1,4 +1,6 @@
-const API_BASE = '/api';
+import { API_BASE_URL } from './urls';
+
+const API_BASE = API_BASE_URL;
 
 /**
  * Core fetch wrapper with JWT injection and error handling.

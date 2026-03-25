@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { searchEvents, getActiveCategories } from '../services/api';
 import { Search, MapPin, Clock, Users, ChevronLeft, ChevronRight, AlertCircle, Calendar, X, SlidersHorizontal, ArrowUpDown, Tag } from 'lucide-react';
 import { generateBauhausBanner } from '../services/bauhausBanner';
+import { toApiUrl } from '../services/urls';
 import AppLayout from '../components/AppLayout';
 
 function fmtDate(iso) {
@@ -336,7 +337,7 @@ function EventCard({ event }) {
       {/* Banner image */}
       <div className="h-36 overflow-hidden bg-[#E5E7EB]">
         <img
-          src={event.bannerUrl ? `/api${event.bannerUrl}` : generateBauhausBanner(event.title, event.id)}
+          src={event.bannerUrl ? toApiUrl(event.bannerUrl) : generateBauhausBanner(event.title, event.id)}
           alt=""
           className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
         />

@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
 import { generateBauhausBanner } from '../services/bauhausBanner';
+import { toApiUrl } from '../services/urls';
 import { downloadICS, getGoogleCalendarUrl } from '../services/calendar';
 import TicketModal from '../components/TicketModal';
 import { useAuth } from '../context/AuthContext';
@@ -257,7 +258,7 @@ export default function EventDetail() {
           {/* Banner hero */}
           <div className="h-48 sm:h-64 overflow-hidden bg-[#E5E7EB]">
             <img
-              src={event.bannerUrl ? `/api${event.bannerUrl}` : generateBauhausBanner(event.title, event.id)}
+              src={event.bannerUrl ? toApiUrl(event.bannerUrl) : generateBauhausBanner(event.title, event.id)}
               alt=""
               className="w-full h-full object-cover"
             />

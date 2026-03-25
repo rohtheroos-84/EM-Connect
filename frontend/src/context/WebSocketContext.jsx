@@ -1,11 +1,9 @@
 import { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
+import { getWebSocketUrl } from '../services/urls';
 
 const WebSocketContext = createContext(null);
 
-const WS_URL =
-  typeof window !== 'undefined'
-    ? `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/ws`
-    : 'ws://localhost:8081/ws';
+const WS_URL = getWebSocketUrl();
 
 const RECONNECT_BASE_MS = 1000;
 const RECONNECT_MAX_MS = 30000;

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { X, Loader2, Upload, Image as ImageIcon } from 'lucide-react';
+import { toApiUrl } from '../services/urls';
 
 const EVENT_CATEGORIES = [
   'TECHNOLOGY',
@@ -63,7 +64,7 @@ export default function EventFormModal({ event, onSubmit, onClose }) {
         tags: Array.isArray(event.tags) ? event.tags.join(', ') : '',
       });
       if (event.bannerUrl) {
-        setBannerPreview(`/api${event.bannerUrl}`);
+        setBannerPreview(toApiUrl(event.bannerUrl));
       }
     }
   }, [event]);
