@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -16,6 +18,7 @@ import (
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	log.Printf("🚀 Starting Notification Worker...")
+	startHealthServer("notification-worker")
 
 	// Load configuration
 	cfg := config.Load()
@@ -88,4 +91,25 @@ func connectWithRetry(c *consumer.Consumer, maxRetries int, initialBackoff time.
 	}
 
 	return lastErr
+}
+
+func startHealthServer(serviceName string) {
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(fmt.Sprintf(`{"service":"%s","status":"UP"}`+"\n", serviceName)))
+	})
+
+	go func() {
+		log.Printf("🌐 Health server listening on :%s/health", port)
+		if err := http.ListenAndServe(":"+port, mux); err != nil {
+			log.Printf("⚠️ Health server stopped: %v", err)
+		}
+	}()
 }
