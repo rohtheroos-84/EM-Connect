@@ -4,6 +4,18 @@ em-connect is a backend-first event management system i built to learn real-worl
 
 it now supports event lifecycle management, registration concurrency handling, async ticket generation, rich email flows (including reminders and password reset), real-time websocket updates, analytics, and a bauhaus-styled ui.
 
+## live deployment (current)
+
+- frontend (netlify): https://tryemconnect.netlify.app
+- api (render): https://emconnect-backend.onrender.com
+- api health: https://emconnect-backend.onrender.com/actuator/health
+- websocket hub (render): https://emconnect-websocket.onrender.com
+- websocket health: https://emconnect-websocket.onrender.com/health
+- notification service (render): https://emconnect-notification-worker.onrender.com/health
+- ticket service (render): https://emconnect-ticket-worker.onrender.com/health
+
+live deployment runbook: [docs/DEPLOY.md](docs/DEPLOY.md)
+
 ---
 
 ## what this project is
@@ -112,6 +124,8 @@ client (react)
     |                                                                    |
     +----------------- websocket ----------------------------------------+
 ```
+
+production note (free tier): notification and ticket processors are deployed as render web services (not background workers), each exposing a lightweight `/health` endpoint for port binding.
 
 - spring boot api: core domain logic + auth + persistence + event publishing
 - notification-worker (go): consumes `registration.*`, `event.*`, `user.*` and sends html mail
@@ -243,6 +257,21 @@ npm run dev
 - rabbitmq ui: `http://localhost:15672` (`emconnect` / `emconnect`)
 - mailhog ui (when dev profile is used): `http://localhost:8025`
 
+### local/prod environment switching
+- keep production secrets only in render/netlify env settings.
+- for local runs, use default local values (docker postgres/rabbitmq) and do not export cloud env vars in your shell.
+- if you need to test cloud resources locally, use a separate terminal profile/session so you can switch back cleanly.
+
+---
+
+## admin bootstrap
+
+promote any existing user directly in postgres:
+
+```sql
+update users set role = 'ADMIN' where email = 'your-email@example.com';
+```
+
 ---
 
 ## database migrations
@@ -329,7 +358,7 @@ full phase-by-phase notes live in [docs/NOTES.md](docs/NOTES.md).
 
 ## status
 
-the platform is feature-complete for local end-to-end usage, including:
+the platform is deployed live on free-tier infrastructure and is feature-complete for end-to-end usage, including:
 
 - auth + oauth + forgot password
 - event lifecycle management with categories/tags/banners
@@ -340,3 +369,9 @@ the platform is feature-complete for local end-to-end usage, including:
 - analytics + admin tooling
 
 remaining future work is tracked in [FUTURE.md](docs/FUTURE.md).
+
+### free-tier caveats
+
+- render web services spin down on inactivity (cold starts can add delay).
+- websocket and async processing responsiveness can degrade after idle periods.
+- if you need steadier queue-processing behavior on free tier, keep worker `/health` endpoints warm with an external uptime monitor.
