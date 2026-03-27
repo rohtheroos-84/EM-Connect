@@ -1,106 +1,63 @@
 # EM-Connect - Overview
 
-EM-Connect is an Event Management System built as a learning project to understand backend development concepts using modern technologies.
+EM-Connect is an event management platform built with a Spring Boot API, Go background processors, and a React frontend connected through RabbitMQ events.
 
-## What is EM-Connect?
+This document is the quick orientation guide. For setup and runbook details, see [../README.md](../README.md) and [DEPLOY.md](DEPLOY.md).
 
-EM-Connect allows users to:
-- **Create and manage events** - Organizers can create events with details like title, description, location, date/time, and capacity
-- **Register/Login** - Users authenticate via JWT tokens
-- **Browse events** - Anyone can view published events
-- **Event lifecycle management** - Events follow a state machine (Draft → Published → Completed/Cancelled)
+## Current Deployment
 
-## Tech Stack
+- Frontend: https://tryemconnect.netlify.app
+- API: https://emconnect-backend.onrender.com
+- API health: https://emconnect-backend.onrender.com/actuator/health
+- WebSocket hub: https://emconnect-websocket.onrender.com
+- WebSocket health: https://emconnect-websocket.onrender.com/health
+- Notification service health: https://emconnect-notification-worker.onrender.com/health
+- Ticket service health: https://emconnect-ticket-worker.onrender.com/health
 
-| Component | Technology |
-|-----------|------------|
-| Backend API | Spring Boot 3.2.2 (Java 17) |
-| Database | PostgreSQL 15 |
-| Authentication | JWT (JSON Web Tokens) |
-| Password Hashing | BCrypt |
-| Database Migrations | Flyway |
-| Containerization | Docker Compose |
+## System Summary
 
-## Project Structure
+Core capabilities:
+- JWT and Google OAuth authentication
+- Event CRUD and lifecycle transitions (draft/published/cancelled/completed)
+- Concurrency-safe registrations
+- Asynchronous ticket generation and notification delivery
+- Real-time websocket announcements and participant updates
+- Profile management and admin analytics
 
-```
-EM-Connect/
-├── docker-compose.yaml     # PostgreSQL container setup
-├── docs/                   # Documentation (you are here!)
-├── services/
-│   └── api/                # Spring Boot API service
-│       ├── src/main/java/com/emconnect/api/
-│       │   ├── config/     # Security & JWT configuration
-│       │   ├── controller/ # REST API endpoints
-│       │   ├── dto/        # Data Transfer Objects
-│       │   ├── entity/     # JPA entities (User, Event)
-│       │   ├── exception/  # Custom exceptions
-│       │   ├── repository/ # Database repositories
-│       │   └── service/    # Business logic
-│       └── src/main/resources/
-│           ├── application.yml  # App configuration
-│           └── db/migration/    # Flyway SQL migrations
-├── frontend/               # (Future) Frontend application
-└── PLAN.md                 # Development roadmap
-```
+Core runtime components:
+- Spring Boot API (Java 17)
+- PostgreSQL 16
+- RabbitMQ 3.13 topic exchange and DLQ
+- Go services: notification-worker, ticket-worker, websocket-hub
+- React 19 + Vite 6 frontend
 
-## Getting Started
+## Architecture at a Glance
 
-### Prerequisites
-- Java 17+
-- Docker Desktop
-- Maven
+1. Frontend calls API for CRUD/auth flows.
+2. API writes domain state to PostgreSQL.
+3. API publishes domain events to RabbitMQ.
+4. Go services consume events:
+   - Notification worker sends emails via SendGrid.
+   - Ticket worker generates ticket QR assets/metadata.
+   - WebSocket hub broadcasts live updates to clients.
 
-### Running the Application
+## Important Free-Tier Behavior
 
-1. **Start PostgreSQL database:**
-   ```bash
-   docker-compose up -d
-   ```
+On Render free tier, notification and ticket processors are deployed as web services (not native background workers) and can sleep after inactivity. They expose /health for port binding and wake-up behavior.
 
-2. **Run the API service:**
-   ```bash
-   cd services/api
-   mvn spring-boot:run
-   ```
+## Admin Bootstrap
 
-3. **Test the health endpoint:**
-   ```bash
-   curl http://localhost:8080/api/health
-   ```
+Flyway seeds a default admin account in migration V3:
+- Email: admin@emconnect.com
+- Password: password123
 
-## Key Concepts Implemented
+If missing, promote an existing user in PostgreSQL by setting role = 'ADMIN'.
 
-### Phase 1: Foundation
-- Docker Compose for PostgreSQL
-- Spring Boot project setup
-- Health check endpoints
+## Documentation Map
 
-### Phase 2: Authentication
-- User entity with email/password/role
-- Registration and login APIs
-- JWT token generation and validation
-- Role-based access control (USER, ADMIN)
-
-### Phase 3: Event Management
-- Event CRUD operations
-- Event state machine (DRAFT → PUBLISHED → COMPLETED/CANCELLED)
-- Organizer-based authorization
-- Pagination and search
-
-## Documentation Index
-
-| Document | Description |
-|----------|-------------|
-| [API.md](API.md) | Complete API reference with examples |
-| [DATABASE.md](DATABASE.md) | Database schema and migrations |
-| [AUTHENTICATION.md](AUTHENTICATION.md) | Auth flow and security configuration |
-| [EVENT_STATES.md](EVENT_STATES.md) | Event state machine documentation |
-
-## Default Credentials
-
-For development purposes, an admin user is seeded:
-- **Email:** `admin@emconnect.com`
-- **Password:** `admin123`
-
-> ⚠️ Change these credentials in production!
+- [API.md](API.md): endpoint reference
+- [AUTHENTICATION.md](AUTHENTICATION.md): auth, JWT, roles, CORS
+- [DATABASE.md](DATABASE.md): schema and migrations
+- [EVENT_STATES.md](EVENT_STATES.md): event lifecycle rules
+- [RABBITMQ_TOPOLOGY_DESIGN.md](RABBITMQ_TOPOLOGY_DESIGN.md): exchange/queue topology
+- [DEPLOY.md](DEPLOY.md): production runbook (do not alter historical decisions)

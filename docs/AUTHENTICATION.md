@@ -1,323 +1,84 @@
-# Authentication & Security
+# Authentication and Security
 
-EM-Connect uses **JWT (JSON Web Tokens)** for stateless authentication with **Spring Security**.
+This document reflects the current auth behavior in the Spring Boot API.
 
-## Overview
+## Auth Model
 
-```
-┌─────────┐  1. Login Request     ┌─────────────┐
-│ Client  │──────────────────────▶│ AuthService │
-│         │                       │             │
-│         │  2. JWT Token         │  - Verify   │
-│         │◀──────────────────────│    password │
-└────┬────┘                       │  - Generate │
-     │                            │    token    │
-     │ 3. Request + JWT           └─────────────┘
-     │ (Authorization header)
-     ▼
-┌─────────────────────┐
-│ JwtAuthFilter       │
-│                     │
-│ - Extract token     │
-│ - Validate token    │
-│ - Set auth context  │
-└─────────┬───────────┘
-          │
-          ▼
-┌─────────────────────┐
-│ Protected Endpoint  │
-└─────────────────────┘
-```
+- Stateless JWT authentication
+- Role model: USER, ADMIN
+- Password hashing: BCrypt
+- OAuth: Google login supported
+- Password reset: request code, verify code, reset password
 
-## Authentication Flow
+## Core Endpoints
 
-### 1. Registration
+Public auth endpoints:
+- POST /api/auth/register
+- POST /api/auth/login
+- POST /api/auth/google
+- POST /api/auth/forgot-password
+- POST /api/auth/verify-reset-code
+- POST /api/auth/reset-password
 
-```
-POST /api/auth/register
-{
-  "email": "user@example.com",
-  "password": "password123",
-  "name": "John Doe"
-}
-```
+Profile endpoints (JWT required):
+- GET /api/users/me
+- PUT /api/users/me
+- PUT /api/users/me/password
+- POST /api/users/me/avatar
 
-**Process:**
-1. `AuthController` receives request
-2. `AuthService.register()`:
-   - Check if email already exists
-   - Hash password with BCrypt
-   - Save user with role USER
-   - Generate JWT token
-3. Return token + user info
+## JWT Notes
 
-### 2. Login
+- Tokens are signed with HS256 via configured jwt.secret.
+- Default expiration is 24h (jwt.expiration in ms).
+- API expects Authorization: Bearer <token>.
+- Security filter extracts token, validates, and sets Spring Security context.
 
-```
-POST /api/auth/login
-{
-  "email": "user@example.com",
-  "password": "password123"
-}
-```
+## Google OAuth Behavior
 
-**Process:**
-1. `AuthController` receives request
-2. `AuthService.login()`:
-   - Find user by email
-   - Verify password with BCrypt
-   - Generate JWT token
-3. Return token + user info
+- API verifies Google ID token with Google tokeninfo endpoint.
+- aud claim must match configured google.oauth.client-id.
+- Existing users can be linked to Google provider.
+- OAuth-only users do not use password login.
 
-### 3. Authenticated Requests
+## Password Reset Behavior
 
-```
-GET /api/events/my-events
-Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
-```
+- Reset code is generated server-side and persisted in password_reset_codes.
+- Existing active codes are invalidated before generating a new one.
+- Code verification and reset have separate endpoints.
+- Successful reset publishes a user password changed event.
 
-**Process:**
-1. `JwtAuthenticationFilter` intercepts request
-2. Extract token from `Authorization: Bearer <token>`
-3. `JwtService.validateToken()` checks:
-   - Valid signature
-   - Not expired
-4. Extract username (email) from token
-5. Load user via `CustomUserDetailsService`
-6. Create `Authentication` object
-7. Set in `SecurityContextHolder`
-8. Request continues to controller
+## Authorization Rules
 
----
+Public routes include:
+- /api/auth/**
+- /api/health
+- /api/ping
+- /actuator/**
+- GET public event and media endpoints
 
-## JWT Token
+Restricted routes include:
+- /api/admin/** requires ADMIN
+- Most mutating event/registration/user actions require JWT
 
-### Structure
+## CORS (Cross-Origin Browser Access)
 
-JWT tokens have three parts separated by dots:
-```
-header.payload.signature
-```
+- CORS is enabled in SecurityConfig.
+- Allowed origins are controlled by CORS_ALLOWED_ORIGINS env var.
+- For Netlify/Vercel deploys, include exact frontend origin(s), comma-separated.
+- Example:
+  CORS_ALLOWED_ORIGINS=https://tryemconnect.netlify.app
 
-**Example decoded:**
+## Operational Security Notes
 
-```json
-// Header
-{
-  "alg": "HS256",
-  "typ": "JWT"
-}
+- Do not keep development secrets in production.
+- Rotate exposed credentials immediately (JWT secret, DB password, broker password, SendGrid key).
+- Keep /api/test/** disabled or removed in production.
 
-// Payload
-{
-  "sub": "user@example.com",
-  "iat": 1704067200,
-  "exp": 1704153600
-}
+## Related Docs
 
-// Signature
-HMACSHA256(base64(header) + "." + base64(payload), secret)
-```
-
-### Token Claims
-
-| Claim | Description |
-|-------|-------------|
-| sub | Subject (user email) |
-| iat | Issued at (timestamp) |
-| exp | Expiration (timestamp) |
-
-### Configuration
-
-```yaml
-# application.yml
-jwt:
-  secret: your-256-bit-secret-key-here-make-it-long-and-random
-  expiration: 86400000  # 24 hours in milliseconds
-```
-
----
-
-## Password Security
-
-### BCrypt Hashing
-
-Passwords are never stored in plain text. BCrypt is used for secure hashing:
-
-```java
-@Bean
-public PasswordEncoder passwordEncoder() {
-    return new BCryptPasswordEncoder();
-}
-```
-
-**Features:**
-- Automatic salt generation
-- Configurable work factor
-- Resistant to rainbow tables
-
-**Example hash:**
-```
-$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZRGljZVrdLfGu1IxM3L2vU.XXXXXXXXX
-```
-
----
-
-## Security Configuration
-
-### SecurityConfig.java
-
-```java
-@Configuration
-@EnableWebSecurity
-@EnableMethodSecurity  // Enables @PreAuthorize annotations
-public class SecurityConfig {
-    // ...
-}
-```
-
-### Authorization Rules
-
-```java
-.authorizeHttpRequests(auth -> auth
-    // Public endpoints
-    .requestMatchers(
-        "/api/auth/**",      // Login, register
-        "/api/health",       // Health check
-        "/api/ping",         // Ping
-        "/actuator/**"       // Actuator endpoints
-    ).permitAll()
-    
-    // Public event endpoints (GET only)
-    .requestMatchers("GET", "/api/events").permitAll()
-    .requestMatchers("GET", "/api/events/search").permitAll()
-    .requestMatchers("GET", "/api/events/{id}").permitAll()
-    
-    // Admin-only endpoints
-    .requestMatchers("/api/admin/**").hasRole("ADMIN")
-    
-    // All other endpoints require authentication
-    .anyRequest().authenticated()
-)
-```
-
-### Endpoint Access Summary
-
-| Endpoint | Access |
-|----------|--------|
-| POST /api/auth/register | Public |
-| POST /api/auth/login | Public |
-| GET /api/health | Public |
-| GET /api/events | Public |
-| GET /api/events/{id} | Public |
-| GET /api/events/search | Public |
-| POST /api/events | Authenticated |
-| PUT /api/events/{id} | Authenticated (organizer only) |
-| DELETE /api/events/{id} | Authenticated (organizer only) |
-| POST /api/events/{id}/publish | Authenticated (organizer only) |
-| GET /api/events/my-events | Authenticated |
-| GET /api/users/me | Authenticated |
-| GET /api/admin/users | ADMIN only |
-
----
-
-## Role-Based Access Control (RBAC)
-
-### Roles
-
-| Role | Description | Permissions |
-|------|-------------|-------------|
-| USER | Regular user | Create/manage own events |
-| ADMIN | Administrator | All permissions + admin endpoints |
-
-### Using Roles in Code
-
-```java
-// Method-level security (requires @EnableMethodSecurity)
-@PreAuthorize("hasRole('ADMIN')")
-public List<UserResponse> getAllUsers() {
-    // Only admins can access
-}
-
-// URL-based security (in SecurityConfig)
-.requestMatchers("/api/admin/**").hasRole("ADMIN")
-```
-
-### Getting Current User
-
-```java
-// In controller
-@GetMapping("/me")
-public ResponseEntity<UserResponse> getCurrentUser(Authentication auth) {
-    String email = auth.getName();  // Returns the email
-    // ...
-}
-```
-
----
-
-## JWT Service Implementation
-
-### Key Methods
-
-```java
-public class JwtService {
-    
-    // Generate token for user
-    public String generateToken(String username) {
-        return Jwts.builder()
-            .setSubject(username)
-            .setIssuedAt(new Date())
-            .setExpiration(new Date(System.currentTimeMillis() + expiration))
-            .signWith(getSigningKey(), SignatureAlgorithm.HS256)
-            .compact();
-    }
-    
-    // Extract username from token
-    public String extractUsername(String token) {
-        return extractClaim(token, Claims::getSubject);
-    }
-    
-    // Validate token
-    public boolean isTokenValid(String token, UserDetails userDetails) {
-        String username = extractUsername(token);
-        return username.equals(userDetails.getUsername()) 
-            && !isTokenExpired(token);
-    }
-}
-```
-
----
-
-## JWT Authentication Filter
-
-### Request Processing Flow
-
-```java
-@Component
-public class JwtAuthenticationFilter extends OncePerRequestFilter {
-    
-    @Override
-    protected void doFilterInternal(
-            HttpServletRequest request,
-            HttpServletResponse response,
-            FilterChain filterChain) {
-        
-        // 1. Get Authorization header
-        String authHeader = request.getHeader("Authorization");
-        
-        // 2. Check for Bearer token
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-        
-        // 3. Extract and validate token
-        String token = authHeader.substring(7);
-        String username = jwtService.extractUsername(token);
-        
-        // 4. Load user and validate
-        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+- [API.md](API.md)
+- [DATABASE.md](DATABASE.md)
+- [DEPLOY.md](DEPLOY.md)
         
         if (jwtService.isTokenValid(token, userDetails)) {
             // 5. Create authentication

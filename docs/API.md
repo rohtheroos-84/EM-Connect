@@ -1,363 +1,102 @@
 # API Reference
 
-Base URL: `http://localhost:8080`
-
-## Authentication
-
-All authenticated endpoints require the JWT token in the Authorization header:
-```
-Authorization: Bearer <your-jwt-token>
-```
-
----
-
-## Health Endpoints
-
-### GET /api/health
-Health check endpoint.
-
-**Authentication:** None
-
-**Response:**
-```json
-{
-  "status": "healthy",
-  "service": "api"
-}
-```
-
-### GET /api/ping
-Simple ping endpoint.
-
-**Authentication:** None
-
-**Response:**
-```
-pong
-```
-
----
-
-## Auth Endpoints
-
-### POST /api/auth/register
-Register a new user account.
-
-**Authentication:** None
-
-**Request Body:**
-```json
-{
-  "email": "user@example.com",
-  "password": "password123",
-  "name": "John Doe"
-}
-```
-
-| Field | Type | Required | Validation |
-|-------|------|----------|------------|
-| email | string | Yes | Valid email format, unique |
-| password | string | Yes | Min 6 characters |
-| name | string | Yes | Not blank |
-
-**Response (201 Created):**
-```json
-{
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "email": "user@example.com",
-  "name": "John Doe",
-  "role": "USER"
-}
-```
-
-**Error Responses:**
-- `400 Bad Request` - Validation failed
-- `409 Conflict` - Email already exists
-
----
-
-### POST /api/auth/login
-Authenticate and receive a JWT token.
-
-**Authentication:** None
-
-**Request Body:**
-```json
-{
-  "email": "user@example.com",
-  "password": "password123"
-}
-```
-
-**Response (200 OK):**
-```json
-{
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "email": "user@example.com",
-  "name": "John Doe",
-  "role": "USER"
-}
-```
-
-**Error Responses:**
-- `401 Unauthorized` - Invalid credentials
-
----
-
-## Event Endpoints
-
-### GET /api/events
-Get all published events (paginated).
-
-**Authentication:** None (public)
-
-**Query Parameters:**
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| page | int | 0 | Page number (0-indexed) |
-| size | int | 10 | Items per page |
-
-**Response (200 OK):**
-```json
-{
-  "content": [
-    {
-      "id": 1,
-      "title": "Tech Conference 2024",
-      "description": "Annual tech conference",
-      "location": "Convention Center",
-      "startDate": "2024-06-15T09:00:00",
-      "endDate": "2024-06-15T17:00:00",
-      "capacity": 500,
-      "status": "PUBLISHED",
-      "organizerId": 1,
-      "organizerName": "John Doe",
-      "createdAt": "2024-01-10T10:00:00",
-      "updatedAt": "2024-01-12T14:30:00"
-    }
-  ],
-  "totalElements": 25,
-  "totalPages": 3,
-  "number": 0,
-  "size": 10
-}
-```
-
----
-
-### GET /api/events/{id}
-Get a single event by ID.
-
-**Authentication:** None (public for published events)
-
-**Path Parameters:**
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| id | Long | Event ID |
-
-**Response (200 OK):**
-```json
-{
-  "id": 1,
-  "title": "Tech Conference 2024",
-  "description": "Annual tech conference",
-  "location": "Convention Center",
-  "startDate": "2024-06-15T09:00:00",
-  "endDate": "2024-06-15T17:00:00",
-  "capacity": 500,
-  "status": "PUBLISHED",
-  "organizerId": 1,
-  "organizerName": "John Doe",
-  "createdAt": "2024-01-10T10:00:00",
-  "updatedAt": "2024-01-12T14:30:00"
-}
-```
-
-**Error Responses:**
-- `404 Not Found` - Event not found
-
----
-
-### GET /api/events/search
-Search published events by keyword in title.
-
-**Authentication:** None (public)
-
-**Query Parameters:**
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| keyword | string | Yes | Search term |
-| page | int | No | Page number (default: 0) |
-| size | int | No | Items per page (default: 10) |
-
-**Example:** `GET /api/events/search?keyword=tech&page=0&size=10`
-
-**Response:** Same pagination format as GET /api/events
-
----
-
-### GET /api/events/my-events
-Get events created by the authenticated user.
-
-**Authentication:** Required
-
-**Query Parameters:**
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| page | int | 0 | Page number |
-| size | int | 10 | Items per page |
-
-**Response:** Same pagination format, includes all statuses (DRAFT, PUBLISHED, etc.)
-
----
-
-### POST /api/events
-Create a new event.
-
-**Authentication:** Required
-
-**Request Body:**
-```json
-{
-  "title": "My Event",
-  "description": "Event description",
-  "location": "123 Main St",
-  "startDate": "2024-06-15T09:00:00",
-  "endDate": "2024-06-15T17:00:00",
-  "capacity": 100
-}
-```
-
-| Field | Type | Required | Validation |
-|-------|------|----------|------------|
-| title | string | Yes | Not blank, max 255 chars |
-| description | string | No | - |
-| location | string | No | Max 255 chars |
-| startDate | datetime | Yes | ISO 8601 format |
-| endDate | datetime | Yes | Must be after startDate |
-| capacity | int | No | Default: 0 |
-
-**Response (201 Created):**
-```json
-{
-  "id": 5,
-  "title": "My Event",
-  "status": "DRAFT",
-  ...
-}
-```
-
-> **Note:** Events are always created with status `DRAFT`
-
-**Error Responses:**
-- `400 Bad Request` - Validation failed
-- `401 Unauthorized` - Not authenticated
-
----
-
-### PUT /api/events/{id}
-Update an event (partial update supported).
-
-**Authentication:** Required (must be organizer)
-
-**Path Parameters:**
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| id | Long | Event ID |
-
-**Request Body:** (all fields optional)
-```json
-{
-  "title": "Updated Title",
-  "description": "New description",
-  "location": "New location",
-  "startDate": "2024-07-15T09:00:00",
-  "endDate": "2024-07-15T17:00:00",
-  "capacity": 200
-}
-```
-
-**Response (200 OK):** Updated event
-
-**Error Responses:**
-- `400 Bad Request` - Validation failed or cannot edit (wrong state)
-- `403 Forbidden` - Not the organizer
-- `404 Not Found` - Event not found
-
-> **Note:** Can only edit events in DRAFT or PUBLISHED status
-
----
-
-### DELETE /api/events/{id}
-Delete an event.
-
-**Authentication:** Required (must be organizer)
-
-**Response (200 OK):**
-```json
-{
-  "message": "Event deleted successfully"
-}
-```
-
-**Error Responses:**
-- `400 Bad Request` - Can only delete DRAFT events
-- `403 Forbidden` - Not the organizer
-- `404 Not Found` - Event not found
-
-> **Note:** Only DRAFT events can be deleted. Use cancel for published events.
-
----
-
-### POST /api/events/{id}/publish
-Publish a draft event (makes it visible to users).
-
-**Authentication:** Required (must be organizer)
-
-**State Transition:** `DRAFT → PUBLISHED`
-
-**Response (200 OK):** Updated event with status "PUBLISHED"
-
-**Error Responses:**
-- `400 Bad Request` - Invalid state transition
-- `403 Forbidden` - Not the organizer
-- `404 Not Found` - Event not found
-
----
-
-### POST /api/events/{id}/cancel
-Cancel an event.
-
-**Authentication:** Required (must be organizer)
-
-**State Transition:** `DRAFT → CANCELLED` or `PUBLISHED → CANCELLED`
-
-**Response (200 OK):** Updated event with status "CANCELLED"
-
-**Error Responses:**
-- `400 Bad Request` - Invalid state transition
-- `403 Forbidden` - Not the organizer
-- `404 Not Found` - Event not found
-
----
-
-### POST /api/events/{id}/complete
-Mark an event as completed.
-
-**Authentication:** Required (must be organizer)
-
-**State Transition:** `PUBLISHED → COMPLETED`
-
-**Response (200 OK):** Updated event with status "COMPLETED"
-
-**Error Responses:**
-- `400 Bad Request` - Invalid state transition
-- `403 Forbidden` - Not the organizer
-- `404 Not Found` - Event not found
-
----
-
-## User Endpoints
+This is the current endpoint map based on the active controllers in services/api.
+
+## Base URLs
+
+- Local API: http://localhost:8080
+- Live API: https://emconnect-backend.onrender.com
+
+## Auth Header
+
+Authenticated routes require:
+
+Authorization: Bearer <jwt>
+
+## Public Endpoints
+
+Health:
+- GET /api/health
+- GET /api/ping
+
+Auth:
+- POST /api/auth/register
+- POST /api/auth/login
+- POST /api/auth/google
+- POST /api/auth/forgot-password
+- POST /api/auth/verify-reset-code
+- POST /api/auth/reset-password
+
+Event browsing:
+- GET /api/events
+- GET /api/events/{id}
+- GET /api/events/search
+- GET /api/events/categories
+- GET /api/events/categories/active
+
+Static media:
+- GET /api/events/banners/{filename}
+- GET /api/users/avatars/{filename}
+
+## Authenticated Endpoints
+
+User profile:
+- GET /api/users/me
+- PUT /api/users/me
+- PUT /api/users/me/password
+- POST /api/users/me/avatar
+
+Events (organizer-owned operations):
+- GET /api/events/my-events
+- POST /api/events
+- PUT /api/events/{id}
+- DELETE /api/events/{id}
+- POST /api/events/{id}/publish
+- POST /api/events/{id}/cancel
+- POST /api/events/{id}/complete
+- POST /api/events/{id}/banner
+- GET /api/events/{id}/participants/count
+
+Registrations:
+- POST /api/events/{eventId}/register
+- POST /api/registrations/{id}/cancel
+- GET /api/registrations/my-registrations
+- GET /api/registrations/{id}
+- GET /api/registrations/ticket/{ticketCode}
+- GET /api/events/{eventId}/registration-status
+- GET /api/events/{eventId}/registrations
+
+Tickets:
+- GET /api/tickets/my
+- GET /api/tickets/{code}
+- GET /api/tickets/{code}/qr
+- POST /api/tickets/{code}/validate (guarded by role check in controller)
+
+Admin:
+- GET /api/admin/users
+- GET /api/admin/dashboard
+- GET /api/admin/events
+- PUT /api/admin/users/{id}/promote
+- PUT /api/admin/users/{id}/demote
+- GET /api/admin/analytics
+
+## Test Endpoints (Keep Disabled in Production)
+
+- POST /api/test/users
+- GET /api/test/users
+- POST /api/test/concurrent-register
+
+## Common Query Parameters
+
+- Pagination: page, size
+- Search/filter: keyword, category, tag
+- Registrations: status, activeOnly
+
+## Notes
+
+- API publishes domain events to RabbitMQ for notification, ticket, and websocket services.
+- For browser clients on another origin (Netlify/Vercel), API CORS allowlist must include the frontend origin through CORS_ALLOWED_ORIGINS.
+- See [AUTHENTICATION.md](AUTHENTICATION.md), [DATABASE.md](DATABASE.md), and [RABBITMQ_TOPOLOGY_DESIGN.md](RABBITMQ_TOPOLOGY_DESIGN.md) for deeper details.
 
 ### GET /api/users/me
 Get current authenticated user's profile.
