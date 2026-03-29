@@ -71,34 +71,34 @@ export default function AppLayout({ children }) {
     <div className="h-screen flex flex-col overflow-hidden bg-bauhaus-bg">
       {/* ── Navbar ── */}
       <nav className="bg-bauhaus-nav shrink-0">
-        <div className="max-w-6xl mx-auto px-6 lg:px-8 flex items-center justify-between h-12">
-          {/* Left: brand + nav links */}
-          <div className="flex items-center gap-8">
-            <div className="flex items-center gap-2.5">
-              <div className="flex gap-0.75">
-                <div className="w-2 h-2 bg-bauhaus-red" />
-                <div className="w-2 h-2 bg-bauhaus-yellow" />
-                <div className="w-2 h-2 bg-bauhaus-blue" />
-              </div>
-              <Link to={isAuthenticated ? '/dashboard' : '/events'} className="text-sm font-black text-white tracking-tight uppercase hover:text-white/80 transition-colors">
-                EM-Connect
-              </Link>
-              {connected && (
-                <span className="flex items-center gap-1 ml-0.5">
-                  <span className="w-1.5 h-1.5 bg-[#16A34A] rounded-full animate-live-pulse" />
-                  <span className="text-[8px] font-bold text-[#16A34A] uppercase tracking-wider">Live</span>
-                </span>
-              )}
+        <div className="max-w-6xl mx-auto px-6 lg:px-8 h-12 flex items-center gap-3 lg:gap-4">
+          {/* Left: brand */}
+          <div className="flex items-center gap-2.5 shrink-0">
+            <div className="flex gap-0.75">
+              <div className="w-2 h-2 bg-bauhaus-red" />
+              <div className="w-2 h-2 bg-bauhaus-yellow" />
+              <div className="w-2 h-2 bg-bauhaus-blue" />
             </div>
+            <Link to={isAuthenticated ? '/dashboard' : '/events'} className="text-sm font-black text-white tracking-tight uppercase hover:text-white/80 transition-colors whitespace-nowrap">
+              EM-Connect
+            </Link>
+            {connected && (
+              <span className="flex items-center gap-1 ml-0.5 shrink-0">
+                <span className="w-1.5 h-1.5 bg-[#16A34A] rounded-full animate-live-pulse" />
+                <span className="text-[8px] font-bold text-[#16A34A] uppercase tracking-wider">Live</span>
+              </span>
+            )}
+          </div>
 
-            {/* Nav links — bottom-border active indicator */}
-            <div className="hidden sm:flex items-center gap-0.5">
+          {/* Center: desktop nav links */}
+          <div className="hidden sm:flex flex-1 min-w-0 items-center justify-center">
+            <div className="flex items-center justify-center w-full max-w-170 xl:max-w-190 gap-1 lg:gap-2 xl:gap-3">
               {navItems.map(({ to, label, icon: Icon }) => (
                 <NavLink
                   key={to}
                   to={to}
                   className={({ isActive }) =>
-                    `flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider transition-all duration-150 border-b-2 ${
+                    `flex items-center gap-1.5 px-2.5 lg:px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-wider transition-all duration-150 border-b-2 whitespace-nowrap ${
                       isActive
                         ? 'text-white border-white'
                         : 'text-white/50 hover:text-white/80 border-transparent'
@@ -113,7 +113,7 @@ export default function AppLayout({ children }) {
           </div>
 
           {/* Right: theme toggle + user dropdown */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 shrink-0">
             <ThemeToggle />
             {isAuthenticated ? (
               <div className="relative" ref={userMenuRef}>
