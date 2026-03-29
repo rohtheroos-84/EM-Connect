@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <rect width="256" height="256" fill="#F0F0F0"/>
+
+  <path d="M128 24l84 30v64c0 54-33 94-84 114c-51-20-84-60-84-114V54z" fill="#121212"/>
+  <path d="M128 40l68 24v54c0 45-27 79-68 97c-41-18-68-52-68-97V64z" fill="#FFFFFF"/>
+
+  <!-- E -->
+  <rect x="72" y="78" width="16" height="100" fill="#D02020"/>
+  <rect x="72" y="78" width="50" height="16" fill="#D02020"/>
+  <rect x="72" y="120" width="42" height="16" fill="#D02020"/>
+  <rect x="72" y="162" width="50" height="16" fill="#D02020"/>
+
+  <!-- M -->
+  <rect x="138" y="78" width="14" height="100" fill="#1040C0"/>
+  <rect x="174" y="78" width="14" height="100" fill="#1040C0"/>
+  <polygon points="152,78 163,108 174,78 174,112 163,142 152,112" fill="#F0C020"/>
+</svg>
