@@ -64,8 +64,11 @@ func main() {
 	}()
 
 	// Start consuming (this blocks)
-	if err := c.Start(); err != nil {
-		log.Fatalf("❌ Consumer error: %v", err)
+	for {
+		if err := c.Start(); err != nil {
+			log.Printf("retrying...")
+			time.Sleep(2 * time.Second)
+		}
 	}
 }
 
