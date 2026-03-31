@@ -23,6 +23,10 @@ free-tier reality:
 - websocket + workers are the least stable parts on free plans
 - this is good for demo/portfolio/early users, not strict uptime
 
+current mitigation (active):
+- uptime robot keep-alive monitoring is enabled for all 4 render services.
+- public status page: https://stats.uptimerobot.com/HoUhFK8lmD
+
 ---
 
 ## 2) preflight checklist (do before any deploy)
@@ -155,6 +159,30 @@ tracking:
 - [x] notification-worker deployed at [this address](https://emconnect-notification-worker.onrender.com)
 - [x] ticket-worker deployed at [this address](https://emconnect-ticket-worker.onrender.com)
 - [x] both are consuming messages
+
+---
+
+## 6.5) keep render services warm via uptimerobot
+
+why:
+- render free web services can sleep on inactivity.
+- periodic health pings reduce cold-start impact for demo users.
+
+service used:
+- uptimerobot (http monitor type, 5-minute interval)
+
+configured monitors (active):
+- `emconnect-backend-api` -> `https://emconnect-backend.onrender.com/actuator/health`
+- `emconnect-websocket-worker` -> `https://emconnect-websocket.onrender.com/health`
+- `emconnect-notification-worker` -> `https://emconnect-notification-worker.onrender.com/health`
+- `emconnect-ticket-worker` -> `https://emconnect-ticket-worker.onrender.com/health`
+
+public status page:
+- https://stats.uptimerobot.com/HoUhFK8lmD
+
+tracking:
+- [x] all 4 monitors configured
+- [x] all 4 monitors currently up
 
 ---
 

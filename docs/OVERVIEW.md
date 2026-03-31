@@ -13,6 +13,7 @@ This document is the quick orientation guide. For setup and runbook details, see
 - WebSocket health: https://emconnect-websocket.onrender.com/health
 - Notification service health: https://emconnect-notification-worker.onrender.com/health
 - Ticket service health: https://emconnect-ticket-worker.onrender.com/health
+- Uptime dashboard (public): https://stats.uptimerobot.com/HoUhFK8lmD
 
 ## System Summary
 
@@ -44,6 +45,11 @@ Core runtime components:
 ## Important Free-Tier Behavior
 
 On Render free tier, notification and ticket processors are deployed as web services (not native background workers) and can sleep after inactivity. They expose /health for port binding and wake-up behavior.
+
+Current keep-alive setup:
+- UptimeRobot is active with 4 HTTP monitors (API, websocket, notification worker, ticket worker).
+- Polling interval is 5 minutes.
+- Public status page: https://stats.uptimerobot.com/HoUhFK8lmD
 
 ## Admin Bootstrap
 
