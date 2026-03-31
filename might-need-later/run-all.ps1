@@ -16,7 +16,7 @@ if ($Profile -eq "prod") {
 }
 
 Start-Process powershell -ArgumentList "cd services/api; .\mvnw spring-boot:run"
-Start-Process powershell -ArgumentList "cd services/websocket-hub; go run main.go"
-Start-Process powershell -ArgumentList "cd services/notification-worker; go run main.go"
-Start-Process powershell -ArgumentList "cd services/ticket-worker; go run main.go"
+Start-Process powershell -ArgumentList "cd services/websocket-hub; go run ."
+Start-Process powershell -ArgumentList "cd services/notification-worker; go run ."
+Start-Process powershell -ArgumentList "cd services/ticket-worker; go run ."
 Start-Process powershell -ArgumentList "cd frontend; npm run dev"
