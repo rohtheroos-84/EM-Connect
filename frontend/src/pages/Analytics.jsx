@@ -83,8 +83,7 @@ function SectionHeader({ title, icon: Icon, accent = 'bg-bauhaus-red' }) {
 function StatCard({ label, value, icon: Icon, accent, sub }) {
   return (
     <div className="bg-bauhaus-white border border-bauhaus-fg/6 relative overflow-hidden group hover:shadow-md transition-shadow duration-200">
-      <div className={`absolute top-0 left-0 w-1 h-full ${accent}`} />
-      <div className="p-5 pl-7">
+      <div className="p-5">
         <div className="flex items-start justify-between">
           <div>
             <p className="text-[10px] font-bold text-bauhaus-fg/35 uppercase tracking-[0.15em] mb-1">{label}</p>
