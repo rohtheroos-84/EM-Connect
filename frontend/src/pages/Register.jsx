@@ -278,7 +278,7 @@ export default function Register() {
                     <div className="flex-1 h-px bg-[#E5E7EB]" />
                   </div>
                   <div className="w-full flex justify-center">
-                  <div className="w-full max-w-md">
+                  <div className="w-full max-w-md flex justify-center google-auth-wrap">
                     <GoogleLogin
                       onSuccess={handleGoogleSuccess}
                       onError={handleGoogleError}

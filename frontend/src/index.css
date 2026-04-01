@@ -128,3 +128,10 @@ button {
 .animate-live-pulse {
   animation: live-pulse 2s ease-in-out infinite;
 }
+
+/* Keep Google Identity button centered before and after GIS hydration. */
+.google-auth-wrap > div,
+.google-auth-wrap iframe {
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
