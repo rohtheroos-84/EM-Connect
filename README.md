@@ -1,6 +1,6 @@
-# em-connect
+# EM-Connect
 
-em-connect is a backend-first event management system i built to learn real-world system design with spring boot, golang workers, and a react frontend connected through rabbitmq.
+EM-Connect is a backend-first event management system i built to learn real-world system design with spring boot, golang workers, and a react frontend connected through rabbitmq.
 
 it now supports event lifecycle management, registration concurrency handling, async ticket generation, rich email flows (including reminders and password reset), real-time websocket updates, analytics, and a bauhaus-styled ui.
 
