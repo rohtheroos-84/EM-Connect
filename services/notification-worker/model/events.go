@@ -3,8 +3,21 @@ package model
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"time"
 )
+
+func notificationLocation() *time.Location {
+	tz := os.Getenv("NOTIFICATION_TIMEZONE")
+	if tz == "" {
+		tz = "Asia/Kolkata"
+	}
+	loc, err := time.LoadLocation(tz)
+	if err != nil {
+		return time.UTC
+	}
+	return loc
+}
 
 // Timestamp handles numeric timestamps (Java Instant as epoch seconds)
 type Timestamp struct {
@@ -17,7 +30,7 @@ func (t *Timestamp) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &num); err == nil {
 		sec := int64(num)
 		nsec := int64((num - float64(sec)) * 1e9)
-		t.Time = time.Unix(sec, nsec)
+		t.Time = time.Unix(sec, nsec).UTC()
 		return nil
 	}
 
@@ -26,13 +39,22 @@ func (t *Timestamp) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &str); err == nil {
 		// Try common formats in order of likelihood
 		for _, layout := range []string{
-			time.RFC3339Nano,                // 2026-03-01T20:11:37.5594923Z
-			time.RFC3339,                    // 2026-03-01T20:11:37Z
+			time.RFC3339Nano, // 2026-03-01T20:11:37.5594923Z
+			time.RFC3339,     // 2026-03-01T20:11:37Z
+		} {
+			if parsed, err := time.Parse(layout, str); err == nil {
+				t.Time = parsed
+				return nil
+			}
+		}
+
+		loc := notificationLocation()
+		for _, layout := range []string{
 			"2006-01-02T15:04:05.999999999", // Java LocalDateTime with fractional seconds (no TZ)
 			"2006-01-02T15:04:05",           // Java LocalDateTime without fractional seconds
 			"2006-01-02 15:04:05",           // fallback space-separated
 		} {
-			if parsed, err := time.Parse(layout, str); err == nil {
+			if parsed, err := time.ParseInLocation(layout, str, loc); err == nil {
 				t.Time = parsed
 				return nil
 			}
@@ -61,7 +83,7 @@ func (t *LocalDateTime) UnmarshalJSON(data []byte) error {
 			if len(arr) >= 6 {
 				second = arr[5]
 			}
-			t.Time = time.Date(year, month, day, hour, minute, second, 0, time.UTC)
+			t.Time = time.Date(year, month, day, hour, minute, second, 0, notificationLocation())
 			return nil
 		}
 	}
@@ -72,11 +94,20 @@ func (t *LocalDateTime) UnmarshalJSON(data []byte) error {
 		for _, layout := range []string{
 			time.RFC3339Nano,
 			time.RFC3339,
+		} {
+			if parsed, err := time.Parse(layout, str); err == nil {
+				t.Time = parsed
+				return nil
+			}
+		}
+
+		loc := notificationLocation()
+		for _, layout := range []string{
 			"2006-01-02T15:04:05.999999999",
 			"2006-01-02T15:04:05",
 			"2006-01-02 15:04:05",
 		} {
-			if parsed, err := time.Parse(layout, str); err == nil {
+			if parsed, err := time.ParseInLocation(layout, str, loc); err == nil {
 				t.Time = parsed
 				return nil
 			}

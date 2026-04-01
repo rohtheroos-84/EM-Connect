@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
+	"time"
 
 	"github.com/emconnect/notification-worker/email"
 	"github.com/emconnect/notification-worker/model"
@@ -13,12 +15,34 @@ import (
 // MessageHandler processes incoming messages
 type MessageHandler struct {
 	emailService *email.Service
+	timeZoneLoc  *time.Location
+}
+
+func resolveNotificationLocation() *time.Location {
+	tz := os.Getenv("NOTIFICATION_TIMEZONE")
+	if tz == "" {
+		tz = "Asia/Kolkata"
+	}
+	loc, err := time.LoadLocation(tz)
+	if err != nil {
+		log.Printf("⚠️ Invalid NOTIFICATION_TIMEZONE=%q, falling back to UTC", tz)
+		return time.UTC
+	}
+	return loc
+}
+
+func (h *MessageHandler) formatDateTime(t time.Time) string {
+	if t.IsZero() {
+		return "N/A"
+	}
+	return t.In(h.timeZoneLoc).Format("Monday, January 2, 2006 at 3:04 PM MST")
 }
 
 // NewMessageHandler creates a new handler
 func NewMessageHandler(emailService *email.Service) *MessageHandler {
 	return &MessageHandler{
 		emailService: emailService,
+		timeZoneLoc:  resolveNotificationLocation(),
 	}
 }
 
@@ -78,7 +102,7 @@ func (h *MessageHandler) handleRegistrationConfirmed(body []byte) error {
 		UserName:      event.UserName,
 		EventTitle:    event.EventTitle,
 		EventLocation: event.EventLocation,
-		EventDate:     event.EventStartDate.Format("Monday, January 2, 2006 at 3:04 PM"),
+		EventDate:     h.formatDateTime(event.EventStartDate.Time),
 		TicketCode:    event.TicketCode,
 	})
 	if err != nil {
@@ -136,7 +160,7 @@ func (h *MessageHandler) handleEventPublished(body []byte) error {
 		EventTitle:       event.EventTitle,
 		EventDescription: event.EventDescription,
 		EventLocation:    event.EventLocation,
-		EventDate:        event.StartDate.Format("Monday, January 2, 2006 at 3:04 PM"),
+		EventDate:        h.formatDateTime(event.StartDate.Time),
 		Capacity:         event.Capacity,
 	})
 	if err != nil {
@@ -164,7 +188,7 @@ func (h *MessageHandler) handleEventCancelled(body []byte) error {
 		Subject:               fmt.Sprintf("Event Cancelled: %s", event.EventTitle),
 		AccentColor:           "#F0C020",
 		EventTitle:            event.EventTitle,
-		OriginalDate:          event.OriginalStartDate.Format("Monday, January 2, 2006 at 3:04 PM"),
+		OriginalDate:          h.formatDateTime(event.OriginalStartDate.Time),
 		AffectedRegistrations: event.AffectedRegistrations,
 	})
 	if err != nil {
@@ -195,7 +219,7 @@ func (h *MessageHandler) handleEventReminder(body []byte) error {
 		UserName:      event.UserName,
 		EventTitle:    event.EventTitle,
 		EventLocation: event.EventLocation,
-		EventDate:     event.EventStartDate.Format("Monday, January 2, 2006 at 3:04 PM"),
+		EventDate:     h.formatDateTime(event.EventStartDate.Time),
 		TicketCode:    event.TicketCode,
 	})
 	if err != nil {
@@ -254,7 +278,7 @@ func (h *MessageHandler) handleUserLogin(body []byte) error {
 		AccentColor: "#1040C0",
 		UserName:    event.UserName,
 		LoginMethod: method,
-		LoginTime:   event.Timestamp.Format("Monday, January 2, 2006 at 3:04 PM"),
+		LoginTime:   h.formatDateTime(event.Timestamp.Time),
 	})
 	if err != nil {
 		return fmt.Errorf("failed to render template: %w", err)
