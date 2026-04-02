@@ -10,6 +10,7 @@ import {
   XCircle,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Loader2,
   CalendarX,
   QrCode,
