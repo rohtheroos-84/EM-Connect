@@ -159,20 +159,20 @@ export default function EventList() {
 
             {/* Category dropdown */}
             {activeCategories.length > 0 && (
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1">
                 <SlidersHorizontal className="w-3.5 h-3.5 text-[#6B7280] hidden sm:block" />
                 <div className="relative">
                   <select
                     value={categoryFilter}
                     onChange={(e) => { setCategoryFilter(e.target.value); setPage(0); }}
-                    className="h-9 min-w-54 px-3 pr-10 text-[11px] font-bold uppercase tracking-wider border border-[#D1D5DB] bg-bauhaus-white/80 text-bauhaus-fg cursor-pointer appearance-none focus:outline-none focus:border-bauhaus-blue transition-colors"
+                    className="h-9 min-w-54 px-2.5 pr-8 text-[11px] font-bold uppercase tracking-wider border border-[#D1D5DB] bg-bauhaus-white/80 text-bauhaus-fg cursor-pointer appearance-none focus:outline-none focus:border-bauhaus-blue transition-colors"
                   >
                     <option value="">All Categories</option>
                     {activeCategories.map((cat) => (
                       <option key={cat} value={cat}>{cat.charAt(0) + cat.slice(1).toLowerCase()}</option>
                     ))}
                   </select>
-                  <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#6B7280]" />
+                  <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#6B7280]" />
                 </div>
               </div>
             )}
@@ -189,19 +189,19 @@ export default function EventList() {
             </div>
 
             {/* Sort */}
-            <div className="flex items-center gap-1.5 ml-auto">
+            <div className="flex items-center gap-1 ml-auto">
               <ArrowUpDown className="w-3.5 h-3.5 text-[#6B7280] hidden sm:block" />
               <div className="relative">
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="h-9 min-w-52 px-3 pr-10 text-[11px] font-bold uppercase tracking-wider border border-[#D1D5DB] bg-bauhaus-white/80 text-bauhaus-fg cursor-pointer appearance-none focus:outline-none focus:border-bauhaus-blue transition-colors"
+                  className="h-9 min-w-52 px-2.5 pr-8 text-[11px] font-bold uppercase tracking-wider border border-[#D1D5DB] bg-bauhaus-white/80 text-bauhaus-fg cursor-pointer appearance-none focus:outline-none focus:border-bauhaus-blue transition-colors"
                 >
                   {SORT_OPTIONS.map(({ value, label }) => (
                     <option key={value} value={value}>{label}</option>
                   ))}
                 </select>
-                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#6B7280]" />
+                <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#6B7280]" />
               </div>
             </div>
 
