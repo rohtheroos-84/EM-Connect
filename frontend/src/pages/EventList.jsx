@@ -111,6 +111,21 @@ export default function EventList() {
     fetchEvents('', 0);
   };
 
+  const clearOnlySearch = () => {
+    setSearch('');
+    setPage(0);
+  };
+
+  const clearOnlyCategory = () => {
+    setCategoryFilter('');
+    setPage(0);
+  };
+
+  const clearOnlyTag = () => {
+    setTagFilter('');
+    setPage(0);
+  };
+
   const handleCategoryClick = (cat) => {
     const next = categoryFilter === cat ? '' : cat;
     setCategoryFilter(next);
@@ -323,20 +338,50 @@ export default function EventList() {
           <div className="text-center py-20">
             <Calendar className="w-12 h-12 text-[#D1D5DB] mx-auto mb-4" />
             <h3 className="text-lg font-bold text-bauhaus-fg uppercase tracking-tight">
-              {search.trim() ? 'No events found' : 'No events yet'}
+              {hasActiveFilters ? 'No matching events' : 'No events yet'}
             </h3>
             <p className="text-sm text-[#6B7280] mt-1">
-              {search.trim()
-                ? `No events match "${search.trim()}". Try a different search.`
+              {hasActiveFilters
+                ? 'Try relaxing one filter below to recover results quickly.'
                 : 'Events will appear here once they are published.'}
             </p>
-            {search.trim() && (
-              <button
-                onClick={clearSearch}
-                className="mt-4 px-4 py-2 bg-bauhaus-blue text-white text-xs font-bold uppercase tracking-wider hover:bg-[#0D3399] transition-colors cursor-pointer"
-              >
-                Clear Search
-              </button>
+
+            {hasActiveFilters && (
+              <div className="mt-5 flex flex-wrap justify-center gap-2">
+                {search.trim() && (
+                  <button
+                    onClick={clearOnlySearch}
+                    className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider border border-[#D1D5DB] bg-bauhaus-white/80 text-bauhaus-fg hover:border-bauhaus-blue/40 hover:text-bauhaus-blue transition-colors cursor-pointer"
+                  >
+                    Clear search
+                  </button>
+                )}
+
+                {categoryFilter && (
+                  <button
+                    onClick={clearOnlyCategory}
+                    className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider border border-[#D1D5DB] bg-bauhaus-white/80 text-bauhaus-fg hover:border-bauhaus-blue/40 hover:text-bauhaus-blue transition-colors cursor-pointer"
+                  >
+                    Clear category
+                  </button>
+                )}
+
+                {tagFilter.trim() && (
+                  <button
+                    onClick={clearOnlyTag}
+                    className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider border border-[#D1D5DB] bg-bauhaus-white/80 text-bauhaus-fg hover:border-bauhaus-blue/40 hover:text-bauhaus-blue transition-colors cursor-pointer"
+                  >
+                    Clear tag
+                  </button>
+                )}
+
+                <button
+                  onClick={clearSearch}
+                  className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider bg-bauhaus-blue text-white border border-bauhaus-blue hover:bg-[#0D3399] transition-colors cursor-pointer"
+                >
+                  Reset all filters
+                </button>
+              </div>
             )}
           </div>
         )}
