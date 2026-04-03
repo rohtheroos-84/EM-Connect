@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { searchEvents, getActiveCategories } from '../services/api';
 import { Search, MapPin, Clock, Users, ChevronLeft, ChevronRight, AlertCircle, Calendar, X, SlidersHorizontal, ArrowUpDown, ChevronDown, Tag } from 'lucide-react';
 import { generateBauhausBanner } from '../services/bauhausBanner';
 import { toApiUrl } from '../services/urls';
 import AppLayout from '../components/AppLayout';
+import { useWebSocket } from '../context/WebSocketContext';
 
 function fmtDate(iso) {
   if (!iso) return '—';
@@ -55,7 +56,11 @@ export default function EventList() {
   const [tagFilter, setTagFilter] = useState('');
   const [sortBy, setSortBy] = useState('newest');
   const [activeCategories, setActiveCategories] = useState([]);
+  const [liveCounts, setLiveCounts] = useState({});
+  const [seatPulseByEventId, setSeatPulseByEventId] = useState({});
   const debounceRef = useRef(null);
+  const pulseTimersRef = useRef(new Map());
+  const { subscribe, unsubscribe, addListener, removeListener } = useWebSocket();
 
   const PAGE_SIZE = 15;
 
@@ -120,6 +125,54 @@ export default function EventList() {
   });
 
   const hasActiveFilters = search.trim() || categoryFilter || tagFilter.trim();
+  const visibleEventIds = useMemo(
+    () => events.map((ev) => Number(ev.id)).filter(Number.isFinite),
+    [events],
+  );
+
+  // Subscribe to participant updates for currently visible cards.
+  useEffect(() => {
+    if (visibleEventIds.length === 0) return;
+
+    visibleEventIds.forEach((eventId) => subscribe(eventId));
+    return () => {
+      visibleEventIds.forEach((eventId) => unsubscribe(eventId));
+    };
+  }, [visibleEventIds, subscribe, unsubscribe]);
+
+  // Pulse the seats line when participant count changes.
+  useEffect(() => {
+    const onParticipantCount = (payload) => {
+      const eventId = Number(payload?.eventId);
+      const count = Number(payload?.count);
+      if (!Number.isFinite(eventId) || !Number.isFinite(count)) return;
+
+      setLiveCounts((prev) => {
+        if (prev[eventId] === count) return prev;
+        return { ...prev, [eventId]: count };
+      });
+
+      setSeatPulseByEventId((prev) => ({ ...prev, [eventId]: true }));
+
+      const prevTimer = pulseTimersRef.current.get(eventId);
+      if (prevTimer) clearTimeout(prevTimer);
+
+      const timer = setTimeout(() => {
+        setSeatPulseByEventId((prev) => ({ ...prev, [eventId]: false }));
+        pulseTimersRef.current.delete(eventId);
+      }, 1100);
+
+      pulseTimersRef.current.set(eventId, timer);
+    };
+
+    addListener('participant.count', onParticipantCount);
+
+    return () => {
+      removeListener('participant.count', onParticipantCount);
+      pulseTimersRef.current.forEach((timerId) => clearTimeout(timerId));
+      pulseTimersRef.current.clear();
+    };
+  }, [addListener, removeListener]);
 
   return (
     <AppLayout>
@@ -293,7 +346,12 @@ export default function EventList() {
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {sortedEvents.map((event) => (
-                <EventCard key={event.id} event={event} />
+                <EventCard
+                  key={event.id}
+                  event={event}
+                  liveRegistered={liveCounts[Number(event.id)]}
+                  pulseSeats={!!seatPulseByEventId[Number(event.id)]}
+                />
               ))}
             </div>
 
@@ -329,9 +387,13 @@ export default function EventList() {
 }
 
 /* ── Event Card ── */
-function EventCard({ event }) {
+function EventCard({ event, liveRegistered, pulseSeats }) {
   const status = STATUS_STYLE[event.status] || STATUS_STYLE.DRAFT;
   const isPast = event.endDate && new Date(event.endDate) < new Date();
+  const capacity = Number(event.capacity) || 0;
+  const hasCapacity = capacity > 0;
+  const hasLiveCount = Number.isFinite(liveRegistered);
+  const seatsLeft = hasLiveCount ? Math.max(capacity - liveRegistered, 0) : null;
 
   return (
     <Link
@@ -406,9 +468,14 @@ function EventCard({ event }) {
           <span className="flex items-center gap-1">
             <Clock className="w-3 h-3" /> {fmtTime(event.startDate)}
           </span>
-          {event.capacity > 0 && (
-            <span className="flex items-center gap-1">
-              <Users className="w-3 h-3" /> {event.capacity} capacity
+          {hasCapacity && (
+            <span
+              className={`flex items-center gap-1 transition-colors duration-300 ${
+                pulseSeats ? 'text-bauhaus-blue animate-pulse font-semibold' : ''
+              }`}
+            >
+              <Users className="w-3 h-3" />
+              {hasLiveCount ? `${seatsLeft} seats left` : `${capacity} capacity`}
             </span>
           )}
         </div>
