@@ -80,12 +80,48 @@ export default function EventDetail() {
   const [error, setError] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [actionMsg, setActionMsg] = useState(null); // { type: 'success'|'error', text }
+  const [clashLoading, setClashLoading] = useState(false);
+  const [showClashWarning, setShowClashWarning] = useState(false);
+  const [clashingRegs, setClashingRegs] = useState([]);
   const [showTicket, setShowTicket] = useState(false);
   const [liveCount, setLiveCount] = useState(null); // live participant count from WS
   const [liveActivity, setLiveActivity] = useState(null); // { action, userName }
   const activityTimer = useRef(null);
 
   const { subscribe, unsubscribe, addListener, removeListener, connected } = useWebSocket();
+
+  const parseDateSafe = (value) => {
+    if (!value) return null;
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date;
+  };
+
+  const rangesOverlap = (aStart, aEnd, bStart, bEnd) => {
+    return aStart < bEnd && aEnd > bStart;
+  };
+
+  const formatConflictWindow = (startDate, endDate) => {
+    return `${fmtDate(startDate)} • ${fmtTime(startDate)} - ${fmtTime(endDate)}`;
+  };
+
+  const getConfirmedRegistrations = async () => {
+    const pageSize = 50;
+    const maxPages = 5;
+    let page = 0;
+    let all = [];
+
+    while (page < maxPages) {
+      const res = await getMyRegistrations(page, pageSize, 'CONFIRMED');
+      const content = Array.isArray(res?.content) ? res.content : [];
+      all = all.concat(content);
+
+      const isLast = res?.last === true || page >= (res?.totalPages || 1) - 1;
+      if (isLast || content.length === 0) break;
+      page += 1;
+    }
+
+    return all;
+  };
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -158,6 +194,8 @@ export default function EventDetail() {
     setActionMsg(null);
     try {
       const reg = await registerForEvent(id);
+      setShowClashWarning(false);
+      setClashingRegs([]);
       setActionMsg({ type: 'success', text: `Registered! Your ticket: ${reg.ticketCode}` });
       setMyReg(reg);
       // Refresh status
@@ -167,6 +205,54 @@ export default function EventDetail() {
       setActionMsg({ type: 'error', text: err.message });
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  const handleRegisterWithClashCheck = async () => {
+    if (actionLoading || clashLoading) return;
+
+    setActionMsg(null);
+    setShowClashWarning(false);
+    setClashingRegs([]);
+
+    const targetStart = parseDateSafe(event?.startDate);
+    const targetEnd = parseDateSafe(event?.endDate);
+
+    // If event has incomplete datetime info, proceed without clash check.
+    if (!targetStart || !targetEnd) {
+      await handleRegister();
+      return;
+    }
+
+    setClashLoading(true);
+    try {
+      const regs = await getConfirmedRegistrations();
+      const conflicts = regs.filter((reg) => {
+        if (String(reg?.event?.id) === String(id)) return false;
+        if (reg?.status !== 'CONFIRMED') return false;
+
+        const regStart = parseDateSafe(reg?.event?.startDate);
+        const regEnd = parseDateSafe(reg?.event?.endDate);
+        if (!regStart || !regEnd) return false;
+
+        // Ignore events that already ended.
+        if (regEnd < new Date()) return false;
+
+        return rangesOverlap(targetStart, targetEnd, regStart, regEnd);
+      });
+
+      if (conflicts.length > 0) {
+        setClashingRegs(conflicts);
+        setShowClashWarning(true);
+        return;
+      }
+
+      await handleRegister();
+    } catch {
+      // Do not block registration if clash-check lookup fails.
+      await handleRegister();
+    } finally {
+      setClashLoading(false);
     }
   };
 
@@ -456,14 +542,68 @@ export default function EventDetail() {
 
               {isAuthenticated && (
                 <div className="flex flex-wrap gap-3">
+                  {showClashWarning && clashingRegs.length > 0 && (
+                    <div className="w-full mb-1 bg-[#FFFBEB] border-l-[3px] border-[#F59E0B] px-4 py-3">
+                      <div className="flex items-start gap-2">
+                        <AlertCircle className="w-4 h-4 text-[#B45309] mt-0.5 shrink-0" />
+                        <div className="flex-1">
+                          <p className="text-sm font-semibold text-[#92400E]">
+                            This event overlaps with your existing registrations.
+                          </p>
+                          <p className="text-xs text-[#92400E]/85 mt-0.5">
+                            You can still continue, but you might miss one of the sessions.
+                          </p>
+                          <div className="mt-2 space-y-1.5">
+                            {clashingRegs.slice(0, 3).map((reg) => (
+                              <div key={reg.id} className="text-xs text-[#78350F]">
+                                <span className="font-semibold">{reg?.event?.title || 'Registered event'}</span>
+                                <span className="text-[#92400E]/80"> • {formatConflictWindow(reg?.event?.startDate, reg?.event?.endDate)}</span>
+                              </div>
+                            ))}
+                            {clashingRegs.length > 3 && (
+                              <p className="text-xs text-[#92400E]/85">+{clashingRegs.length - 3} more conflict(s)</p>
+                            )}
+                          </div>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            <Link
+                              to="/my-registrations"
+                              className="px-3 py-1.5 bg-white border border-[#D1D5DB] text-[11px] font-bold text-bauhaus-fg uppercase tracking-wider hover:bg-bauhaus-bg transition-colors"
+                            >
+                              Review My Schedule
+                            </Link>
+                            <Link
+                              to="/events"
+                              className="px-3 py-1.5 bg-white border border-[#D1D5DB] text-[11px] font-bold text-bauhaus-fg uppercase tracking-wider hover:bg-bauhaus-bg transition-colors"
+                            >
+                              Find Alternatives
+                            </Link>
+                            <button
+                              onClick={handleRegister}
+                              disabled={actionLoading}
+                              className="px-3 py-1.5 bg-bauhaus-red text-white text-[11px] font-bold uppercase tracking-wider hover:bg-[#B91C1C] disabled:opacity-50 transition-colors cursor-pointer"
+                            >
+                              {actionLoading ? 'Registering...' : 'Register Anyway'}
+                            </button>
+                            <button
+                              onClick={() => setShowClashWarning(false)}
+                              className="px-3 py-1.5 bg-transparent border border-[#D1D5DB] text-[11px] font-bold text-[#6B7280] uppercase tracking-wider hover:bg-bauhaus-bg transition-colors cursor-pointer"
+                            >
+                              Dismiss
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {canRegister && !isFull && (
                     <button
-                      onClick={handleRegister}
-                      disabled={actionLoading}
+                      onClick={handleRegisterWithClashCheck}
+                      disabled={actionLoading || clashLoading}
                       className="flex items-center gap-2 px-6 h-12 bg-bauhaus-red text-white text-sm font-bold uppercase tracking-wider hover:bg-[#B91C1C] disabled:opacity-50 transition-colors cursor-pointer"
                     >
-                      {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                      Register Now
+                      {actionLoading || clashLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                      {clashLoading ? 'Checking Schedule...' : 'Register Now'}
                     </button>
                   )}
 
