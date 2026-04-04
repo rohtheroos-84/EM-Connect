@@ -2,6 +2,19 @@
 
 This doc captures the selected improvements for phased implementation with minimal risk and clear, testable tasks.
 
+## Delivery Order:
+
+1. OTP Paste Intelligence
+2. Resend Code + Cooldown
+3. Security Badges
+4. Registration UX Upgrade (dialogs + copy)
+5. Login Activity Timeline
+6. Notification Inbox Drawer
+7. Weekly Digest Email Export
+8. Command Palette
+
+- This order prioritizes quick UX wins first, then broader app-wide enhancements.
+
 ## 1) Profile: Login Activity Timeline
 
 Show recent account sign-ins so users can quickly detect unusual access.
@@ -158,15 +171,4 @@ Send admins a concise weekly analytics summary via email.
 
 ---
 
-## Delivery Order:
 
-1. OTP Paste Intelligence
-2. Resend Code + Cooldown
-3. Security Badges
-4. Registration UX Upgrade (dialogs + copy)
-5. Login Activity Timeline
-6. Notification Inbox Drawer
-7. Weekly Digest Email Export
-8. Command Palette
-
-- This order prioritizes quick UX wins first, then broader app-wide enhancements.
