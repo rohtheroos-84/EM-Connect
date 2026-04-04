@@ -181,7 +181,8 @@ export default function MyRegistrations() {
                 <select
                   value={statusFilter}
                   onChange={(e) => handleStatusFilterChange(e.target.value)}
-                  className="h-9 min-w-44 px-2.5 pr-8 text-[11px] font-bold uppercase tracking-wider border border-[#D1D5DB] bg-bauhaus-white/80 text-bauhaus-fg cursor-pointer appearance-none focus:outline-none focus:border-bauhaus-blue transition-colors"
+                  style={{ textAlignLast: 'center' }}
+                  className="h-9 min-w-44 pl-3 pr-8 text-[11px] font-bold uppercase tracking-wider text-center border border-[#D1D5DB] bg-bauhaus-white/80 text-bauhaus-fg cursor-pointer appearance-none focus:outline-none focus:border-bauhaus-blue transition-colors"
                 >
                   {STATUS_FILTERS.map(({ value, label }) => (
                     <option key={value} value={value}>{label}</option>
