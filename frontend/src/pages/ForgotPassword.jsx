@@ -23,6 +23,8 @@ export default function ForgotPassword() {
   const btnCls =
     'w-full h-12.5 border-2 border-bauhaus-fg text-white font-bold text-[14px] uppercase tracking-[0.15em] shadow-[4px_4px_0px_0px_#121212] hover:shadow-[2px_2px_0px_0px_#121212] hover:translate-x-0.5 hover:translate-y-0.5 active:shadow-none active:translate-x-1 active:translate-y-1 disabled:opacity-40 disabled:pointer-events-none transition-all duration-150 cursor-pointer';
 
+  const sanitizeCode = (value) => value.replace(/\D/g, '').slice(0, 6);
+
   /* ── Step 1: Request code ── */
   const handleRequestCode = async (e) => {
     e.preventDefault();
@@ -38,13 +40,16 @@ export default function ForgotPassword() {
     }
   };
 
-  /* ── Step 2: Verify code ── */
-  const handleVerifyCode = async (e) => {
-    e.preventDefault();
+  const verifyCodeValue = async (value) => {
+    if (value.length !== 6) {
+      setError('Enter the full 6-digit code');
+      return;
+    }
+
     setLoading(true);
     setError('');
     try {
-      const res = await verifyResetCode(email, code);
+      const res = await verifyResetCode(email, value);
       if (res.valid) {
         setStep(STEPS.PASSWORD);
       } else {
@@ -55,6 +60,31 @@ export default function ForgotPassword() {
     } finally {
       setLoading(false);
     }
+  };
+
+  /* ── Step 2: Verify code ── */
+  const handleVerifyCode = async (e) => {
+    e.preventDefault();
+    await verifyCodeValue(code);
+  };
+
+  const handleCodePaste = async (e) => {
+    if (loading) return;
+
+    const pastedText = e.clipboardData?.getData('text') || '';
+    if (!pastedText) return;
+
+    e.preventDefault();
+    const sanitized = sanitizeCode(pastedText);
+    setCode(sanitized);
+    clearError();
+
+    if (sanitized.length === 6) {
+      await verifyCodeValue(sanitized);
+      return;
+    }
+
+    setError('Paste must include all 6 digits');
   };
 
   /* ── Step 3: Reset password ── */
@@ -231,7 +261,8 @@ export default function ForgotPassword() {
                       inputMode="numeric"
                       maxLength={6}
                       value={code}
-                      onChange={(e) => { setCode(e.target.value.replace(/\D/g, '').slice(0, 6)); clearError(); }}
+                      onChange={(e) => { setCode(sanitizeCode(e.target.value)); clearError(); }}
+                      onPaste={handleCodePaste}
                       placeholder="000000"
                       disabled={loading}
                       className={`${inputCls} text-center text-2xl font-bold tracking-[0.5em] font-mono`}
