@@ -22,6 +22,7 @@ public class PasswordResetService {
     private static final Logger logger = LoggerFactory.getLogger(PasswordResetService.class);
     // private static final int CODE_LENGTH = 6;
     private static final int CODE_EXPIRY_MINUTES = 15;
+    private static final int RESEND_COOLDOWN_SECONDS = 30;
 
     private final UserRepository userRepository;
     private final PasswordResetCodeRepository resetCodeRepository;
@@ -45,6 +46,18 @@ public class PasswordResetService {
      */
     @Transactional
     public void requestReset(String email) {
+        requestResetInternal(email, false);
+    }
+
+    /**
+     * Resend a password reset code with server-side cooldown protection.
+     */
+    @Transactional
+    public void resendReset(String email) {
+        requestResetInternal(email, true);
+    }
+
+    private void requestResetInternal(String email, boolean enforceCooldown) {
         Optional<User> userOpt = userRepository.findByEmail(email);
         if (userOpt.isEmpty()) {
             // Don't reveal whether the email exists
@@ -57,6 +70,11 @@ public class PasswordResetService {
         // OAuth-only users can't reset passwords
         if (user.getPassword() == null) {
             logger.info("Password reset requested for OAuth-only user: {}", email);
+            return;
+        }
+
+        if (enforceCooldown && isResendOnCooldown(user.getId())) {
+            logger.info("Password reset resend blocked by cooldown for user: {}", user.getId());
             return;
         }
 
@@ -80,6 +98,16 @@ public class PasswordResetService {
         );
 
         logger.info("Password reset code generated for user: {}", user.getId());
+    }
+
+    private boolean isResendOnCooldown(Long userId) {
+        Optional<PasswordResetCode> latestCodeOpt = resetCodeRepository.findTopByUserIdOrderByCreatedAtDesc(userId);
+        if (latestCodeOpt.isEmpty()) {
+            return false;
+        }
+
+        LocalDateTime nextAllowedAt = latestCodeOpt.get().getCreatedAt().plusSeconds(RESEND_COOLDOWN_SECONDS);
+        return nextAllowedAt.isAfter(LocalDateTime.now());
     }
 
     /**

@@ -59,6 +59,18 @@ public class AuthController {
                 "If an account with that email exists, a reset code has been sent."));
     }
 
+    @PostMapping("/resend-reset-code")
+    public ResponseEntity<Map<String, Object>> resendResetCode(
+            @Valid @RequestBody ForgotPasswordRequest request) {
+
+        passwordResetService.resendReset(request.getEmail());
+        // Always return success to prevent email enumeration
+        return ResponseEntity.ok(Map.of(
+                "message", "If an account with that email exists, a reset code has been sent.",
+                "cooldownSeconds", 30
+        ));
+    }
+
     @PostMapping("/verify-reset-code")
     public ResponseEntity<Map<String, Object>> verifyResetCode(
             @Valid @RequestBody VerifyResetCodeRequest request) {

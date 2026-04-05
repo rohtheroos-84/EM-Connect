@@ -14,6 +14,8 @@ public interface PasswordResetCodeRepository extends JpaRepository<PasswordReset
 
     Optional<PasswordResetCode> findByUserIdAndCodeAndUsedFalse(Long userId, String code);
 
+    Optional<PasswordResetCode> findTopByUserIdOrderByCreatedAtDesc(Long userId);
+
     @Modifying
     @Query("UPDATE PasswordResetCode p SET p.used = true WHERE p.user.id = :userId AND p.used = false")
     void invalidateAllForUser(Long userId);
