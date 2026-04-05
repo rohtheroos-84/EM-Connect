@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { KeyRound, Mail, ShieldCheck, Lock, AlertCircle, ArrowLeft, ArrowRight, CheckCircle } from 'lucide-react';
-import { forgotPassword, verifyResetCode, resetPassword } from '../services/api';
+import { forgotPassword, verifyResetCode, resetPassword, resendResetCode } from '../services/api';
 
 const STEPS = { EMAIL: 0, CODE: 1, PASSWORD: 2, DONE: 3 };
 
@@ -12,10 +12,19 @@ export default function ForgotPassword() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [resending, setResending] = useState(false);
   const [error, setError] = useState('');
+  const [infoMessage, setInfoMessage] = useState('');
+  const [resendCooldown, setResendCooldown] = useState(0);
   const navigate = useNavigate();
 
   const clearError = () => setError('');
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return undefined;
+    const timer = setTimeout(() => setResendCooldown((prev) => prev - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [resendCooldown]);
 
   const inputCls =
     'w-full px-4 h-[48px] bg-[#FAFAFA] border border-[#D1D5DB] text-[15px] text-bauhaus-fg placeholder:text-[#BCBCBC] placeholder:italic focus:border-[#1040C0] focus:bg-white focus:shadow-[0_0_0_3px_rgba(16,64,192,0.08)] disabled:bg-[#F3F3F3] disabled:text-[#BCBCBC] disabled:cursor-not-allowed transition-all duration-150';
@@ -30,9 +39,12 @@ export default function ForgotPassword() {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setInfoMessage('');
     try {
       await forgotPassword(email);
       setStep(STEPS.CODE);
+      setResendCooldown(30);
+      setInfoMessage('Reset code sent. You can request another code in 30 seconds.');
     } catch (err) {
       setError(err.message || 'Something went wrong');
     } finally {
@@ -48,6 +60,7 @@ export default function ForgotPassword() {
 
     setLoading(true);
     setError('');
+    setInfoMessage('');
     try {
       const res = await verifyResetCode(email, value);
       if (res.valid) {
@@ -87,6 +100,24 @@ export default function ForgotPassword() {
     setError('Paste must include all 6 digits');
   };
 
+  const handleResendCode = async () => {
+    if (loading || resending || resendCooldown > 0) return;
+
+    setResending(true);
+    setError('');
+    setInfoMessage('');
+    try {
+      const res = await resendResetCode(email);
+      const cooldown = Number(res?.cooldownSeconds) || 30;
+      setResendCooldown(cooldown);
+      setInfoMessage(res?.message || 'If an account with that email exists, a reset code has been sent.');
+    } catch (err) {
+      setError(err.message || 'Unable to resend reset code. Please try again.');
+    } finally {
+      setResending(false);
+    }
+  };
+
   /* ── Step 3: Reset password ── */
   const handleResetPassword = async (e) => {
     e.preventDefault();
@@ -100,6 +131,7 @@ export default function ForgotPassword() {
     }
     setLoading(true);
     setError('');
+    setInfoMessage('');
     try {
       await resetPassword(email, code, newPassword);
       setStep(STEPS.DONE);
@@ -210,6 +242,12 @@ export default function ForgotPassword() {
                 </div>
               )}
 
+              {infoMessage && (
+                <div className="mb-6 flex items-start gap-3 bg-[#F0F9FF] border-l-[3px] border-bauhaus-blue px-4 py-3 rounded-sm">
+                  <p className="flex-1 text-sm text-bauhaus-blue">{infoMessage}</p>
+                </div>
+              )}
+
               {/* ── Step 1: Email ── */}
               {step === STEPS.EMAIL && (
                 <form onSubmit={handleRequestCode}>
@@ -281,7 +319,25 @@ export default function ForgotPassword() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => { setStep(STEPS.EMAIL); setCode(''); clearError(); }}
+                    onClick={handleResendCode}
+                    disabled={loading || resending || resendCooldown > 0}
+                    className="w-full mt-3 text-sm text-bauhaus-blue hover:text-[#0D3399] transition-colors disabled:text-[#9CA3AF] disabled:cursor-not-allowed"
+                  >
+                    {resending
+                      ? 'Sending new code...'
+                      : resendCooldown > 0
+                      ? `Resend code in ${resendCooldown}s`
+                      : 'Resend code'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStep(STEPS.EMAIL);
+                      setCode('');
+                      setResendCooldown(0);
+                      setInfoMessage('');
+                      clearError();
+                    }}
                     className="w-full mt-3 text-sm text-[#6B7280] hover:text-bauhaus-fg transition-colors flex items-center justify-center gap-1"
                   >
                     <ArrowLeft className="w-3 h-3" /> Use a different email

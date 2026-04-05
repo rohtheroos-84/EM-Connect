@@ -4,8 +4,8 @@ This doc captures the selected improvements for phased implementation with minim
 
 ## Delivery Order:
 
-1. OTP Paste Intelligence
-2. Resend Code + Cooldown
+1. OTP Paste Intelligence - DONE
+2. Resend Code + Cooldown - DONE
 3. Security Badges
 4. Registration UX Upgrade (dialogs + copy)
 5. Login Activity Timeline
@@ -42,11 +42,11 @@ Reduce friction and support requests when users do not receive OTP quickly.
 - Disable resend button while cooldown is active.
 
 ### Checklist
-- [ ] Add resend API route or reuse existing OTP issue flow safely.
-- [ ] Add server-side resend guard/rate-limit by email and time window.
-- [ ] Add frontend cooldown timer and button disabled state.
-- [ ] Show clear success and error toasts/messages.
-- [ ] Add telemetry/logging for resend attempts.
+- [x] Add resend API route or reuse existing OTP issue flow safely.
+- [x] Add server-side resend guard/rate-limit by email and time window.
+- [x] Add frontend cooldown timer and button disabled state.
+- [x] Show clear success and error toasts/messages.
+- [x] Add telemetry/logging for resend attempts.
 
 ## 3) Forgot Password: OTP Paste Intelligence
 
