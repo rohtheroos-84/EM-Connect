@@ -100,6 +100,13 @@ export async function forgotPassword(email) {
   });
 }
 
+export async function resendResetCode(email) {
+  return request('/auth/resend-reset-code', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  });
+}
+
 export async function verifyResetCode(email, code) {
   return request('/auth/verify-reset-code', {
     method: 'POST',
