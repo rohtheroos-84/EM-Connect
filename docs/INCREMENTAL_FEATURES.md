@@ -136,6 +136,7 @@ A modal search box (similar to VS Code or Linear) opened with keyboard shortcut 
 - [ ] Add safe action confirmations where needed (example: logout).
 - [ ] Add basic analytics for command usage.
 
+<!--
 ## 7) Profile/Auth: Security Badges
 
 Show lightweight security context on Profile so users can quickly verify account status.
@@ -151,6 +152,7 @@ Show lightweight security context on Profile so users can quickly verify account
 - [ ] Add Security Badges UI card in Profile page.
 - [ ] Add fallback text when values are unavailable (for legacy users).
 - [ ] Add timezone-consistent formatting for timestamps.
+-->
 
 ## 8) Analytics: Weekly Digest Email Export
 
