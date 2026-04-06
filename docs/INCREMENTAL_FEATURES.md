@@ -7,7 +7,7 @@ This doc captures the selected improvements for phased implementation with minim
 1. OTP Paste Intelligence - DONE
 2. Resend Code + Cooldown - DONE
 3. Security Badges
-4. Registration UX Upgrade (dialogs + copy)
+4. Registration UX Upgrade (dialogs + copy) - DONE
 5. Login Activity Timeline
 6. Notification Inbox Drawer
 7. Weekly Digest Email Export
@@ -81,13 +81,13 @@ Current behavior shows inline registration confirmation in the event view. Upgra
 - Ticket code quick copy with success feedback text.
 
 ### Checklist
-- [ ] Add register confirmation modal component/state.
-- [ ] Add cancellation confirmation modal component/state.
-- [ ] Ensure modal actions call existing APIs without behavior regressions.
-- [ ] Add quick copy button near ticket code in Event tab view.
-- [ ] Add same copy action in post-success dialog.
-- [ ] Add consistent toast text for copy success/failure.
-- [ ] Verify keyboard/escape/focus behavior for dialogs.
+- [x] Add register confirmation modal component/state.
+- [x] Add cancellation confirmation modal component/state.
+- [x] Ensure modal actions call existing APIs without behavior regressions.
+- [x] Add quick copy button near ticket code in Event tab view.
+- [x] Add same copy action in post-success dialog.
+- [x] Add consistent toast text for copy success/failure.
+- [x] Verify keyboard/escape/focus behavior for dialogs.
 
 ## 5) Global: Notification Inbox Drawer
 

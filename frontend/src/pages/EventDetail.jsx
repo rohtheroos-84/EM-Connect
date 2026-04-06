@@ -23,6 +23,7 @@ import {
   Radio,
   CalendarPlus,
   Download,
+  Copy,
 } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
 import { generateBauhausBanner } from '../services/bauhausBanner';
@@ -31,6 +32,7 @@ import { downloadICS, getGoogleCalendarUrl } from '../services/calendar';
 import TicketModal from '../components/TicketModal';
 import { useAuth } from '../context/AuthContext';
 import { useWebSocket } from '../context/WebSocketContext';
+import { useToast } from '../context/ToastContext';
 
 function fmtDate(iso) {
   if (!iso) return '—';
@@ -81,7 +83,9 @@ export default function EventDetail() {
   const [actionLoading, setActionLoading] = useState(false);
   const [actionMsg, setActionMsg] = useState(null); // { type: 'success'|'error', text }
   const [clashLoading, setClashLoading] = useState(false);
-  const [showClashWarning, setShowClashWarning] = useState(false);
+  const [showRegisterDialog, setShowRegisterDialog] = useState(false);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [showRegisterSuccessDialog, setShowRegisterSuccessDialog] = useState(false);
   const [clashingRegs, setClashingRegs] = useState([]);
   const [showTicket, setShowTicket] = useState(false);
   const [liveCount, setLiveCount] = useState(null); // live participant count from WS
@@ -89,6 +93,7 @@ export default function EventDetail() {
   const activityTimer = useRef(null);
 
   const { subscribe, unsubscribe, addListener, removeListener, connected } = useWebSocket();
+  const { addToast } = useToast();
 
   const parseDateSafe = (value) => {
     if (!value) return null;
@@ -103,6 +108,46 @@ export default function EventDetail() {
   const formatConflictWindow = (startDate, endDate) => {
     return `${fmtDate(startDate)} • ${fmtTime(startDate)} - ${fmtTime(endDate)}`;
   };
+
+  const copyTicketCode = useCallback(
+    async (ticketCode) => {
+      if (!ticketCode) return;
+
+      const onCopySuccess = () => {
+        addToast({
+          title: 'Ticket Code Copied',
+          message: `${ticketCode} copied to clipboard.`,
+        });
+      };
+
+      try {
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(ticketCode);
+          onCopySuccess();
+          return;
+        }
+
+        const el = document.createElement('textarea');
+        el.value = ticketCode;
+        el.setAttribute('readonly', '');
+        el.style.position = 'absolute';
+        el.style.left = '-9999px';
+        document.body.appendChild(el);
+        el.select();
+        const copied = document.execCommand('copy');
+        document.body.removeChild(el);
+
+        if (!copied) throw new Error('Copy command failed');
+        onCopySuccess();
+      } catch {
+        addToast({
+          title: 'Copy Failed',
+          message: 'Could not copy ticket code. Please copy it manually.',
+        });
+      }
+    },
+    [addToast]
+  );
 
   const getConfirmedRegistrations = async () => {
     const pageSize = 50;
@@ -194,14 +239,15 @@ export default function EventDetail() {
     setActionMsg(null);
     try {
       const reg = await registerForEvent(id);
-      setShowClashWarning(false);
+      setShowRegisterDialog(false);
       setClashingRegs([]);
-      setActionMsg({ type: 'success', text: `Registered! Your ticket: ${reg.ticketCode}` });
+      setShowRegisterSuccessDialog(true);
       setMyReg(reg);
       // Refresh status
       const status = await getEventRegistrationStatus(id).catch(() => null);
       setRegStatus(status);
     } catch (err) {
+      setShowRegisterDialog(false);
       setActionMsg({ type: 'error', text: err.message });
     } finally {
       setActionLoading(false);
@@ -212,7 +258,7 @@ export default function EventDetail() {
     if (actionLoading || clashLoading) return;
 
     setActionMsg(null);
-    setShowClashWarning(false);
+    setShowRegisterDialog(false);
     setClashingRegs([]);
 
     const targetStart = parseDateSafe(event?.startDate);
@@ -220,7 +266,7 @@ export default function EventDetail() {
 
     // If event has incomplete datetime info, proceed without clash check.
     if (!targetStart || !targetEnd) {
-      await handleRegister();
+      setShowRegisterDialog(true);
       return;
     }
 
@@ -243,14 +289,12 @@ export default function EventDetail() {
 
       if (conflicts.length > 0) {
         setClashingRegs(conflicts);
-        setShowClashWarning(true);
-        return;
       }
-
-      await handleRegister();
+      setShowRegisterDialog(true);
     } catch {
       // Do not block registration if clash-check lookup fails.
-      await handleRegister();
+      setClashingRegs([]);
+      setShowRegisterDialog(true);
     } finally {
       setClashLoading(false);
     }
@@ -262,11 +306,13 @@ export default function EventDetail() {
     setActionMsg(null);
     try {
       await cancelRegistration(myReg.id);
+      setShowCancelDialog(false);
       setActionMsg({ type: 'success', text: 'Registration cancelled.' });
       setMyReg(null);
       const status = await getEventRegistrationStatus(id).catch(() => null);
       setRegStatus(status);
     } catch (err) {
+      setShowCancelDialog(false);
       setActionMsg({ type: 'error', text: err.message });
     } finally {
       setActionLoading(false);
@@ -504,6 +550,12 @@ export default function EventDetail() {
                         Ticket: <span className="font-mono font-bold">{myReg.ticketCode}</span>
                       </p>
                       <button
+                        onClick={() => copyTicketCode(myReg.ticketCode)}
+                        className="flex items-center gap-1 px-3 py-1.5 bg-bauhaus-white border border-[#1F2937]/20 text-[11px] font-bold text-bauhaus-fg uppercase tracking-wider hover:bg-bauhaus-bg transition-colors cursor-pointer"
+                      >
+                        <Copy className="w-3.5 h-3.5" /> Copy Code
+                      </button>
+                      <button
                         onClick={() => setShowTicket(true)}
                         className="flex items-center gap-1 px-3 py-1.5 bg-bauhaus-blue text-white text-[11px] font-bold uppercase tracking-wider hover:bg-[#0D3399] transition-colors cursor-pointer"
                       >
@@ -542,60 +594,6 @@ export default function EventDetail() {
 
               {isAuthenticated && (
                 <div className="flex flex-wrap gap-3">
-                  {showClashWarning && clashingRegs.length > 0 && (
-                    <div className="w-full mb-1 bg-[#FFFBEB] border-l-[3px] border-[#F59E0B] px-4 py-3">
-                      <div className="flex items-start gap-2">
-                        <AlertCircle className="w-4 h-4 text-[#B45309] mt-0.5 shrink-0" />
-                        <div className="flex-1">
-                          <p className="text-sm font-semibold text-[#92400E]">
-                            This event overlaps with your existing registrations.
-                          </p>
-                          <p className="text-xs text-[#92400E]/85 mt-0.5">
-                            You can still continue, but you might miss one of the sessions.
-                          </p>
-                          <div className="mt-2 space-y-1.5">
-                            {clashingRegs.slice(0, 3).map((reg) => (
-                              <div key={reg.id} className="text-xs text-[#78350F]">
-                                <span className="font-semibold">{reg?.event?.title || 'Registered event'}</span>
-                                <span className="text-[#92400E]/80"> • {formatConflictWindow(reg?.event?.startDate, reg?.event?.endDate)}</span>
-                              </div>
-                            ))}
-                            {clashingRegs.length > 3 && (
-                              <p className="text-xs text-[#92400E]/85">+{clashingRegs.length - 3} more conflict(s)</p>
-                            )}
-                          </div>
-                          <div className="mt-3 flex flex-wrap gap-2">
-                            <Link
-                              to="/my-registrations"
-                              className="px-3 py-1.5 bg-white border border-[#D1D5DB] text-[11px] font-bold text-bauhaus-fg uppercase tracking-wider hover:bg-bauhaus-bg transition-colors"
-                            >
-                              Review My Schedule
-                            </Link>
-                            <Link
-                              to="/events"
-                              className="px-3 py-1.5 bg-white border border-[#D1D5DB] text-[11px] font-bold text-bauhaus-fg uppercase tracking-wider hover:bg-bauhaus-bg transition-colors"
-                            >
-                              Find Alternatives
-                            </Link>
-                            <button
-                              onClick={handleRegister}
-                              disabled={actionLoading}
-                              className="px-3 py-1.5 bg-bauhaus-red text-white text-[11px] font-bold uppercase tracking-wider hover:bg-[#B91C1C] disabled:opacity-50 transition-colors cursor-pointer"
-                            >
-                              {actionLoading ? 'Registering...' : 'Register Anyway'}
-                            </button>
-                            <button
-                              onClick={() => setShowClashWarning(false)}
-                              className="px-3 py-1.5 bg-transparent border border-[#D1D5DB] text-[11px] font-bold text-[#6B7280] uppercase tracking-wider hover:bg-bauhaus-bg transition-colors cursor-pointer"
-                            >
-                              Dismiss
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
                   {canRegister && !isFull && (
                     <button
                       onClick={handleRegisterWithClashCheck}
@@ -615,7 +613,7 @@ export default function EventDetail() {
 
                   {canCancel && (
                     <button
-                      onClick={handleCancel}
+                      onClick={() => setShowCancelDialog(true)}
                       disabled={actionLoading}
                       className="flex items-center gap-2 px-6 h-12 bg-bauhaus-white/80 border border-[#1F2937]/30 text-sm font-bold text-bauhaus-red uppercase tracking-wider hover:bg-bauhaus-red/10 disabled:opacity-50 transition-colors cursor-pointer"
                     >
@@ -641,6 +639,100 @@ export default function EventDetail() {
           </div>
         </div>
 
+        {showRegisterDialog && (
+          <ConfirmationDialog
+            title="Confirm Registration"
+            accent="bg-bauhaus-red"
+            confirmLabel="Confirm Registration"
+            loadingLabel="Registering..."
+            confirmDisabled={actionLoading}
+            loading={actionLoading}
+            onClose={() => {
+              if (actionLoading) return;
+              setShowRegisterDialog(false);
+            }}
+            onConfirm={handleRegister}
+          >
+            <p className="text-sm text-[#374151]">
+              You are about to register for{' '}
+              <span className="font-semibold text-bauhaus-fg">{event.title}</span>.
+            </p>
+            <p className="text-xs text-[#6B7280] mt-2">
+              {fmtDate(event.startDate)} • {fmtTime(event.startDate)} to {fmtTime(event.endDate)}
+            </p>
+
+            {clashingRegs.length > 0 && (
+              <div className="mt-4 bg-[#FFFBEB] border-l-[3px] border-[#F59E0B] px-3 py-2.5">
+                <p className="text-xs font-semibold text-[#92400E]">
+                  This overlaps with your existing schedule.
+                </p>
+                <div className="mt-2 space-y-1.5">
+                  {clashingRegs.slice(0, 3).map((reg) => (
+                    <div key={reg.id} className="text-xs text-[#78350F]">
+                      <span className="font-semibold">{reg?.event?.title || 'Registered event'}</span>
+                      <span className="text-[#92400E]/80"> • {formatConflictWindow(reg?.event?.startDate, reg?.event?.endDate)}</span>
+                    </div>
+                  ))}
+                </div>
+                {clashingRegs.length > 3 && (
+                  <p className="mt-1 text-xs text-[#92400E]/85">+{clashingRegs.length - 3} more conflict(s)</p>
+                )}
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Link
+                    to="/my-registrations"
+                    className="px-2.5 py-1 bg-white border border-[#D1D5DB] text-[10px] font-bold text-bauhaus-fg uppercase tracking-wider hover:bg-bauhaus-bg transition-colors"
+                  >
+                    Review My Schedule
+                  </Link>
+                  <Link
+                    to="/events"
+                    className="px-2.5 py-1 bg-white border border-[#D1D5DB] text-[10px] font-bold text-bauhaus-fg uppercase tracking-wider hover:bg-bauhaus-bg transition-colors"
+                  >
+                    Find Alternatives
+                  </Link>
+                </div>
+              </div>
+            )}
+          </ConfirmationDialog>
+        )}
+
+        {showCancelDialog && (
+          <ConfirmationDialog
+            title="Cancel Registration"
+            accent="bg-bauhaus-red"
+            confirmLabel="Yes, Cancel"
+            loadingLabel="Cancelling..."
+            confirmDisabled={actionLoading}
+            loading={actionLoading}
+            onClose={() => {
+              if (actionLoading) return;
+              setShowCancelDialog(false);
+            }}
+            onConfirm={handleCancel}
+          >
+            <p className="text-sm text-[#374151]">
+              This will cancel your registration for{' '}
+              <span className="font-semibold text-bauhaus-fg">{event.title}</span>.
+            </p>
+            <p className="text-xs text-[#6B7280] mt-2">
+              You can register again later if seats are still available.
+            </p>
+          </ConfirmationDialog>
+        )}
+
+        {showRegisterSuccessDialog && myReg?.ticketCode && (
+          <RegistrationSuccessDialog
+            event={event}
+            ticketCode={myReg.ticketCode}
+            onCopy={() => copyTicketCode(myReg.ticketCode)}
+            onViewTicket={() => {
+              setShowRegisterSuccessDialog(false);
+              setShowTicket(true);
+            }}
+            onClose={() => setShowRegisterSuccessDialog(false)}
+          />
+        )}
+
         {/* Ticket Modal */}
         {showTicket && myReg?.ticketCode && (
           <TicketModal
@@ -651,6 +743,139 @@ export default function EventDetail() {
         )}
       </div>
     </AppLayout>
+  );
+}
+
+function ConfirmationDialog({
+  title,
+  accent,
+  confirmLabel,
+  loadingLabel,
+  onConfirm,
+  onClose,
+  confirmDisabled,
+  loading,
+  children,
+}) {
+  const confirmRef = useRef(null);
+
+  useEffect(() => {
+    confirmRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    const onEsc = (e) => {
+      if (e.key === 'Escape' && !loading) onClose();
+    };
+
+    window.addEventListener('keydown', onEsc);
+    return () => window.removeEventListener('keydown', onEsc);
+  }, [loading, onClose]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4" onClick={onClose}>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="registration-confirmation-title"
+        className="w-full max-w-md bg-bauhaus-white border border-[#1F2937]/30 shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className={`h-1 ${accent}`} />
+        <div className="p-5">
+          <h3 id="registration-confirmation-title" className="text-lg font-black text-bauhaus-fg uppercase tracking-tight">
+            {title}
+          </h3>
+          <div className="mt-3">{children}</div>
+          <div className="mt-5 flex flex-wrap justify-end gap-2">
+            <button
+              onClick={onClose}
+              disabled={loading}
+              className="px-4 h-10 bg-bauhaus-white border border-[#D1D5DB] text-[11px] font-bold text-bauhaus-fg uppercase tracking-wider hover:bg-bauhaus-bg disabled:opacity-50 transition-colors cursor-pointer"
+            >
+              Keep Editing
+            </button>
+            <button
+              ref={confirmRef}
+              onClick={onConfirm}
+              disabled={confirmDisabled}
+              className="px-4 h-10 bg-bauhaus-red text-white text-[11px] font-bold uppercase tracking-wider hover:bg-[#B91C1C] disabled:opacity-50 transition-colors cursor-pointer"
+            >
+              {loading ? loadingLabel : confirmLabel}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function RegistrationSuccessDialog({ event, ticketCode, onCopy, onViewTicket, onClose }) {
+  const closeRef = useRef(null);
+
+  useEffect(() => {
+    closeRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    const onEsc = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
+
+    window.addEventListener('keydown', onEsc);
+    return () => window.removeEventListener('keydown', onEsc);
+  }, [onClose]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4" onClick={onClose}>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="registration-success-title"
+        className="w-full max-w-md bg-bauhaus-white border border-[#1F2937]/30 shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="h-1 bg-[#16A34A]" />
+        <div className="p-5">
+          <div className="flex items-start gap-2.5">
+            <CheckCircle className="w-5 h-5 text-[#16A34A] mt-0.5 shrink-0" />
+            <div>
+              <h3 id="registration-success-title" className="text-lg font-black text-bauhaus-fg uppercase tracking-tight">
+                Registration Confirmed
+              </h3>
+              <p className="text-sm text-[#6B7280] mt-1">You are registered for {event?.title}.</p>
+            </div>
+          </div>
+
+          <div className="mt-4 bg-bauhaus-bg/50 border border-[#1F2937]/20 p-3">
+            <p className="text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wider">Ticket Code</p>
+            <p className="text-base font-mono font-bold text-bauhaus-fg mt-1">{ticketCode}</p>
+          </div>
+
+          <div className="mt-5 flex flex-wrap justify-end gap-2">
+            <button
+              onClick={onCopy}
+              className="px-4 h-10 bg-bauhaus-white border border-[#D1D5DB] text-[11px] font-bold text-bauhaus-fg uppercase tracking-wider hover:bg-bauhaus-bg transition-colors cursor-pointer flex items-center gap-1.5"
+            >
+              <Copy className="w-3.5 h-3.5" /> Copy Ticket Code
+            </button>
+            <button
+              onClick={onViewTicket}
+              className="px-4 h-10 bg-bauhaus-blue text-white text-[11px] font-bold uppercase tracking-wider hover:bg-[#0D3399] transition-colors cursor-pointer"
+            >
+              View Ticket
+            </button>
+            <button
+              ref={closeRef}
+              onClick={onClose}
+              className="px-4 h-10 bg-bauhaus-red text-white text-[11px] font-bold uppercase tracking-wider hover:bg-[#B91C1C] transition-colors cursor-pointer"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
