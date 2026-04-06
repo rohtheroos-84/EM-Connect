@@ -6,7 +6,7 @@ This doc captures the selected improvements for phased implementation with minim
 
 1. OTP Paste Intelligence - DONE
 2. Resend Code + Cooldown - DONE
-3. Security Badges
+3. Security Badges - WAITLISTED for now, may revisit after core features are solidified
 4. Registration UX Upgrade (dialogs + copy) - DONE
 5. Login Activity Timeline
 6. Notification Inbox Drawer
