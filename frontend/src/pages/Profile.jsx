@@ -11,7 +11,6 @@ import {
 } from '../services/api';
 import AppLayout from '../components/AppLayout';
 import {
-  User,
   Mail,
   Shield,
   CalendarDays,
@@ -74,6 +73,7 @@ export default function Profile() {
   const fileRef = useRef(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [avatarMsg, setAvatarMsg] = useState(null);
+  const [avatarLoadFailed, setAvatarLoadFailed] = useState(false);
 
   /* ── Registration stats ── */
   const [stats, setStats] = useState({
@@ -139,6 +139,11 @@ export default function Profile() {
   const avatarSrc = profile?.avatarUrl
     ? toApiUrl(`/${profile.avatarUrl.replace(/^avatars\//, 'users/avatars/')}`)
     : null;
+  const showAvatarImage = Boolean(avatarSrc) && !avatarLoadFailed;
+
+  useEffect(() => {
+    setAvatarLoadFailed(false);
+  }, [avatarSrc]);
 
   /* ── Save name ── */
   const handleSaveName = async () => {
@@ -248,15 +253,16 @@ export default function Profile() {
             {/* Avatar */}
             <div className="relative group shrink-0">
               <div className="w-24 h-24 bg-bauhaus-bg border-2 border-[#1F2937]/20 overflow-hidden flex items-center justify-center">
-                {avatarSrc ? (
+                {showAvatarImage ? (
                   <img
                     src={avatarSrc}
                     alt="Avatar"
                     className="w-full h-full object-cover"
                     key={avatarSrc}
+                    onError={() => setAvatarLoadFailed(true)}
                   />
                 ) : (
-                  <User className="w-10 h-10 text-bauhaus-fg/20" />
+                  <DefaultAvatarPlaceholder />
                 )}
                 {avatarUploading && (
                   <div className="absolute inset-0 bg-bauhaus-fg/40 flex items-center justify-center">
@@ -666,5 +672,25 @@ function PwInput({ label, value, onChange, placeholder, match }) {
         )}
       </div>
     </div>
+  );
+}
+
+function DefaultAvatarPlaceholder() {
+  return (
+    <svg
+      viewBox="0 0 64 64"
+      aria-hidden="true"
+      className="w-14 h-14"
+    >
+      <circle cx="32" cy="20" r="10" fill="#D1D5DB" stroke="#9CA3AF" strokeWidth="2" />
+      <path
+        d="M14 56c0-10 8-18 18-18s18 8 18 18"
+        fill="#E5E7EB"
+        stroke="#9CA3AF"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+      <line x1="18" y1="40" x2="46" y2="40" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" />
+    </svg>
   );
 }
