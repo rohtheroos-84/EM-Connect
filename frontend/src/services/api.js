@@ -251,6 +251,10 @@ export async function getCurrentUser() {
   return request('/users/me');
 }
 
+export async function getLoginActivity() {
+  return request('/users/me/login-activity');
+}
+
 export async function updateProfile(data) {
   return request('/users/me', { method: 'PUT', body: JSON.stringify(data) });
 }
