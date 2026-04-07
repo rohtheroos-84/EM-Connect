@@ -690,7 +690,6 @@ function DefaultAvatarPlaceholder() {
         strokeWidth="2"
         strokeLinecap="round"
       />
-      <line x1="18" y1="40" x2="46" y2="40" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" />
     </svg>
   );
 }
