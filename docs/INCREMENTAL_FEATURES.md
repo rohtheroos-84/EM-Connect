@@ -8,7 +8,7 @@ This doc captures the selected improvements for phased implementation with minim
 2. Resend Code + Cooldown - DONE
 3. Security Badges - WAITLISTED for now, may revisit after core features are solidified
 4. Registration UX Upgrade (dialogs + copy) - DONE
-5. Login Activity Timeline
+5. Login Activity Timeline - DONE
 6. Notification Inbox Drawer
 7. Weekly Digest Email Export
 8. Command Palette
@@ -25,12 +25,12 @@ Show recent account sign-ins so users can quickly detect unusual access.
 - Read-only view on Profile page.
 
 ### Checklist
-- [ ] Add backend endpoint for current user login history.
-- [ ] Store login audit entries on successful auth events.
-- [ ] Add Profile section UI card: Recent Login Activity.
-- [ ] Add empty-state text for users with no history.
-- [ ] Add loading and error states.
-- [ ] Add basic retention cap (for example, keep latest N records).
+- [x] Add backend endpoint for current user login history.
+- [x] Store login audit entries on successful auth events.
+- [x] Add Profile section UI card: Recent Login Activity.
+- [x] Add empty-state text for users with no history.
+- [x] Add loading and error states.
+- [x] Add basic retention cap (for example, keep latest N records).
 
 ## 2) Forgot Password: Resend Code with Cooldown
 
