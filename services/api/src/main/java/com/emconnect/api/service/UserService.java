@@ -1,10 +1,12 @@
 package com.emconnect.api.service;
 
 import com.emconnect.api.dto.ChangePasswordRequest;
+import com.emconnect.api.dto.LoginActivityResponse;
 import com.emconnect.api.dto.UpdateProfileRequest;
 import com.emconnect.api.dto.UserResponse;
 import com.emconnect.api.entity.User;
 import com.emconnect.api.event.UserPasswordChangedEvent;
+import com.emconnect.api.repository.LoginActivityRepository;
 import com.emconnect.api.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -15,6 +17,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -22,6 +25,7 @@ import java.util.UUID;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final LoginActivityRepository loginActivityRepository;
     private final PasswordEncoder passwordEncoder;
     private final EventPublisher eventPublisher;
 
@@ -31,8 +35,12 @@ public class UserService {
     );
     private static final long MAX_SIZE = 2 * 1024 * 1024; // 2 MB
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, EventPublisher eventPublisher) {
+    public UserService(UserRepository userRepository,
+                       LoginActivityRepository loginActivityRepository,
+                       PasswordEncoder passwordEncoder,
+                       EventPublisher eventPublisher) {
         this.userRepository = userRepository;
+        this.loginActivityRepository = loginActivityRepository;
         this.passwordEncoder = passwordEncoder;
         this.eventPublisher = eventPublisher;
     }
@@ -47,6 +55,15 @@ public class UserService {
         user.setName(request.getName().trim());
         User saved = userRepository.save(user);
         return new UserResponse(saved);
+    }
+
+    public List<LoginActivityResponse> getLoginActivity(String email) {
+        User user = findByEmail(email);
+
+        return loginActivityRepository.findTop10ByUserIdOrderByCreatedAtDesc(user.getId())
+                .stream()
+                .map(LoginActivityResponse::new)
+                .toList();
     }
 
     public void changePassword(String email, ChangePasswordRequest request) {

@@ -4,12 +4,15 @@ import com.emconnect.api.dto.AuthResponse;
 import com.emconnect.api.dto.LoginRequest;
 import com.emconnect.api.dto.RegisterRequest;
 import com.emconnect.api.dto.UserResponse;
+import com.emconnect.api.entity.LoginActivity;
 import com.emconnect.api.entity.User;
 import com.emconnect.api.event.UserLoginEvent;
 import com.emconnect.api.event.UserRegisteredEvent;
 import com.emconnect.api.exception.EmailAlreadyExistsException;
 import com.emconnect.api.exception.InvalidCredentialsException;
+import com.emconnect.api.repository.LoginActivityRepository;
 import com.emconnect.api.repository.UserRepository;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
@@ -23,7 +26,10 @@ import java.util.Map;
 @Service
 public class AuthService {
 
+    private static final int LOGIN_ACTIVITY_RETENTION_LIMIT = 100;
+
     private final UserRepository userRepository;
+    private final LoginActivityRepository loginActivityRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final EventPublisher eventPublisher;
@@ -31,11 +37,13 @@ public class AuthService {
     @Value("${google.oauth.client-id:}")
     private String googleClientId;
 
-    public AuthService(UserRepository userRepository, 
+    public AuthService(UserRepository userRepository,
+                       LoginActivityRepository loginActivityRepository,
                        PasswordEncoder passwordEncoder,
                        JwtService jwtService,
                        EventPublisher eventPublisher) {
         this.userRepository = userRepository;
+        this.loginActivityRepository = loginActivityRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.eventPublisher = eventPublisher;
@@ -78,6 +86,10 @@ public class AuthService {
     }
 
     public AuthResponse login(LoginRequest request) {
+        return login(request, null, null);
+    }
+
+    public AuthResponse login(LoginRequest request, String sourceIp, String userAgent) {
         // Find user by email
         User user = userRepository.findByEmail(request.getEmail())
             .orElseThrow(() -> new InvalidCredentialsException(
@@ -105,6 +117,7 @@ public class AuthService {
 
         // Publish login event
         eventPublisher.publishUserLogin(UserLoginEvent.fromUser(user, "PASSWORD"));
+        recordLoginActivity(user, "PASSWORD", sourceIp, userAgent);
 
         // Return response with token
         return new AuthResponse(
@@ -119,6 +132,10 @@ public class AuthService {
      * Verifies the token with Google's tokeninfo endpoint, then finds or creates the user.
      */
     public AuthResponse googleLogin(String credential) {
+        return googleLogin(credential, null, null);
+    }
+
+    public AuthResponse googleLogin(String credential, String sourceIp, String userAgent) {
         if (googleClientId == null || googleClientId.isBlank()) {
             throw new IllegalStateException("Google OAuth is not configured");
         }
@@ -167,12 +184,46 @@ public class AuthService {
 
         // Publish Google login event
         eventPublisher.publishUserLogin(UserLoginEvent.fromUser(user, "GOOGLE"));
+        recordLoginActivity(user, "GOOGLE", sourceIp, userAgent);
 
         return new AuthResponse(
             "Google login successful",
             new UserResponse(user),
             token
         );
+    }
+
+    private void recordLoginActivity(User user, String loginMethod, String sourceIp, String userAgent) {
+        LoginActivity activity = new LoginActivity(
+                user,
+                loginMethod,
+                sanitize(sourceIp, 64),
+                sanitize(userAgent, 500)
+        );
+        loginActivityRepository.save(activity);
+
+        long total = loginActivityRepository.countByUserId(user.getId());
+        if (total <= LOGIN_ACTIVITY_RETENTION_LIMIT) {
+            return;
+        }
+
+        int overflow = (int) (total - LOGIN_ACTIVITY_RETENTION_LIMIT);
+        var oldest = loginActivityRepository
+                .findByUserIdOrderByCreatedAtAsc(user.getId(), PageRequest.of(0, overflow))
+                .getContent();
+
+        if (!oldest.isEmpty()) {
+            loginActivityRepository.deleteAll(oldest);
+        }
+    }
+
+    private String sanitize(String value, int maxLength) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+
+        String trimmed = value.trim();
+        return trimmed.length() <= maxLength ? trimmed : trimmed.substring(0, maxLength);
     }
 
     /**

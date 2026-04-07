@@ -1,6 +1,7 @@
 package com.emconnect.api.controller;
 
 import com.emconnect.api.dto.ChangePasswordRequest;
+import com.emconnect.api.dto.LoginActivityResponse;
 import com.emconnect.api.dto.UpdateProfileRequest;
 import com.emconnect.api.dto.UserResponse;
 import com.emconnect.api.service.UserService;
@@ -18,6 +19,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 @RestController
 @RequestMapping("/api/users")
@@ -33,6 +35,12 @@ public class UserController {
     public ResponseEntity<UserResponse> getCurrentUser() {
         String email = getAuthEmail();
         return ResponseEntity.ok(userService.getProfile(email));
+    }
+
+    @GetMapping("/me/login-activity")
+    public ResponseEntity<List<LoginActivityResponse>> getLoginActivity() {
+        String email = getAuthEmail();
+        return ResponseEntity.ok(userService.getLoginActivity(email));
     }
 
     @PutMapping("/me")

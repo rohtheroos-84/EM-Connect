@@ -3,6 +3,7 @@ package com.emconnect.api.controller;
 import com.emconnect.api.dto.*;
 import com.emconnect.api.service.AuthService;
 import com.emconnect.api.service.PasswordResetService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -35,18 +36,52 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(
-            @Valid @RequestBody LoginRequest request) {
+            @Valid @RequestBody LoginRequest request,
+            HttpServletRequest httpRequest) {
         
-        AuthResponse response = authService.login(request);
+        AuthResponse response = authService.login(
+                request,
+                resolveClientIp(httpRequest),
+                sanitizeUserAgent(httpRequest.getHeader("User-Agent"))
+        );
         return ResponseEntity.ok(response);
     }
 
     @PostMapping("/google")
     public ResponseEntity<AuthResponse> googleLogin(
-            @Valid @RequestBody GoogleTokenRequest request) {
+            @Valid @RequestBody GoogleTokenRequest request,
+            HttpServletRequest httpRequest) {
 
-        AuthResponse response = authService.googleLogin(request.getCredential());
+        AuthResponse response = authService.googleLogin(
+                request.getCredential(),
+                resolveClientIp(httpRequest),
+                sanitizeUserAgent(httpRequest.getHeader("User-Agent"))
+        );
         return ResponseEntity.ok(response);
+    }
+
+    private String resolveClientIp(HttpServletRequest request) {
+        String forwarded = request.getHeader("X-Forwarded-For");
+        if (forwarded != null && !forwarded.isBlank()) {
+            return truncate(forwarded.split(",")[0].trim(), 64);
+        }
+
+        String realIp = request.getHeader("X-Real-IP");
+        if (realIp != null && !realIp.isBlank()) {
+            return truncate(realIp.trim(), 64);
+        }
+
+        return truncate(request.getRemoteAddr(), 64);
+    }
+
+    private String sanitizeUserAgent(String userAgent) {
+        if (userAgent == null || userAgent.isBlank()) return null;
+        return truncate(userAgent.trim(), 500);
+    }
+
+    private String truncate(String value, int maxLength) {
+        if (value == null) return null;
+        return value.length() <= maxLength ? value : value.substring(0, maxLength);
     }
 
     @PostMapping("/forgot-password")
