@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import {
   getCurrentUser,
+  getLoginActivity,
   updateProfile,
   changePassword,
   uploadAvatar,
@@ -33,6 +34,18 @@ function fmtDate(iso) {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
+  });
+}
+
+function fmtDateTime(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleString('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
   });
 }
 
@@ -70,6 +83,11 @@ export default function Profile() {
     tickets: 0,
   });
 
+  /* ── Login activity ── */
+  const [loginActivity, setLoginActivity] = useState([]);
+  const [activityLoading, setActivityLoading] = useState(true);
+  const [activityError, setActivityError] = useState(null);
+
   /* ── Load profile + stats ── */
   const loadProfile = useCallback(async () => {
     setLoading(true);
@@ -98,6 +116,24 @@ export default function Profile() {
   useEffect(() => {
     loadProfile();
   }, [loadProfile]);
+
+  const loadLoginActivity = useCallback(async () => {
+    setActivityLoading(true);
+    setActivityError(null);
+    try {
+      const items = await getLoginActivity();
+      setLoginActivity(Array.isArray(items) ? items : []);
+    } catch {
+      setLoginActivity([]);
+      setActivityError('Could not load recent login activity right now.');
+    } finally {
+      setActivityLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadLoginActivity();
+  }, [loadLoginActivity]);
 
   /* ── Avatar URL helper ── */
   const avatarSrc = profile?.avatarUrl
@@ -385,6 +421,66 @@ export default function Profile() {
                     <span className="w-2.5 h-2.5 bg-[#9CA3AF]" /> Cancelled
                   </span>
                 </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ── Login Activity Timeline ── */}
+        <div className="bg-bauhaus-white/80 border border-[#1F2937]/20 overflow-hidden">
+          <div className="h-0.75 bg-bauhaus-blue" />
+          <div className="p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Shield className="w-4 h-4 text-bauhaus-blue" />
+              <h2 className="text-[11px] font-bold text-bauhaus-fg/35 uppercase tracking-[0.15em]">
+                Recent Login Activity
+              </h2>
+            </div>
+
+            {activityLoading && (
+              <div className="flex items-center gap-2 text-sm text-bauhaus-fg/50">
+                <Loader2 className="w-4 h-4 animate-spin" /> Loading login history...
+              </div>
+            )}
+
+            {!activityLoading && activityError && (
+              <div className="flex items-center gap-2 text-sm text-bauhaus-red">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                {activityError}
+              </div>
+            )}
+
+            {!activityLoading && !activityError && loginActivity.length === 0 && (
+              <p className="text-sm text-bauhaus-fg/45">
+                No recent sign-ins yet. Your future account logins will appear here.
+              </p>
+            )}
+
+            {!activityLoading && !activityError && loginActivity.length > 0 && (
+              <div className="space-y-2">
+                {loginActivity.map((entry, idx) => (
+                  <div key={`${entry.timestamp || 'unknown'}-${idx}`} className="border border-[#1F2937]/12 bg-bauhaus-bg/45 p-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                            String(entry.loginMethod).toUpperCase() === 'GOOGLE'
+                              ? 'bg-[#DBEAFE] text-[#1E3A8A]'
+                              : 'bg-[#FEF3C7] text-[#92400E]'
+                          }`}
+                        >
+                          {entry.loginMethod || 'UNKNOWN'}
+                        </span>
+                        <span className="text-[12px] text-bauhaus-fg/75 font-medium">
+                          {fmtDateTime(entry.timestamp)}
+                        </span>
+                      </div>
+                      <span className="text-[11px] text-bauhaus-fg/55">
+                        {entry.source || 'Unknown source'}
+                      </span>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
