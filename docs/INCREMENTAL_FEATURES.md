@@ -10,7 +10,7 @@ This doc captures the selected improvements for phased implementation with minim
 4. Registration UX Upgrade (dialogs + copy) - DONE
 5. Login Activity Timeline - DONE
 6. Notification Inbox Drawer
-7. Weekly Digest Email Export
+7. Weekly Digest Email Export - WAITLISTED for now, may revisit after core features are solidified
 8. Command Palette
 
 - This order prioritizes quick UX wins first, then broader app-wide enhancements.
@@ -136,6 +136,7 @@ A modal search box (similar to VS Code or Linear) opened with keyboard shortcut 
 - [ ] Add safe action confirmations where needed (example: logout).
 - [ ] Add basic analytics for command usage.
 
+## maybe later:
 <!--
 ## 7) Profile/Auth: Security Badges
 
@@ -152,7 +153,7 @@ Show lightweight security context on Profile so users can quickly verify account
 - [ ] Add Security Badges UI card in Profile page.
 - [ ] Add fallback text when values are unavailable (for legacy users).
 - [ ] Add timezone-consistent formatting for timestamps.
--->
+
 
 ## 8) Analytics: Weekly Digest Email Export
 
@@ -172,5 +173,5 @@ Send admins a concise weekly analytics summary via email.
 - [ ] Add basic rate-limit/guard to avoid duplicate sends.
 
 ---
-
+-->
 
