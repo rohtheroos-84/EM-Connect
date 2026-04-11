@@ -13,7 +13,7 @@ it now supports event lifecycle management, registration concurrency handling, a
 - websocket health: https://em-connect-websocket-hub.onrender.com/health
 - notification service (render): https://em-connect-notification-worker.onrender.com/health
 - ticket service (render): https://em-connect-ticket-worker.onrender.com/health
-- uptime dashboard (public): https://stats.uptimerobot.com/HoUhFK8lmD
+- uptime dashboard (public): https://stats.uptimerobot.com/v6aGZHL957
 
 live deployment runbook: [docs/DEPLOY.md](docs/DEPLOY.md)
 
@@ -131,7 +131,7 @@ production note (free tier): notification and ticket processors are deployed as 
 keep-alive monitoring:
 - uptime robot monitors all 4 render services every 5 minutes.
 - monitor set: backend api, websocket hub, notification worker, ticket worker.
-- status page: https://stats.uptimerobot.com/HoUhFK8lmD
+- status page: https://stats.uptimerobot.com/v6aGZHL957
 
 - spring boot api: core domain logic + auth + persistence + event publishing
 - notification-worker (go): consumes `registration.*`, `event.*`, `user.*` and sends html mail

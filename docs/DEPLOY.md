@@ -25,7 +25,7 @@ free-tier reality:
 
 current mitigation (active):
 - uptime robot keep-alive monitoring is enabled for all 4 render services.
-- public status page: https://stats.uptimerobot.com/HoUhFK8lmD
+- public status page: https://stats.uptimerobot.com/v6aGZHL957
 
 ---
 
@@ -178,7 +178,7 @@ configured monitors (active):
 - `em-connect-ticket-worker` -> `https://em-connect-ticket-worker.onrender.com/health`
 
 public status page:
-- https://stats.uptimerobot.com/HoUhFK8lmD
+- https://stats.uptimerobot.com/v6aGZHL957
 
 tracking:
 - [x] all 4 monitors configured
