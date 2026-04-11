@@ -93,7 +93,7 @@ api env vars to set in render:
 - `GOOGLE_OAUTH_CLIENT_ID=<if-using-google-login>`
 
 tracking:
-- [x] api service created([link to the health page](https://emconnect-backend.onrender.com/actuator/health))
+- [x] api service created([link to the health page](https://em-connect-backend-api.onrender.com/actuator/health))
 - [x] env vars set
 - [x] health check green
 - [x] flyway migration completed
@@ -117,7 +117,7 @@ required env vars:
 - `ENVIRONMENT=production`
 
 tracking:
-- [x] websocket service deployed([link to the websocket heath page](https://emconnect-websocket.onrender.com/health))
+- [x] websocket service deployed([link to the websocket heath page](https://em-connect-websocket-hub.onrender.com/health))
 - [x] /health endpoint works
 - [x] websocket connects from browser (`wss://.../ws`)
 
@@ -156,8 +156,8 @@ env vars:
 - `ENVIRONMENT=production`
 
 tracking:
-- [x] notification-worker deployed at [this address](https://emconnect-notification-worker.onrender.com)
-- [x] ticket-worker deployed at [this address](https://emconnect-ticket-worker.onrender.com)
+- [x] notification-worker deployed at [this address](https://em-connect-notification-worker.onrender.com)
+- [x] ticket-worker deployed at [this address](https://em-connect-ticket-worker.onrender.com)
 - [x] both are consuming messages
 
 ---
@@ -172,10 +172,10 @@ service used:
 - uptimerobot (http monitor type, 5-minute interval)
 
 configured monitors (active):
-- `emconnect-backend-api` -> `https://emconnect-backend.onrender.com/actuator/health`
-- `emconnect-websocket-worker` -> `https://emconnect-websocket.onrender.com/health`
-- `emconnect-notification-worker` -> `https://emconnect-notification-worker.onrender.com/health`
-- `emconnect-ticket-worker` -> `https://emconnect-ticket-worker.onrender.com/health`
+- `em-connect-backend-api` -> `https://em-connect-backend-api.onrender.com/actuator/health`
+- `em-connect-websocket-hub` -> `https://em-connect-websocket-hub.onrender.com/health`
+- `em-connect-notification-worker` -> `https://em-connect-notification-worker.onrender.com/health`
+- `em-connect-ticket-worker` -> `https://em-connect-ticket-worker.onrender.com/health`
 
 public status page:
 - https://stats.uptimerobot.com/HoUhFK8lmD
@@ -218,7 +218,7 @@ change:
 - to: `const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';`
 
 env to set on netlify/vercel:
-- `VITE_API_BASE_URL=https://<api-service>.onrender.com/api`
+- `VITE_API_BASE_URL=https://em-connect-backend-api.onrender.com/api`
 
 tracking:
 - [x] `api.js` updated
@@ -239,7 +239,7 @@ change:
 - keep current fallback for local dev.
 
 env to set:
-- `VITE_WS_URL=wss://<websocket-service>.onrender.com/ws`
+- `VITE_WS_URL=wss://em-connect-websocket-hub.onrender.com/ws`
 
 tracking:
 - [x] websocket context updated

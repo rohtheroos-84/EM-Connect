@@ -7,12 +7,12 @@ it now supports event lifecycle management, registration concurrency handling, a
 ## live deployment (current)
 
 - frontend (netlify): https://tryemconnect.netlify.app
-- api (render): https://emconnect-backend.onrender.com
-- api health: https://emconnect-backend.onrender.com/actuator/health
-- websocket hub (render): https://emconnect-websocket.onrender.com
-- websocket health: https://emconnect-websocket.onrender.com/health
-- notification service (render): https://emconnect-notification-worker.onrender.com/health
-- ticket service (render): https://emconnect-ticket-worker.onrender.com/health
+- api (render): https://em-connect-backend-api.onrender.com
+- api health: https://em-connect-backend-api.onrender.com/actuator/health
+- websocket hub (render): https://em-connect-websocket-hub.onrender.com
+- websocket health: https://em-connect-websocket-hub.onrender.com/health
+- notification service (render): https://em-connect-notification-worker.onrender.com/health
+- ticket service (render): https://em-connect-ticket-worker.onrender.com/health
 - uptime dashboard (public): https://stats.uptimerobot.com/HoUhFK8lmD
 
 live deployment runbook: [docs/DEPLOY.md](docs/DEPLOY.md)

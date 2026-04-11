@@ -7,12 +7,12 @@ This document is the quick orientation guide. For setup and runbook details, see
 ## Current Deployment
 
 - Frontend: https://tryemconnect.netlify.app
-- API: https://emconnect-backend.onrender.com
-- API health: https://emconnect-backend.onrender.com/actuator/health
-- WebSocket hub: https://emconnect-websocket.onrender.com
-- WebSocket health: https://emconnect-websocket.onrender.com/health
-- Notification service health: https://emconnect-notification-worker.onrender.com/health
-- Ticket service health: https://emconnect-ticket-worker.onrender.com/health
+- API: https://em-connect-backend-api.onrender.com
+- API health: https://em-connect-backend-api.onrender.com/actuator/health
+- WebSocket hub: https://em-connect-websocket-hub.onrender.com
+- WebSocket health: https://em-connect-websocket-hub.onrender.com/health
+- Notification service health: https://em-connect-notification-worker.onrender.com/health
+- Ticket service health: https://em-connect-ticket-worker.onrender.com/health
 - Uptime dashboard (public): https://stats.uptimerobot.com/HoUhFK8lmD
 
 ## System Summary

@@ -5,7 +5,7 @@ This is the current endpoint map based on the active controllers in services/api
 ## Base URLs
 
 - Local API: http://localhost:8080
-- Live API: https://emconnect-backend.onrender.com
+- Live API: https://em-connect-backend-api.onrender.com
 
 ## Auth Header
 
