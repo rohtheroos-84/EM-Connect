@@ -10,8 +10,10 @@ This doc captures the selected improvements for phased implementation with minim
 4. Registration UX Upgrade (dialogs + copy) - DONE
 5. Login Activity Timeline - DONE
 6. Notification Inbox Drawer
-7. Weekly Digest Email Export - WAITLISTED for now, may revisit after core features are solidified
-8. Command Palette
+7. Auth/Onboarding: Guest Browse Entry (Limited Access)
+8. Auth Flow: Return-to-Intent Redirect
+9. Weekly Digest Email Export - WAITLISTED for now, may revisit after core features are solidified
+10. Command Palette
 
 - This order prioritizes quick UX wins first, then broader app-wide enhancements.
 
@@ -136,9 +138,41 @@ A modal search box (similar to VS Code or Linear) opened with keyboard shortcut 
 - [ ] Add safe action confirmations where needed (example: logout).
 - [ ] Add basic analytics for command usage.
 
+## 7) Auth/Onboarding: Guest Browse Entry (Limited Access)
+
+Allow users to explore events first, then sign in only when they are ready to register.
+
+### Scope
+- Add a clear Continue as Guest action on Login and Register pages.
+- Keep guest access read-only (browse/search/view event detail).
+- Show clear sign-in prompts when guest tries protected actions.
+
+### Checklist
+- [ ] Add Continue as Guest CTA on login page and register page.
+- [ ] Route guest entry to public events list (instead of forcing auth first).
+- [ ] Keep all protected pages guarded (dashboard, profile, registrations, admin, analytics).
+- [ ] Add a subtle guest-mode indicator with quick Sign In / Register actions.
+- [ ] Ensure no token/user session is written for guest mode.
+
+## 8) Auth Flow: Return-to-Intent Redirect
+
+After login/signup, send users back to what they originally wanted to do.
+
+### Scope
+- Preserve intended destination when redirecting unauthenticated users to login.
+- Reuse the same redirect logic for email login, Google login, and register flows.
+- Fall back to a safe default when no prior destination exists.
+
+### Checklist
+- [ ] Update protected-route redirect to pass intended path in navigation state.
+- [ ] After successful login, redirect to intended path (fallback: dashboard).
+- [ ] After successful Google login, redirect to intended path (fallback: dashboard).
+- [ ] After successful register, redirect to intended path (fallback: dashboard).
+- [ ] Keep admin-only guard behavior intact if redirected user lacks admin role.
+
 ## maybe later:
 <!--
-## 7) Profile/Auth: Security Badges
+## 9) Profile/Auth: Security Badges
 
 Show lightweight security context on Profile so users can quickly verify account status.
 
@@ -155,7 +189,7 @@ Show lightweight security context on Profile so users can quickly verify account
 - [ ] Add timezone-consistent formatting for timestamps.
 
 
-## 8) Analytics: Weekly Digest Email Export
+## 10) Analytics: Weekly Digest Email Export
 
 Send admins a concise weekly analytics summary via email.
 
