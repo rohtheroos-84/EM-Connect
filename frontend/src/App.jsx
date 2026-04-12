@@ -5,6 +5,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import Dashboard from './pages/Dashboard';
 import EventList from './pages/EventList';
 import EventDetail from './pages/EventDetail';
+import About from './pages/About';
 import MyRegistrations from './pages/MyRegistrations';
 import Profile from './pages/Profile';
 import Admin from './pages/Admin';
@@ -20,6 +21,7 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/about" element={<About />} />
         <Route
           path="/dashboard"
           element={

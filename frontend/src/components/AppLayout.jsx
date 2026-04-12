@@ -2,16 +2,18 @@ import { useState, useRef, useEffect } from 'react';
 import { NavLink, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useWebSocket } from '../context/WebSocketContext';
-import { LogOut, LayoutDashboard, Calendar, ClipboardList, LogIn, UserCircle, ShieldCheck, TrendingUp, MoreHorizontal, ChevronDown } from 'lucide-react';
+import { LogOut, LayoutDashboard, Calendar, ClipboardList, LogIn, UserCircle, ShieldCheck, TrendingUp, MoreHorizontal, ChevronDown, Info } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 
 const PUBLIC_NAV = [
   { to: '/events', label: 'Events', icon: Calendar },
+  { to: '/about', label: 'About', icon: Info },
 ];
 
 const AUTH_NAV = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/events', label: 'Events', icon: Calendar },
+  { to: '/about', label: 'About', icon: Info },
   { to: '/my-registrations', label: 'Registrations', icon: ClipboardList },
 ];
 
