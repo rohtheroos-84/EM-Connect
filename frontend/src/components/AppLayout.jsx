@@ -7,13 +7,11 @@ import ThemeToggle from './ThemeToggle';
 
 const PUBLIC_NAV = [
   { to: '/events', label: 'Events', icon: Calendar },
-  { to: '/about', label: 'About', icon: Info },
 ];
 
 const AUTH_NAV = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/events', label: 'Events', icon: Calendar },
-  { to: '/about', label: 'About', icon: Info },
   { to: '/my-registrations', label: 'Registrations', icon: ClipboardList },
 ];
 
@@ -22,6 +20,8 @@ const ADMIN_NAV_ITEMS = [
   { to: '/admin', label: 'Admin', icon: ShieldCheck },
 ];
 
+const ABOUT_NAV_ITEM = { to: '/about', label: 'About', icon: Info };
+
 export default function AppLayout({ children }) {
   const { user, logout, isAuthenticated } = useAuth();
   const { connected } = useWebSocket();
@@ -29,8 +29,10 @@ export default function AppLayout({ children }) {
   const location = useLocation();
   const isAdmin = user?.role === 'ADMIN';
   const navItems = isAuthenticated
-    ? (isAdmin ? [...AUTH_NAV, ...ADMIN_NAV_ITEMS] : AUTH_NAV)
-    : PUBLIC_NAV;
+    ? (isAdmin
+      ? [...AUTH_NAV, ...ADMIN_NAV_ITEMS, ABOUT_NAV_ITEM]
+      : [...AUTH_NAV, ABOUT_NAV_ITEM])
+    : [...PUBLIC_NAV, ABOUT_NAV_ITEM];
 
   // User dropdown
   const [userMenuOpen, setUserMenuOpen] = useState(false);
