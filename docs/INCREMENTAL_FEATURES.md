@@ -164,11 +164,11 @@ After login/signup, send users back to what they originally wanted to do.
 - Fall back to a safe default when no prior destination exists.
 
 ### Checklist
-- [ ] Update protected-route redirect to pass intended path in navigation state.
-- [ ] After successful login, redirect to intended path (fallback: dashboard).
-- [ ] After successful Google login, redirect to intended path (fallback: dashboard).
-- [ ] After successful register, redirect to intended path (fallback: dashboard).
-- [ ] Keep admin-only guard behavior intact if redirected user lacks admin role.
+- [x] Update protected-route redirect to pass intended path in navigation state.
+- [x] After successful login, redirect to intended path (fallback: dashboard).
+- [x] After successful Google login, redirect to intended path (fallback: dashboard).
+- [x] After successful register, redirect to intended path (fallback: dashboard).
+- [x] Keep admin-only guard behavior intact if redirected user lacks admin role.
 
 ## maybe later:
 <!--
