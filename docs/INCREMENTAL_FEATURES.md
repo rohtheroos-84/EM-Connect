@@ -60,11 +60,11 @@ Allow users to paste a full 6-digit OTP and complete verification faster.
 - Keep manual entry behavior unchanged.
 
 ### Checklist
-- [ ] Add paste handler for verify step input.
-- [ ] Sanitize pasted text to digits only.
-- [ ] Auto-populate OTP value and trigger verify when complete.
-- [ ] Keep accessibility behavior (focus management and screen-reader labels).
-- [ ] Add guardrails for invalid/partial paste.
+- [x] Add paste handler for verify step input.
+- [x] Sanitize pasted text to digits only.
+- [x] Auto-populate OTP value and trigger verify when complete.
+- [x] Keep accessibility behavior (focus management and screen-reader labels).
+- [x] Add guardrails for invalid/partial paste.
 
 ## 4) Registration UX Upgrade (Adjusted)
 
