@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useLocation } from 'react-router-dom';
 import {
   getEvent,
   getEventRegistrationStatus,
@@ -74,6 +74,7 @@ const CATEGORY_COLORS = {
 
 export default function EventDetail() {
   const { id } = useParams();
+  const location = useLocation();
   const { isAuthenticated } = useAuth();
   const [event, setEvent] = useState(null);
   const [regStatus, setRegStatus] = useState(null); // { isRegistered, totalRegistrations }
@@ -529,6 +530,7 @@ export default function EventDetail() {
                   <p className="text-sm text-[#6B7280]">Sign in to register for this event.</p>
                   <Link
                     to="/login"
+                    state={{ from: `${location.pathname}${location.search}${location.hash}` }}
                     className="flex items-center gap-1.5 px-5 h-12 bg-bauhaus-blue text-white text-sm font-bold uppercase tracking-wider hover:bg-[#0D3399] transition-colors"
                   >
                     <LogIn className="w-4 h-4" /> Sign In

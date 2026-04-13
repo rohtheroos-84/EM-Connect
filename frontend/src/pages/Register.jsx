@@ -1,8 +1,9 @@
 import { useState, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { GoogleLogin } from '@react-oauth/google';
 import { UserPlus, AlertCircle, ArrowRight, Check, X } from 'lucide-react';
+import { resolvePostAuthRedirect } from '../services/redirect';
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
@@ -29,6 +30,8 @@ export default function Register() {
   const [localError, setLocalError] = useState(null);
   const { register, googleLogin, loading, error, clearError } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const postAuthRedirect = resolvePostAuthRedirect(location.state?.from);
 
   const strength = useMemo(() => getPasswordStrength(password), [password]);
 
@@ -46,14 +49,14 @@ export default function Register() {
     if (password.length < 6) { setLocalError('Password must be at least 6 characters'); return; }
     try {
       await register(email, password, name);
-      navigate('/dashboard');
+      navigate(postAuthRedirect, { replace: true });
     } catch { /* context sets error */ }
   };
 
   const handleGoogleSuccess = async (credentialResponse) => {
     try {
       await googleLogin(credentialResponse.credential);
-      navigate('/dashboard');
+      navigate(postAuthRedirect, { replace: true });
     } catch { /* context sets error */ }
   };
 
@@ -300,6 +303,7 @@ export default function Register() {
                 Already have an account?{' '}
                 <Link
                   to="/login"
+                  state={{ from: location.state?.from }}
                   className="font-semibold text-bauhaus-blue hover:text-[#0D3399] underline underline-offset-2 transition-colors inline-flex items-center gap-1"
                 >
                   Sign in <ArrowRight className="w-3 h-3" />

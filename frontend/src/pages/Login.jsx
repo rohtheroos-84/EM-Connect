@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { GoogleLogin } from '@react-oauth/google';
 import { LogIn, AlertCircle, ArrowRight } from 'lucide-react';
+import { resolvePostAuthRedirect } from '../services/redirect';
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
@@ -12,12 +13,14 @@ export default function Login() {
   const [touched, setTouched] = useState({});
   const { login, googleLogin, loading, error, clearError } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const postAuthRedirect = resolvePostAuthRedirect(location.state?.from);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       await login(email, password);
-      navigate('/dashboard');
+      navigate(postAuthRedirect, { replace: true });
     } catch {
       /* error handled by context */
     }
@@ -26,7 +29,7 @@ export default function Login() {
   const handleGoogleSuccess = async (credentialResponse) => {
     try {
       await googleLogin(credentialResponse.credential);
-      navigate('/dashboard');
+      navigate(postAuthRedirect, { replace: true });
     } catch {
       /* error handled by context */
     }
@@ -200,6 +203,7 @@ export default function Login() {
                 Don&apos;t have an account?{' '}
                 <Link
                   to="/register"
+                  state={{ from: location.state?.from }}
                   className="font-semibold text-bauhaus-blue hover:text-[#0D3399] underline underline-offset-2 transition-colors inline-flex items-center gap-1"
                 >
                   Create one <ArrowRight className="w-3 h-3" />
