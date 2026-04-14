@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { GoogleLogin } from '@react-oauth/google';
@@ -11,10 +11,16 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [touched, setTouched] = useState({});
-  const { login, googleLogin, loading, error, clearError } = useAuth();
+  const { login, googleLogin, loading, error, clearError, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const postAuthRedirect = resolvePostAuthRedirect(location.state?.from);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate(postAuthRedirect, { replace: true });
+    }
+  }, [isAuthenticated, navigate, postAuthRedirect]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

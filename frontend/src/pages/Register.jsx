@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { GoogleLogin } from '@react-oauth/google';
@@ -28,10 +28,16 @@ export default function Register() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [touched, setTouched] = useState({});
   const [localError, setLocalError] = useState(null);
-  const { register, googleLogin, loading, error, clearError } = useAuth();
+  const { register, googleLogin, loading, error, clearError, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const postAuthRedirect = resolvePostAuthRedirect(location.state?.from);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate(postAuthRedirect, { replace: true });
+    }
+  }, [isAuthenticated, navigate, postAuthRedirect]);
 
   const strength = useMemo(() => getPasswordStrength(password), [password]);
 

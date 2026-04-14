@@ -21,6 +21,7 @@ function normalizeRedirectTarget(rawTarget) {
   if (trimmed.includes('://')) return null;
 
   const basePath = trimmed.split(/[?#]/)[0];
+  if (basePath === '/') return null;
   if (AUTH_ROUTES.has(basePath)) return null;
 
   return trimmed;
