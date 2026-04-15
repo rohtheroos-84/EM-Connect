@@ -170,6 +170,77 @@ After login/signup, send users back to what they originally wanted to do.
 - [x] After successful register, redirect to intended path (fallback: dashboard).
 - [x] Keep admin-only guard behavior intact if redirected user lacks admin role.
 
+## Frontend Tweaks
+
+Small frontend-only polish items that are low-risk but improve day-to-day UX quality.
+
+### 1) Form Autocomplete Attributes
+
+Improve password-manager and browser autofill support across auth and profile forms.
+
+#### Scope
+- Add appropriate `autoComplete` attributes to login, register, forgot-password, and change-password fields.
+- Use semantic values (`email`, `username`, `current-password`, `new-password`, `one-time-code`) based on form intent.
+
+#### Checklist
+- [ ] Add autocomplete attributes in Login form.
+- [ ] Add autocomplete attributes in Register form.
+- [ ] Add autocomplete attributes in Forgot Password flow.
+- [ ] Add autocomplete attributes in Profile Change Password form.
+
+### 2) Caps Lock Warning on Password Inputs
+
+Prevent false login/reset failures caused by accidental Caps Lock.
+
+#### Scope
+- Detect Caps Lock state while typing in password fields.
+- Show a subtle inline warning only when Caps Lock is active.
+
+#### Checklist
+- [ ] Add Caps Lock detection on Login password field.
+- [ ] Add Caps Lock detection on Register password fields.
+- [ ] Add Caps Lock detection on Forgot Password reset fields.
+- [ ] Add Caps Lock detection on Profile Change Password fields.
+
+### 3) Ticket QR Download Failure Feedback
+
+Avoid silent failures when QR download is not ready or request fails.
+
+#### Scope
+- Show user-facing feedback when ticket QR download fails.
+- Provide actionable hint (for example, retry after a few seconds).
+
+#### Checklist
+- [ ] Add visible error message/toast on QR download failure.
+- [ ] Add retry-friendly copy for generation-in-progress cases.
+
+### 4) Email Input Normalization
+
+Reduce avoidable auth friction caused by whitespace/case inconsistencies.
+
+#### Scope
+- Normalize email input before submit (trim whitespace; lowercase for auth endpoints).
+- Apply consistently to login/register/forgot-password flows.
+
+#### Checklist
+- [ ] Normalize email on Login submit.
+- [ ] Normalize email on Register submit.
+- [ ] Normalize email on Forgot Password submit.
+- [ ] Normalize email on Resend/Verify reset code paths.
+
+### 5) Unsaved Changes Guard for Event Form Modal
+
+Prevent accidental data loss while creating or editing events.
+
+#### Scope
+- Track dirty form state in EventFormModal.
+- Warn before closing modal if there are unsaved edits.
+
+#### Checklist
+- [ ] Detect dirty state for all editable fields (including banner selection).
+- [ ] Confirm before close on backdrop/X/cancel when form is dirty.
+- [ ] Skip warning when submit succeeds or no changes were made.
+
 ## maybe later:
 <!--
 ## 9) Profile/Auth: Security Badges
