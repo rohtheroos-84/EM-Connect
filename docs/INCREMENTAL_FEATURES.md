@@ -172,8 +172,6 @@ After login/signup, send users back to what they originally wanted to do.
 
 ## Frontend Tweaks
 
-Small frontend-only polish items that are low-risk but improve day-to-day UX quality.
-
 ### 1) Form Autocomplete Attributes
 
 Improve password-manager and browser autofill support across auth and profile forms.
@@ -240,6 +238,21 @@ Prevent accidental data loss while creating or editing events.
 - [ ] Detect dirty state for all editable fields (including banner selection).
 - [ ] Confirm before close on backdrop/X/cancel when form is dirty.
 - [ ] Skip warning when submit succeeds or no changes were made.
+
+### 6) Not Found Page for Unknown Routes
+
+Avoid redirecting unknown URLs to Login and show a clearer recovery path instead.
+
+#### Scope
+- Replace wildcard route redirect with a dedicated Not Found page.
+- Provide quick next actions based on auth state (for example, Dashboard/Events for logged-in users, Login/Register for guests).
+- Keep this frontend-only and low-risk.
+
+#### Checklist
+- [ ] Add a `NotFound` page component with clear copy and primary actions.
+- [ ] Update app wildcard route (`*`) to render `NotFound` instead of redirecting to Login.
+- [ ] Add role/auth-aware CTA buttons (guest vs authenticated).
+- [ ] Add a lightweight "go back" action for quick recovery.
 
 ## maybe later:
 <!--
