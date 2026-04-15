@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { KeyRound, Mail, ShieldCheck, Lock, AlertCircle, ArrowLeft, ArrowRight, CheckCircle } from 'lucide-react';
+import { KeyRound, Mail, ShieldCheck, Lock, AlertCircle, ArrowLeft, ArrowRight, CheckCircle, Eye, EyeOff } from 'lucide-react';
 import { forgotPassword, verifyResetCode, resetPassword, resendResetCode } from '../services/api';
 
 const STEPS = { EMAIL: 0, CODE: 1, PASSWORD: 2, DONE: 3 };
@@ -11,6 +11,8 @@ export default function ForgotPassword() {
   const [code, setCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
   const [error, setError] = useState('');
@@ -355,34 +357,56 @@ export default function ForgotPassword() {
                     <label htmlFor="new-password" className="block text-[12px] font-bold text-bauhaus-fg/70 uppercase tracking-[0.08em] mb-3">
                       New Password
                     </label>
-                    <input
-                      id="new-password"
-                      type="password"
-                      required
-                      minLength={8}
-                      value={newPassword}
-                      onChange={(e) => { setNewPassword(e.target.value); clearError(); }}
-                      placeholder="At least 8 characters"
-                      disabled={loading}
-                      className={inputCls}
-                      autoFocus
-                    />
+                    <div className="relative">
+                      <input
+                        id="new-password"
+                        type={showNewPassword ? 'text' : 'password'}
+                        required
+                        minLength={8}
+                        value={newPassword}
+                        onChange={(e) => { setNewPassword(e.target.value); clearError(); }}
+                        placeholder="At least 8 characters"
+                        disabled={loading}
+                        className={`${inputCls} pr-12`}
+                        autoFocus
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowNewPassword((prev) => !prev)}
+                        disabled={loading}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-bauhaus-fg/45 hover:text-bauhaus-fg transition-colors disabled:opacity-40 cursor-pointer"
+                        aria-label={showNewPassword ? 'Hide password' : 'Show password'}
+                      >
+                        {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
                   </div>
                   <div className="mb-7">
                     <label htmlFor="confirm-password" className="block text-[12px] font-bold text-bauhaus-fg/70 uppercase tracking-[0.08em] mb-3">
                       Confirm Password
                     </label>
-                    <input
-                      id="confirm-password"
-                      type="password"
-                      required
-                      minLength={8}
-                      value={confirmPassword}
-                      onChange={(e) => { setConfirmPassword(e.target.value); clearError(); }}
-                      placeholder="Repeat your password"
-                      disabled={loading}
-                      className={inputCls}
-                    />
+                    <div className="relative">
+                      <input
+                        id="confirm-password"
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        required
+                        minLength={8}
+                        value={confirmPassword}
+                        onChange={(e) => { setConfirmPassword(e.target.value); clearError(); }}
+                        placeholder="Repeat your password"
+                        disabled={loading}
+                        className={`${inputCls} pr-12`}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword((prev) => !prev)}
+                        disabled={loading}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-bauhaus-fg/45 hover:text-bauhaus-fg transition-colors disabled:opacity-40 cursor-pointer"
+                        aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                      >
+                        {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
                   </div>
                   <button type="submit" disabled={loading || !newPassword || !confirmPassword} className={`${btnCls} bg-bauhaus-red`}>
                     {loading ? (

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { GoogleLogin } from '@react-oauth/google';
-import { LogIn, AlertCircle, ArrowRight } from 'lucide-react';
+import { LogIn, AlertCircle, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { resolvePostAuthRedirect } from '../services/redirect';
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
@@ -10,6 +10,7 @@ const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [touched, setTouched] = useState({});
   const { login, googleLogin, loading, error, clearError, isAuthenticated } = useAuth();
   const navigate = useNavigate();
@@ -149,16 +150,27 @@ export default function Login() {
                       <Link to="/forgot-password">Forgot password?</Link>
                     </span>
                   </div>
-                  <input
-                    id="login-password"
-                    type="password"
-                    required
-                    value={password}
-                    onChange={clearOnType(setPassword)}
-                    placeholder="Enter your password"
-                    disabled={loading}
-                    className={inputCls}
-                  />
+                  <div className="relative">
+                    <input
+                      id="login-password"
+                      type={showPassword ? 'text' : 'password'}
+                      required
+                      value={password}
+                      onChange={clearOnType(setPassword)}
+                      placeholder="Enter your password"
+                      disabled={loading}
+                      className={`${inputCls} pr-12`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      disabled={loading}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-bauhaus-fg/45 hover:text-bauhaus-fg transition-colors disabled:opacity-40 cursor-pointer"
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
 
                 {/* CTA */}

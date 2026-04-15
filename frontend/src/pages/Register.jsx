@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { GoogleLogin } from '@react-oauth/google';
-import { UserPlus, AlertCircle, ArrowRight, Check, X } from 'lucide-react';
+import { UserPlus, AlertCircle, ArrowRight, Check, X, Eye, EyeOff } from 'lucide-react';
 import { resolvePostAuthRedirect } from '../services/redirect';
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
@@ -26,6 +26,8 @@ export default function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [touched, setTouched] = useState({});
   const [localError, setLocalError] = useState(null);
   const { register, googleLogin, loading, error, clearError, isAuthenticated } = useAuth();
@@ -196,17 +198,28 @@ export default function Register() {
                   <label htmlFor="reg-password" className="block text-[12px] font-bold text-bauhaus-fg/70 uppercase tracking-[0.08em] mb-3">
                     Password
                   </label>
-                  <input
-                    id="reg-password"
-                    type="password"
-                    required
-                    value={password}
-                    onChange={clearOnType(setPassword)}
-                    onBlur={() => setTouched((t) => ({ ...t, password: true }))}
-                    placeholder="Min 6 characters"
-                    disabled={loading}
-                    className={inputCls('password')}
-                  />
+                  <div className="relative">
+                    <input
+                      id="reg-password"
+                      type={showPassword ? 'text' : 'password'}
+                      required
+                      value={password}
+                      onChange={clearOnType(setPassword)}
+                      onBlur={() => setTouched((t) => ({ ...t, password: true }))}
+                      placeholder="Min 6 characters"
+                      disabled={loading}
+                      className={`${inputCls('password')} pr-12`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      disabled={loading}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-bauhaus-fg/45 hover:text-bauhaus-fg transition-colors disabled:opacity-40 cursor-pointer"
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                   {/* Strength meter — flush under input */}
                   {password.length > 0 && (
                     <div className="mt-2 flex items-center gap-2">
@@ -234,15 +247,24 @@ export default function Register() {
                   <div className="relative">
                     <input
                       id="reg-confirm"
-                      type="password"
+                      type={showConfirmPassword ? 'text' : 'password'}
                       required
                       value={confirmPassword}
                       onChange={clearOnType(setConfirmPassword)}
                       onBlur={() => setTouched((t) => ({ ...t, confirm: true }))}
                       placeholder="Re-enter password"
                       disabled={loading}
-                      className={`${inputCls('confirm')} pr-11`}
+                      className={`${inputCls('confirm')} pr-20`}
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword((prev) => !prev)}
+                      disabled={loading}
+                      className="absolute right-10 top-1/2 -translate-y-1/2 text-bauhaus-fg/45 hover:text-bauhaus-fg transition-colors disabled:opacity-40 cursor-pointer"
+                      aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
                     {confirmPassword.length > 0 && (
                       <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none">
                         {valid.confirm

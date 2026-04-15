@@ -24,6 +24,8 @@ import {
   ClipboardList,
   BarChart3,
   X,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { toApiUrl } from '../services/urls';
 
@@ -642,6 +644,8 @@ function Msg({ msg }) {
 }
 
 function PwInput({ label, value, onChange, placeholder, match }) {
+  const [showPassword, setShowPassword] = useState(false);
+
   return (
     <div>
       <label className="text-[10px] font-bold text-bauhaus-fg/35 uppercase tracking-wider block mb-1">
@@ -649,11 +653,11 @@ function PwInput({ label, value, onChange, placeholder, match }) {
       </label>
       <div className="relative">
         <input
-          type="password"
+          type={showPassword ? 'text' : 'password'}
           value={value}
           onChange={onChange}
           placeholder={placeholder}
-          className={`w-full h-10 px-3 border bg-bauhaus-bg text-bauhaus-fg text-sm focus:outline-none focus:border-bauhaus-blue ${
+          className={`w-full h-10 px-3 pr-20 border bg-bauhaus-bg text-bauhaus-fg text-sm focus:outline-none focus:border-bauhaus-blue ${
             match === false
               ? 'border-bauhaus-red'
               : match === true
@@ -661,6 +665,14 @@ function PwInput({ label, value, onChange, placeholder, match }) {
                 : 'border-[#1F2937]/30'
           }`}
         />
+        <button
+          type="button"
+          onClick={() => setShowPassword((prev) => !prev)}
+          className="absolute right-10 top-1/2 -translate-y-1/2 text-bauhaus-fg/45 hover:text-bauhaus-fg transition-colors cursor-pointer"
+          aria-label={showPassword ? 'Hide password' : 'Show password'}
+        >
+          {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+        </button>
         {match !== null && match !== undefined && (
           <span className="absolute right-3 top-1/2 -translate-y-1/2">
             {match ? (
