@@ -13,6 +13,8 @@ export default function ForgotPassword() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [capsLockNewOn, setCapsLockNewOn] = useState(false);
+  const [capsLockConfirmOn, setCapsLockConfirmOn] = useState(false);
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
   const [error, setError] = useState('');
@@ -35,6 +37,10 @@ export default function ForgotPassword() {
     'w-full h-12.5 border-2 border-bauhaus-fg text-white font-bold text-[14px] uppercase tracking-[0.15em] shadow-[4px_4px_0px_0px_#121212] hover:shadow-[2px_2px_0px_0px_#121212] hover:translate-x-0.5 hover:translate-y-0.5 active:shadow-none active:translate-x-1 active:translate-y-1 disabled:opacity-40 disabled:pointer-events-none transition-all duration-150 cursor-pointer';
 
   const sanitizeCode = (value) => value.replace(/\D/g, '').slice(0, 6);
+
+  const handleCapsLock = (setter) => (e) => {
+    setter(e.getModifierState('CapsLock'));
+  };
 
   /* ── Step 1: Request code ── */
   const handleRequestCode = async (e) => {
@@ -365,6 +371,9 @@ export default function ForgotPassword() {
                         minLength={8}
                         value={newPassword}
                         onChange={(e) => { setNewPassword(e.target.value); clearError(); }}
+                        onKeyDown={handleCapsLock(setCapsLockNewOn)}
+                        onKeyUp={handleCapsLock(setCapsLockNewOn)}
+                        onBlur={() => setCapsLockNewOn(false)}
                         placeholder="At least 8 characters"
                         disabled={loading}
                         className={`${inputCls} pr-12`}
@@ -380,6 +389,9 @@ export default function ForgotPassword() {
                         {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                     </div>
+                    {capsLockNewOn && (
+                      <p className="mt-2 text-[11px] font-medium text-[#92400E]">Caps Lock is on</p>
+                    )}
                   </div>
                   <div className="mb-7">
                     <label htmlFor="confirm-password" className="block text-[12px] font-bold text-bauhaus-fg/70 uppercase tracking-[0.08em] mb-3">
@@ -393,6 +405,9 @@ export default function ForgotPassword() {
                         minLength={8}
                         value={confirmPassword}
                         onChange={(e) => { setConfirmPassword(e.target.value); clearError(); }}
+                        onKeyDown={handleCapsLock(setCapsLockConfirmOn)}
+                        onKeyUp={handleCapsLock(setCapsLockConfirmOn)}
+                        onBlur={() => setCapsLockConfirmOn(false)}
                         placeholder="Repeat your password"
                         disabled={loading}
                         className={`${inputCls} pr-12`}
@@ -407,6 +422,9 @@ export default function ForgotPassword() {
                         {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                     </div>
+                    {capsLockConfirmOn && (
+                      <p className="mt-2 text-[11px] font-medium text-[#92400E]">Caps Lock is on</p>
+                    )}
                   </div>
                   <button type="submit" disabled={loading || !newPassword || !confirmPassword} className={`${btnCls} bg-bauhaus-red`}>
                     {loading ? (

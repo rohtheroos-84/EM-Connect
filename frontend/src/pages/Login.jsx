@@ -11,6 +11,7 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [capsLockOn, setCapsLockOn] = useState(false);
   const [touched, setTouched] = useState({});
   const { login, googleLogin, loading, error, clearError, isAuthenticated } = useAuth();
   const navigate = useNavigate();
@@ -49,6 +50,10 @@ export default function Login() {
   const clearOnType = (setter) => (e) => {
     setter(e.target.value);
     if (error) clearError();
+  };
+
+  const handleCapsLock = (e) => {
+    setCapsLockOn(e.getModifierState('CapsLock'));
   };
 
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -157,6 +162,9 @@ export default function Login() {
                       required
                       value={password}
                       onChange={clearOnType(setPassword)}
+                      onKeyDown={handleCapsLock}
+                      onKeyUp={handleCapsLock}
+                      onBlur={() => setCapsLockOn(false)}
                       placeholder="Enter your password"
                       disabled={loading}
                       className={`${inputCls} pr-12`}
@@ -171,6 +179,9 @@ export default function Login() {
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
+                  {capsLockOn && (
+                    <p className="mt-2 text-[11px] font-medium text-[#92400E]">Caps Lock is on</p>
+                  )}
                 </div>
 
                 {/* CTA */}

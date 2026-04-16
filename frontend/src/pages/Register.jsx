@@ -28,6 +28,8 @@ export default function Register() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [capsLockPasswordOn, setCapsLockPasswordOn] = useState(false);
+  const [capsLockConfirmOn, setCapsLockConfirmOn] = useState(false);
   const [touched, setTouched] = useState({});
   const [localError, setLocalError] = useState(null);
   const { register, googleLogin, loading, error, clearError, isAuthenticated } = useAuth();
@@ -78,6 +80,10 @@ export default function Register() {
     setter(e.target.value);
     if (localError) setLocalError(null);
     if (error) clearError();
+  };
+
+  const handleCapsLock = (setter) => (e) => {
+    setter(e.getModifierState('CapsLock'));
   };
 
   const borderFor = (field) => {
@@ -205,7 +211,12 @@ export default function Register() {
                       required
                       value={password}
                       onChange={clearOnType(setPassword)}
-                      onBlur={() => setTouched((t) => ({ ...t, password: true }))}
+                      onKeyDown={handleCapsLock(setCapsLockPasswordOn)}
+                      onKeyUp={handleCapsLock(setCapsLockPasswordOn)}
+                      onBlur={() => {
+                        setTouched((t) => ({ ...t, password: true }));
+                        setCapsLockPasswordOn(false);
+                      }}
                       placeholder="Min 6 characters"
                       disabled={loading}
                       className={`${inputCls('password')} pr-12`}
@@ -220,6 +231,9 @@ export default function Register() {
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
+                  {capsLockPasswordOn && (
+                    <p className="mt-2 text-[11px] font-medium text-[#92400E]">Caps Lock is on</p>
+                  )}
                   {/* Strength meter — flush under input */}
                   {password.length > 0 && (
                     <div className="mt-2 flex items-center gap-2">
@@ -251,7 +265,12 @@ export default function Register() {
                       required
                       value={confirmPassword}
                       onChange={clearOnType(setConfirmPassword)}
-                      onBlur={() => setTouched((t) => ({ ...t, confirm: true }))}
+                      onKeyDown={handleCapsLock(setCapsLockConfirmOn)}
+                      onKeyUp={handleCapsLock(setCapsLockConfirmOn)}
+                      onBlur={() => {
+                        setTouched((t) => ({ ...t, confirm: true }));
+                        setCapsLockConfirmOn(false);
+                      }}
                       placeholder="Re-enter password"
                       disabled={loading}
                       className={`${inputCls('confirm')} pr-20`}
@@ -273,6 +292,9 @@ export default function Register() {
                       </div>
                     )}
                   </div>
+                  {capsLockConfirmOn && (
+                    <p className="mt-2 text-[11px] font-medium text-[#92400E]">Caps Lock is on</p>
+                  )}
                   {touched.confirm && confirmPassword.length > 0 && !valid.confirm && (
                     <p className="mt-2 text-xs text-bauhaus-red font-medium">Passwords do not match</p>
                   )}

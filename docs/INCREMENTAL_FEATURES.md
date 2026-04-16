@@ -195,10 +195,10 @@ Prevent false login/reset failures caused by accidental Caps Lock.
 - Show a subtle inline warning only when Caps Lock is active.
 
 #### Checklist
-- [ ] Add Caps Lock detection on Login password field.
-- [ ] Add Caps Lock detection on Register password fields.
-- [ ] Add Caps Lock detection on Forgot Password reset fields.
-- [ ] Add Caps Lock detection on Profile Change Password fields.
+- [x] Add Caps Lock detection on Login password field.
+- [x] Add Caps Lock detection on Register password fields.
+- [x] Add Caps Lock detection on Forgot Password reset fields.
+- [x] Add Caps Lock detection on Profile Change Password fields.
 
 ### 3) Ticket QR Download Failure Feedback
 

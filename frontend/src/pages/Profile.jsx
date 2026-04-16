@@ -645,6 +645,11 @@ function Msg({ msg }) {
 
 function PwInput({ label, value, onChange, placeholder, match }) {
   const [showPassword, setShowPassword] = useState(false);
+  const [capsLockOn, setCapsLockOn] = useState(false);
+
+  const handleCapsLock = (e) => {
+    setCapsLockOn(e.getModifierState('CapsLock'));
+  };
 
   return (
     <div>
@@ -656,6 +661,9 @@ function PwInput({ label, value, onChange, placeholder, match }) {
           type={showPassword ? 'text' : 'password'}
           value={value}
           onChange={onChange}
+          onKeyDown={handleCapsLock}
+          onKeyUp={handleCapsLock}
+          onBlur={() => setCapsLockOn(false)}
           placeholder={placeholder}
           className={`w-full h-10 px-3 pr-20 border bg-bauhaus-bg text-bauhaus-fg text-sm focus:outline-none focus:border-bauhaus-blue ${
             match === false
@@ -683,6 +691,9 @@ function PwInput({ label, value, onChange, placeholder, match }) {
           </span>
         )}
       </div>
+      {capsLockOn && (
+        <p className="mt-1 text-[10px] font-medium text-[#92400E]">Caps Lock is on</p>
+      )}
     </div>
   );
 }
