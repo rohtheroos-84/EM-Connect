@@ -249,10 +249,10 @@ Avoid redirecting unknown URLs to Login and show a clearer recovery path instead
 - Keep this frontend-only and low-risk.
 
 #### Checklist
-- [ ] Add a `NotFound` page component with clear copy and primary actions.
-- [ ] Update app wildcard route (`*`) to render `NotFound` instead of redirecting to Login.
-- [ ] Add role/auth-aware CTA buttons (guest vs authenticated).
-- [ ] Add a lightweight "go back" action for quick recovery.
+- [x] Add a `NotFound` page component with clear copy and primary actions.
+- [x] Update app wildcard route (`*`) to render `NotFound` instead of redirecting to Login.
+- [x] Add role/auth-aware CTA buttons (guest vs authenticated).
+- [x] Add a lightweight "go back" action for quick recovery.
 
 ## maybe later:
 <!--

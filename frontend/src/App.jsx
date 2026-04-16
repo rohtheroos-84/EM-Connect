@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
@@ -10,6 +10,7 @@ import MyRegistrations from './pages/MyRegistrations';
 import Profile from './pages/Profile';
 import Admin from './pages/Admin';
 import Analytics from './pages/Analytics';
+import NotFound from './pages/NotFound';
 import ProtectedRoute from './components/ProtectedRoute';
 import LiveAnnouncements from './components/LiveAnnouncements';
 
@@ -64,7 +65,7 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-        <Route path="*" element={<Navigate to="/login" replace />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </>
   );
