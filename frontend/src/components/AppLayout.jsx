@@ -22,7 +22,7 @@ const ADMIN_NAV_ITEMS = [
 
 const ABOUT_NAV_ITEM = { to: '/about', label: 'About', icon: Info };
 
-export default function AppLayout({ children }) {
+export default function AppLayout({ children, preserveLoginFrom = true }) {
   const { user, logout, isAuthenticated } = useAuth();
   const { connected } = useWebSocket();
   const navigate = useNavigate();
@@ -171,7 +171,7 @@ export default function AppLayout({ children }) {
             ) : (
               <Link
                 to="/login"
-                state={{ from: `${location.pathname}${location.search}${location.hash}` }}
+                state={preserveLoginFrom ? { from: `${location.pathname}${location.search}${location.hash}` } : undefined}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-bauhaus-blue text-white text-[11px] font-bold uppercase tracking-wider hover:bg-[#0D3399] transition-colors duration-150"
               >
                 <LogIn className="w-3.5 h-3.5" />

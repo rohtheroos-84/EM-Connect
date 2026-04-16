@@ -21,7 +21,7 @@ export default function NotFound() {
   };
 
   return (
-    <AppLayout>
+    <AppLayout preserveLoginFrom={false}>
       <div className="max-w-4xl mx-auto px-6 lg:px-8 py-10">
         <div className="bg-bauhaus-white border-2 border-bauhaus-fg shadow-[5px_5px_0px_0px_#121212] overflow-hidden">
           <div className="h-1 flex">
