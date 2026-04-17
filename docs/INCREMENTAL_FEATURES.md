@@ -221,10 +221,10 @@ Reduce avoidable auth friction caused by whitespace/case inconsistencies.
 - Apply consistently to login/register/forgot-password flows.
 
 #### Checklist
-- [ ] Normalize email on Login submit.
-- [ ] Normalize email on Register submit.
-- [ ] Normalize email on Forgot Password submit.
-- [ ] Normalize email on Resend/Verify reset code paths.
+- [x] Normalize email on Login submit.
+- [x] Normalize email on Register submit.
+- [x] Normalize email on Forgot Password submit.
+- [x] Normalize email on Resend/Verify reset code paths.
 
 ### 5) Unsaved Changes Guard for Event Form Modal
 
