@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { GoogleLogin } from '@react-oauth/google';
 import { LogIn, AlertCircle, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { resolvePostAuthRedirect } from '../services/redirect';
+import { normalizeEmail } from '../services/email';
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
@@ -26,8 +27,10 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const normalizedEmail = normalizeEmail(email);
+    setEmail(normalizedEmail);
     try {
-      await login(email, password);
+      await login(normalizedEmail, password);
       navigate(postAuthRedirect, { replace: true });
     } catch {
       /* error handled by context */
@@ -135,7 +138,10 @@ export default function Login() {
                     required
                     value={email}
                     onChange={clearOnType(setEmail)}
-                    onBlur={() => setTouched((t) => ({ ...t, email: true }))}
+                    onBlur={() => {
+                      setTouched((t) => ({ ...t, email: true }));
+                      setEmail((prev) => normalizeEmail(prev));
+                    }}
                     placeholder="you@example.com"
                     disabled={loading}
                     className={inputCls}

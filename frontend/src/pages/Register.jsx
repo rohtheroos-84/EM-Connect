@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { GoogleLogin } from '@react-oauth/google';
 import { UserPlus, AlertCircle, ArrowRight, Check, X, Eye, EyeOff } from 'lucide-react';
 import { resolvePostAuthRedirect } from '../services/redirect';
+import { normalizeEmail } from '../services/email';
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
@@ -57,8 +58,10 @@ export default function Register() {
     setLocalError(null);
     if (password !== confirmPassword) { setLocalError('Passwords do not match'); return; }
     if (password.length < 6) { setLocalError('Password must be at least 6 characters'); return; }
+    const normalizedEmail = normalizeEmail(email);
+    setEmail(normalizedEmail);
     try {
-      await register(email, password, name);
+      await register(normalizedEmail, password, name);
       navigate(postAuthRedirect, { replace: true });
     } catch { /* context sets error */ }
   };
@@ -189,7 +192,10 @@ export default function Register() {
                     required
                     value={email}
                     onChange={clearOnType(setEmail)}
-                    onBlur={() => setTouched((t) => ({ ...t, email: true }))}
+                    onBlur={() => {
+                      setTouched((t) => ({ ...t, email: true }));
+                      setEmail((prev) => normalizeEmail(prev));
+                    }}
                     placeholder="you@example.com"
                     disabled={loading}
                     className={inputCls('email')}
