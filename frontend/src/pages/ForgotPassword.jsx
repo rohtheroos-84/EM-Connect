@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { KeyRound, Mail, ShieldCheck, Lock, AlertCircle, ArrowLeft, ArrowRight, CheckCircle, Eye, EyeOff } from 'lucide-react';
 import { forgotPassword, verifyResetCode, resetPassword, resendResetCode } from '../services/api';
+import { normalizeEmail } from '../services/email';
 
 const STEPS = { EMAIL: 0, CODE: 1, PASSWORD: 2, DONE: 3 };
 
@@ -45,11 +46,13 @@ export default function ForgotPassword() {
   /* ── Step 1: Request code ── */
   const handleRequestCode = async (e) => {
     e.preventDefault();
+    const normalizedEmail = normalizeEmail(email);
+    setEmail(normalizedEmail);
     setLoading(true);
     setError('');
     setInfoMessage('');
     try {
-      await forgotPassword(email);
+      await forgotPassword(normalizedEmail);
       setStep(STEPS.CODE);
       setResendCooldown(30);
       setInfoMessage('Reset code sent. You can request another code in 30 seconds.');
@@ -66,11 +69,14 @@ export default function ForgotPassword() {
       return;
     }
 
+    const normalizedEmail = normalizeEmail(email);
+    setEmail(normalizedEmail);
+
     setLoading(true);
     setError('');
     setInfoMessage('');
     try {
-      const res = await verifyResetCode(email, value);
+      const res = await verifyResetCode(normalizedEmail, value);
       if (res.valid) {
         setStep(STEPS.PASSWORD);
       } else {
@@ -111,11 +117,14 @@ export default function ForgotPassword() {
   const handleResendCode = async () => {
     if (loading || resending || resendCooldown > 0) return;
 
+    const normalizedEmail = normalizeEmail(email);
+    setEmail(normalizedEmail);
+
     setResending(true);
     setError('');
     setInfoMessage('');
     try {
-      const res = await resendResetCode(email);
+      const res = await resendResetCode(normalizedEmail);
       const cooldown = Number(res?.cooldownSeconds) || 30;
       setResendCooldown(cooldown);
       setInfoMessage(res?.message || 'If an account with that email exists, a reset code has been sent.');
@@ -129,6 +138,8 @@ export default function ForgotPassword() {
   /* ── Step 3: Reset password ── */
   const handleResetPassword = async (e) => {
     e.preventDefault();
+    const normalizedEmail = normalizeEmail(email);
+    setEmail(normalizedEmail);
     if (newPassword !== confirmPassword) {
       setError('Passwords do not match');
       return;
@@ -141,7 +152,7 @@ export default function ForgotPassword() {
     setError('');
     setInfoMessage('');
     try {
-      await resetPassword(email, code, newPassword);
+      await resetPassword(normalizedEmail, code, newPassword);
       setStep(STEPS.DONE);
     } catch (err) {
       setError(err.message || 'Failed to reset password');
@@ -272,13 +283,14 @@ export default function ForgotPassword() {
                       required
                       value={email}
                       onChange={(e) => { setEmail(e.target.value); clearError(); }}
+                      onBlur={() => setEmail((prev) => normalizeEmail(prev))}
                       placeholder="you@example.com"
                       disabled={loading}
                       className={inputCls}
                       autoFocus
                     />
                   </div>
-                  <button type="submit" disabled={loading || !email} className={`${btnCls} bg-bauhaus-blue`}>
+                  <button type="submit" disabled={loading || !email.trim()} className={`${btnCls} bg-bauhaus-blue`}>
                     {loading ? (
                       <span className="flex items-center justify-center gap-2">
                         <span className="bauhaus-spinner" /> Sending…
