@@ -181,10 +181,10 @@ Improve password-manager and browser autofill support across auth and profile fo
 - Use semantic values (`email`, `username`, `current-password`, `new-password`, `one-time-code`) based on form intent.
 
 #### Checklist
-- [ ] Add autocomplete attributes in Login form.
-- [ ] Add autocomplete attributes in Register form.
-- [ ] Add autocomplete attributes in Forgot Password flow.
-- [ ] Add autocomplete attributes in Profile Change Password form.
+- [x] Add autocomplete attributes in Login form.
+- [x] Add autocomplete attributes in Register form.
+- [x] Add autocomplete attributes in Forgot Password flow.
+- [x] Add autocomplete attributes in Profile Change Password form.
 
 ### 2) Caps Lock Warning on Password Inputs
 
