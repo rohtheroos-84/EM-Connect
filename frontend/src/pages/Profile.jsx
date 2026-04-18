@@ -525,12 +525,14 @@ export default function Profile() {
                   value={pwCurrent}
                   onChange={(e) => setPwCurrent(e.target.value)}
                   placeholder="Enter current password"
+                  autoComplete="current-password"
                 />
                 <PwInput
                   label="New Password"
                   value={pwNew}
                   onChange={(e) => setPwNew(e.target.value)}
                   placeholder="Min. 6 characters"
+                  autoComplete="new-password"
                 />
                 <PwInput
                   label="Confirm New Password"
@@ -538,6 +540,7 @@ export default function Profile() {
                   onChange={(e) => setPwConfirm(e.target.value)}
                   placeholder="Re-enter new password"
                   match={pwNew && pwConfirm ? pwNew === pwConfirm : null}
+                  autoComplete="new-password"
                 />
                 {pwMsg && <Msg msg={pwMsg} />}
                 <div className="flex items-center gap-2 pt-1">
@@ -643,7 +646,7 @@ function Msg({ msg }) {
   );
 }
 
-function PwInput({ label, value, onChange, placeholder, match }) {
+function PwInput({ label, value, onChange, placeholder, match, autoComplete }) {
   const [showPassword, setShowPassword] = useState(false);
   const [capsLockOn, setCapsLockOn] = useState(false);
 
@@ -659,6 +662,7 @@ function PwInput({ label, value, onChange, placeholder, match }) {
       <div className="relative">
         <input
           type={showPassword ? 'text' : 'password'}
+          autoComplete={autoComplete}
           value={value}
           onChange={onChange}
           onKeyDown={handleCapsLock}

@@ -280,6 +280,7 @@ export default function ForgotPassword() {
                     <input
                       id="reset-email"
                       type="email"
+                      autoComplete="email"
                       required
                       value={email}
                       onChange={(e) => { setEmail(e.target.value); clearError(); }}
@@ -315,6 +316,7 @@ export default function ForgotPassword() {
                     <input
                       id="reset-code"
                       type="text"
+                      autoComplete="one-time-code"
                       required
                       inputMode="numeric"
                       maxLength={6}
@@ -379,6 +381,7 @@ export default function ForgotPassword() {
                       <input
                         id="new-password"
                         type={showNewPassword ? 'text' : 'password'}
+                        autoComplete="new-password"
                         required
                         minLength={8}
                         value={newPassword}
@@ -413,6 +416,7 @@ export default function ForgotPassword() {
                       <input
                         id="confirm-password"
                         type={showConfirmPassword ? 'text' : 'password'}
+                        autoComplete="new-password"
                         required
                         minLength={8}
                         value={confirmPassword}
