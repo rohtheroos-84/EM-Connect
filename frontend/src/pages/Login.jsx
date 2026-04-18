@@ -135,6 +135,7 @@ export default function Login() {
                   <input
                     id="login-email"
                     type="email"
+                    autoComplete="username"
                     required
                     value={email}
                     onChange={clearOnType(setEmail)}
@@ -165,6 +166,7 @@ export default function Login() {
                     <input
                       id="login-password"
                       type={showPassword ? 'text' : 'password'}
+                      autoComplete="current-password"
                       required
                       value={password}
                       onChange={clearOnType(setPassword)}

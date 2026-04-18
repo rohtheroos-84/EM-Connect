@@ -168,6 +168,7 @@ export default function Register() {
                   <input
                     id="reg-name"
                     type="text"
+                    autoComplete="name"
                     required
                     value={name}
                     onChange={clearOnType(setName)}
@@ -189,6 +190,7 @@ export default function Register() {
                   <input
                     id="reg-email"
                     type="email"
+                    autoComplete="email"
                     required
                     value={email}
                     onChange={clearOnType(setEmail)}
@@ -214,6 +216,7 @@ export default function Register() {
                     <input
                       id="reg-password"
                       type={showPassword ? 'text' : 'password'}
+                      autoComplete="new-password"
                       required
                       value={password}
                       onChange={clearOnType(setPassword)}
@@ -268,6 +271,7 @@ export default function Register() {
                     <input
                       id="reg-confirm"
                       type={showConfirmPassword ? 'text' : 'password'}
+                      autoComplete="new-password"
                       required
                       value={confirmPassword}
                       onChange={clearOnType(setConfirmPassword)}
