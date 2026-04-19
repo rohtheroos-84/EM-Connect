@@ -1,494 +1,352 @@
-# CODE.md — Source Code Documentation
+# CODE.md - Repository Code Guide
 
-This document provides a description of every source code file in the EM-Connect repository, organized by service and package.
+Last updated: 2026-04-19
 
----
+This document maps the EM-Connect repository as it exists now. It covers maintained source code, config, deployment, documentation, and support files. Runtime-generated artifacts such as uploaded avatars/banners and generated ticket QR files are summarized by directory instead of documented one-by-one.
 
-## Table of Contents
+Older docs and the README still reference files like `docs/ARCHITECTURE.md` or `docs/ADMIN.md`. Those files are not currently present in this repo, so this guide documents only files that actually exist.
 
-- [Root Files](#root-files)
-- [Documentation](#documentation)
-- [Services / API (Java — Spring Boot)](#services--api-java--spring-boot)
-  - [Entry Point](#entry-point)
-  - [Configuration](#configuration)
-  - [Controllers](#controllers)
-  - [Services](#services)
-  - [Entities](#entities)
-  - [DTOs (Data Transfer Objects)](#dtos-data-transfer-objects)
-  - [Repositories](#repositories)
-  - [Domain Events](#domain-events)
-  - [Exception Handling](#exception-handling)
-  - [Resources](#resources)
-  - [Database Migrations (Flyway)](#database-migrations-flyway)
-  - [Tests](#tests)
-- [Services / Notification Worker (Go)](#services--notification-worker-go)
-  - [Entry Point](#entry-point-1)
-  - [Config](#config)
-  - [Consumer](#consumer)
-  - [Email](#email)
-  - [Handler](#handler)
-  - [Model](#model)
-  - [Templates](#templates)
-  - [Dependencies](#dependencies)
-- [Services / Ticket Worker (Go)](#services--ticket-worker-go)
-  - [Entry Point](#entry-point-2)
-  - [Config](#config-1)
-  - [Consumer](#consumer-1)
-  - [Handler](#handler-1)
-  - [Model](#model-1)
-  - [QR Code Generation](#qr-code-generation)
-  - [Ticket Service](#ticket-service)
-  - [Dependencies](#dependencies-1)
-- [Services / WebSocket Hub (Go)](#services--websocket-hub-go)
-  - [Entry Point](#entry-point-3)
-  - [Config](#config-2)
-  - [Consumer](#consumer-2)
-  - [Hub](#hub)
-  - [Handler](#handler-2)
-  - [Model](#model-2)
-  - [Test Dashboard](#test-dashboard)
-  - [Dependencies](#dependencies-2)
-- [Frontend (React — Vite)](#frontend-react--vite)
-  - [Root Files](#root-files-1)
-  - [Entry Point & App](#entry-point--app)
-  - [Styling](#styling)
-  - [Context Providers](#context-providers)
-  - [Components](#components)
-  - [Pages](#pages)
-  - [Services](#services-1)
+## Recent Additions Since Earlier CODE.md Versions
 
----
+- New operational docs were added under `docs/`: `DEPLOY.md`, `INCREMENTAL_FEATURES.md`, and `SECURITY_AUDIT.md`.
+- The API gained password-reset resend support, login-activity tracking, a production Dockerfile, a production profile, and migration `V11__create_login_activity_table.sql`.
+- The frontend gained `/about`, a real `NotFound` page, post-auth return-to-intent redirects, email-normalization helpers, deploy-aware API/WebSocket URL helpers, richer event discovery filters, and new registration UX dialogs.
+- The notification worker now handles more than the original registration/event emails: welcome, login-alert, password-changed, check-in, and password-reset-code flows are all wired in.
+- The notification and ticket workers expose lightweight `/health` endpoints for Render web-service deployment, and the WebSocket hub now supports `PORT` as well as `SERVER_PORT`.
+- Deployment files (`frontend/netlify.toml`, `frontend/vercel.json`, `services/api/Dockerfile`) and helper scripts (`might-need-later/run-all.ps1`) are now part of the repo story and belong in this map.
 
 ## Root Files
 
-| File | Description |
-|------|-------------|
-| `docker-compose.yaml` | Defines the local development infrastructure: PostgreSQL 16 database, RabbitMQ 3.13 message broker (with management UI), and MailHog for local SMTP email testing (under `dev` Docker Compose profile). Includes health checks for all services. |
-| `README.md` | Project overview. Describes EM-Connect as a backend-first event management system built with Spring Boot and Golang, covering event creation, registration, ticket generation, and notifications via an event-driven architecture. |
-
----
+| Path | Description |
+| --- | --- |
+| `.env` | Local scratch environment file for manual runs. Useful during development, but not the main source of truth for deployment config. |
+| `.gitignore` | Ignore rules for build outputs, local runtime files, and developer-specific clutter. |
+| `docker-compose.yaml` | Local infrastructure stack: PostgreSQL 16, RabbitMQ 3.13 with management UI, and MailHog under the optional `dev` profile. Includes persistent Docker volumes and health checks. |
+| `README.md` | Project-level overview, live deployment links, architecture summary, local run instructions, and high-level feature inventory. |
 
 ## Documentation
 
-**Path:** `docs/`
+| Path | Description |
+| --- | --- |
+| `docs/API.md` | REST API reference. Helpful, but parts of it lag behind the live code. |
+| `docs/AUTHENTICATION.md` | Auth and security notes for JWT/session flow. |
+| `docs/CODE.md` | This file. Current repo map and code guide. |
+| `docs/CONTEXT.md` | Long-form handoff document for AI/dev onboarding. Useful, but some sections are now older than the code. |
+| `docs/DATABASE.md` | Database schema notes and migration overview. |
+| `docs/DEPLOY.md` | Live deployment runbook for Netlify/Vercel + Render + Neon + CloudAMQP, including required cross-origin/runtime fixes. |
+| `docs/EVENT_STATES.md` | Event lifecycle and valid state-transition rules. |
+| `docs/FUTURE.md` | Roadmap and backlog of future improvements. |
+| `docs/INCREMENTAL_FEATURES.md` | Smaller UX/product improvements tracked separately from the main roadmap. Includes completed items like OTP paste, resend cooldown, login activity, return-to-intent redirect, and Not Found routing. |
+| `docs/NOTES.md` | Development journal and detailed build/debug notes. |
+| `docs/OVERVIEW.md` | Quick orientation doc for the deployed system. |
+| `docs/PLAN.md` | Original staged build/learning plan. |
+| `docs/RABBITMQ_TOPOLOGY_DESIGN.md` | Broker topology, routing keys, queues, and DLQ design. |
+| `docs/SECURITY_AUDIT.md` | Repository-wide security review, findings, and phased remediation plan. |
 
-Reference documentation covering the system's design, API surface, and infrastructure.
+## Support and Archive Files
 
-| File | Description |
-|------|-------------|
-| `docs/PLAN.md` | Phased learning plan for the project. Outlines milestones from Phase 1 (Foundation & Core Setup) through Phase 7+, detailing what to build, what concepts to learn, and acceptance criteria for each phase. |
-| `docs/NOTES.md` | Development journal (~2000 lines). Documents insights, challenges, debugging sessions, and solutions encountered during each phase — including theory explanations, error traces, and fix rationale. |
-| `docs/CODE.md` | This file. Provides a description of every source code file in the EM-Connect repository, organized by service and package. |
-| `docs/OVERVIEW.md` | High-level project overview. Describes what EM-Connect is, its core features (event management, registration, ticketing, notifications), and the technologies used. |
-| `docs/ARCHITECTURE.md` | System architecture documentation. Illustrates the high-level request flow (Client → Spring Boot API → PostgreSQL / RabbitMQ → Go Workers → SMTP), component responsibilities, and how services communicate. |
-| `docs/API.md` | API reference. Documents REST endpoints grouped by resource (Auth, Events, Registrations, Tickets, Admin, Health), including request/response examples, HTTP methods, and required authentication. Note: partially outdated — missing newer endpoints (tickets, profile, OAuth, analytics, admin events). |
-| `docs/AUTHENTICATION.md` | Authentication and security deep dive. Explains the JWT flow (login → token generation → token validation), Spring Security filter chain, role-based access control (USER, ADMIN), and password hashing with BCrypt. Note: does not yet cover Google OAuth. |
-| `docs/DATABASE.md` | Database schema reference. Documents tables (users, events, registrations), their columns, constraints, indexes, and foreign key relationships. Includes Flyway migration overview. Note: does not cover V6/V7 migrations (avatar, OAuth fields). |
-| `docs/EVENT_STATES.md` | Event state machine documentation. Describes the lifecycle states (DRAFT → PUBLISHED → CANCELLED / COMPLETED), valid transitions, and the business rules enforced at each state (e.g., only published events accept registrations). |
-| `docs/ADMIN.md` | Admin panel documentation. Covers the 3-tab admin UI (Overview stats, Event management with full CRUD/state transitions, User management with promote/demote), admin API endpoints, frontend architecture details, and first-admin setup. |
-| `docs/FUTURE.md` | Feature roadmap organized by priority (P0–P3). Tracks completed and planned enhancements: security hardening, hosting, OAuth, check-in system, waitlist, reminders, categories, forgot password, analytics, dark mode, etc. |
-| `docs/RABBITMQ_TOPOLOGY_DESIGN.md` | RabbitMQ topology specification. Defines the exchange (`em.events`, topic), dead-letter exchange (`em.events.dlx`, topic), queues (notification, ticket, websocket), routing keys, and binding patterns. |
-| `docs/CONTEXT.md` | Comprehensive project context document for AI assistants. Contains complete system architecture, all endpoints, database schema, design system details, configuration, and current feature status. Designed to be fed at the start of new AI chat sessions. |
+| Path | Description |
+| --- | --- |
+| `might-need-later/run-all.ps1` | PowerShell helper that launches the API, all Go services, and the frontend in separate windows. Supports `local` vs `prod` profile selection and clears accidental datasource overrides for local runs. |
+| `might-need-later/events.sql` | Saved SQL scratch file from earlier schema/data work. |
+| `might-need-later/events_fixed.sql` | Revised SQL scratch file kept for reference. |
 
----
+## Services / API (`services/api`)
 
-## Services / API (Java — Spring Boot)
+Spring Boot 3.2.2 service responsible for auth, events, registrations, tickets, scheduling, analytics, persistence, and RabbitMQ publishing.
 
-**Path:** `services/api/`
+### Root and Build Files
 
-The API service is a Spring Boot 3.2.2 application that provides RESTful endpoints for user authentication, event management, and event registration. It uses PostgreSQL for persistence, RabbitMQ for publishing domain events, and JWT for stateless authentication.
+| Path | Description |
+| --- | --- |
+| `services/api/Dockerfile` | Multi-stage build: Maven image compiles the jar, Temurin JRE image runs it. Entry point respects Render's `PORT` env var and falls back to `8080`. |
+| `services/api/mvnw` | Unix Maven wrapper script. |
+| `services/api/mvnw.cmd` | Windows Maven wrapper script. |
+| `services/api/pom.xml` | Maven build config. Pulls in Spring Web, Data JPA, Validation, Security, Actuator, AMQP, Flyway, PostgreSQL, and JJWT. |
+| `services/api/avatars/` | Local avatar upload directory. The repo currently contains sample runtime artifacts, but this folder is really application storage. |
+| `services/api/banners/` | Local banner upload directory. Like `avatars/`, this is runtime storage and currently also contains sample artifacts. |
 
-| File | Description |
-|------|-------------|
-| `pom.xml` | Maven build configuration. Declares dependencies on Spring Boot (Web, Security, Data JPA, Validation, AMQP/RabbitMQ, Actuator), PostgreSQL driver, JJWT 0.12.5 for JWT handling, and Flyway for database migrations. |
+### Application and Config
 
-### Entry Point
-
-| File | Description |
-|------|-------------|
-| `src/main/java/com/emconnect/api/ApiApplication.java` | The Spring Boot application main class. Annotated with `@SpringBootApplication` and `@EnableScheduling` (enables the cron-based event reminder scheduler). Sets default timezone to `Asia/Kolkata`. Contains the `main()` method that bootstraps the application. |
-
-### Configuration
-
-| File | Description |
-|------|-------------|
-| `src/main/java/com/emconnect/api/config/SecurityConfig.java` | Spring Security configuration. Disables CSRF (stateless API), sets session management to stateless, defines public endpoints (`/api/auth/**`, `/api/health`, `GET /api/events`), restricts `/api/admin/**` to the ADMIN role, and registers the JWT authentication filter. |
-| `src/main/java/com/emconnect/api/config/JwtAuthenticationFilter.java` | A `OncePerRequestFilter` that intercepts every HTTP request. Extracts the JWT from the `Authorization` header, validates it via `JwtService`, loads the user via `CustomUserDetailsService`, and sets the `SecurityContext` for the request. |
-| `src/main/java/com/emconnect/api/config/RabbitMQConfig.java` | Defines the RabbitMQ topology: topic exchanges (`em.events`, `em.events.dlx`), queues (`notification.queue`, `ticket.queue`, `websocket.queue`, dead-letter queue `em.events.dlq`), and a Jackson-based JSON message converter. Declares 11 routing key constants (`registration.confirmed`, `registration.cancelled`, `registration.checkedin`, `event.published`, `event.cancelled`, `event.updated`, `event.reminder`, `user.registered`, `user.login`, `user.password_changed`, `user.password_reset`) plus 3 wildcard patterns (`registration.*`, `event.*`, `user.*`). Queue bindings: `notification.queue` bound to `registration.*` + `event.*` + `user.*`; `ticket.queue` bound to `registration.confirmed`; `websocket.queue` bound to `registration.*` + `event.*`; `em.events.dlq` bound to `#` (catch-all). |
+| Path | Description |
+| --- | --- |
+| `services/api/src/main/java/com/emconnect/api/ApiApplication.java` | Main Spring Boot entry point. Enables scheduling and sets JVM default timezone to `Asia/Kolkata`. |
+| `services/api/src/main/java/com/emconnect/api/config/SecurityConfig.java` | Spring Security setup: stateless JWT auth, explicit CORS allowlist via `CORS_ALLOWED_ORIGINS`, public endpoint rules, admin URL protection, and filter-chain registration. |
+| `services/api/src/main/java/com/emconnect/api/config/JwtAuthenticationFilter.java` | Reads Bearer tokens, validates them through `JwtService`, loads the user, and seeds the `SecurityContext` for downstream handlers. |
+| `services/api/src/main/java/com/emconnect/api/config/RabbitMQConfig.java` | Declares the topic exchange, DLX, queues, queue bindings, wildcard routing patterns, and JSON message conversion for RabbitMQ. |
 
 ### Controllers
 
-| File | Description |
-|------|-------------|
-| `src/main/java/com/emconnect/api/controller/AuthController.java` | Handles authentication endpoints: `POST /api/auth/register` (creates a new user account), `POST /api/auth/login` (authenticates and returns a JWT token), `POST /api/auth/google` (Google OAuth login/register using ID token), `POST /api/auth/forgot-password` (initiates password reset — generates 6-digit code, emails it via `PasswordResetService`), `POST /api/auth/verify-reset-code` (validates a reset code without consuming it), and `POST /api/auth/reset-password` (completes password reset — validates code, updates password, publishes `UserPasswordChangedEvent`). Validates request bodies. Dependencies: `AuthService`, `PasswordResetService`. |
-| `src/main/java/com/emconnect/api/controller/HealthController.java` | Provides health check endpoints: `GET /api/health` (returns service status, timestamp, and version) and `GET /api/ping` (simple liveness check returning "pong"). |
-| `src/main/java/com/emconnect/api/controller/EventController.java` | Full CRUD for events (15 endpoints). Endpoints: create (`POST /api/events`), get by ID (`GET /api/events/{id}`), list all published (`GET /api/events` — supports `search`, `category`, `tags` query params), update (`PUT /api/events/{id}`), delete (`DELETE /api/events/{id}`), publish (`POST /api/events/{id}/publish`), cancel (`POST /api/events/{id}/cancel`), complete (`POST /api/events/{id}/complete`), get organizer's events (`GET /api/events/my-events`), search (`GET /api/events/search`), get participant count (`GET /api/events/{id}/participants/count` — returns JSON with `eventId`, `eventTitle`, `participantCount`, `capacity`), upload banner (`POST /api/events/{id}/banner` — multipart file upload), serve banner (`GET /api/events/banners/{filename}` — serves banner image, public), list categories (`GET /api/events/categories` — returns all `EventCategory` enum values), and list active categories (`GET /api/events/categories/active` — returns categories with at least one published event). Supports pagination. |
-| `src/main/java/com/emconnect/api/controller/UserController.java` | User profile management endpoints at `/api/users`. `GET /api/users/me` (get profile), `PUT /api/users/me` (update name), `PUT /api/users/me/password` (change password with current password verification), `POST /api/users/me/avatar` (upload avatar image — JPEG/PNG/GIF/WebP, ≤2MB), `GET /api/users/avatars/{filename}` (serve avatar image, public). |
-| `src/main/java/com/emconnect/api/controller/RegistrationController.java` | Manages event registrations. Endpoints: register for an event (`POST /api/registrations/events/{eventId}`), cancel registration (`POST /api/registrations/{id}/cancel`), get current user's registrations (`GET /api/registrations/my-registrations`), get registrations for an event (`GET /api/registrations/events/{eventId}`), check registration status (`GET /api/registrations/events/{eventId}/status`), and validate a ticket (`GET /api/registrations/tickets/{ticketCode}/validate`). |
-| `src/main/java/com/emconnect/api/controller/TicketController.java` | Ticket retrieval and validation endpoints at `/api/tickets`. Endpoints: get all tickets for the authenticated user (`GET /api/tickets/my`), get a single ticket by code (`GET /api/tickets/{code}`), download QR code image as PNG (`GET /api/tickets/{code}/qr`), and validate a ticket for check-in (`POST /api/tickets/{code}/validate`, restricted to ADMIN/ORGANIZER via `@PreAuthorize`). |
-| `src/main/java/com/emconnect/api/controller/AdminController.java` | Admin-only endpoints (requires ADMIN role): `GET /api/admin/users` (list all users), `GET /api/admin/dashboard` (stats: total users, events by status, registrations), `GET /api/admin/events?status=` (all events paginated with optional status filter), `PUT /api/admin/users/{id}/promote` (promote user to ADMIN), `PUT /api/admin/users/{id}/demote` (demote admin to USER), and `GET /api/admin/analytics` (rich analytics dashboard with 10 datasets: registration trends, user growth, popular events, peak hours, day-of-week, status breakdowns, top locations, recent activity). |
-| `src/main/java/com/emconnect/api/controller/UserTestController.java` | Test-only controller at `/api/test/users`. Provides endpoints to create a hardcoded test user and list all users. Intended for development/testing, not production use. |
-| `src/main/java/com/emconnect/api/controller/TestConcurrencyController.java` | Test-only controller at `/api/test/concurrent-register`. Simulates concurrent registration attempts for a given event by firing multiple threads simultaneously. Used to verify pessimistic locking prevents overbooking. Not intended for production. |
+| Path | Description |
+| --- | --- |
+| `services/api/src/main/java/com/emconnect/api/controller/AuthController.java` | Auth endpoints for register, login, Google OAuth, forgot-password, resend-reset-code, verify-reset-code, and final reset. Also captures client IP and sanitized user-agent for login activity. |
+| `services/api/src/main/java/com/emconnect/api/controller/HealthController.java` | Lightweight `/api/health` and `/api/ping` endpoints. |
+| `services/api/src/main/java/com/emconnect/api/controller/EventController.java` | Event CRUD/lifecycle endpoints, organizer event listing, public search with category/tag filters, category listing, participant count, and banner upload/serving. |
+| `services/api/src/main/java/com/emconnect/api/controller/UserController.java` | Current-user profile endpoints, login-activity feed, name update, password change, avatar upload, and avatar serving. |
+| `services/api/src/main/java/com/emconnect/api/controller/RegistrationController.java` | Event registration, cancellation, status lookup, current-user registration listing, single registration lookup, ticket-code lookup, and event-level registration listing. |
+| `services/api/src/main/java/com/emconnect/api/controller/TicketController.java` | Current-user ticket listing, single-ticket lookup, QR image download, and ticket validation/check-in endpoint guarded by method security. |
+| `services/api/src/main/java/com/emconnect/api/controller/AdminController.java` | Admin dashboard stats, all-user listing, admin event listing/filtering, promote/demote actions, and analytics payload assembly for the charts page. |
+| `services/api/src/main/java/com/emconnect/api/controller/UserTestController.java` | Dev/test-only helper controller for creating and listing test users. |
+| `services/api/src/main/java/com/emconnect/api/controller/TestConcurrencyController.java` | Dev/test-only endpoint for hammering registration concurrency and verifying locking behavior. |
 
 ### Services
 
-| File | Description |
-|------|-------------|
-| `src/main/java/com/emconnect/api/service/AuthService.java` | Business logic for authentication. `register()` checks for duplicate emails, hashes the password with BCrypt, saves the user, and generates a JWT. `login()` validates credentials and returns a JWT (blocks OAuth-only users from password login). `googleLogin(credential)` verifies Google ID token via Google's tokeninfo REST endpoint, validates `aud` claim, finds or creates user, links existing accounts, sets `oauthProvider="GOOGLE"`. |
-| `src/main/java/com/emconnect/api/service/JwtService.java` | Handles JWT lifecycle. Generates tokens containing user ID (as subject), email, and role claims using HMAC-SHA256 signing with 24-hour expiration. Provides methods to validate tokens and extract individual claims (`getUserIdFromToken`, `getEmailFromToken`, `getRoleFromToken`). |
-| `src/main/java/com/emconnect/api/service/UserService.java` | User profile management logic. `getProfile(email)` → `UserResponse`. `updateProfile(email, request)` — updates display name. `changePassword(email, request)` — verifies current password, prevents same-password reuse, BCrypt hashes new password. `uploadAvatar(email, file)` — validates file type (JPEG/PNG/GIF/WebP), enforces ≤2MB limit, saves to `avatars/` directory with unique filename `avatar-{userId}-{uuid8}.{ext}`, deletes old avatar. `getAvatarPath(filename)` — path-traversal protection validates filename contains no path separators. |
-| `src/main/java/com/emconnect/api/service/CustomUserDetailsService.java` | Implements Spring Security's `UserDetailsService`. Loads user details by email (username) or by user ID. Converts the application `Role` enum into Spring Security `GrantedAuthority` objects. |
-| `src/main/java/com/emconnect/api/service/EventService.java` | Core event management logic. Creates events in DRAFT status with optional `category` (enum) and `tags` (comma-separated string). Publishes events (validates future start date), cancels and completes events using the `EventStatus` state machine. Supports search by title and filtering by status, category, and tags. Uses pessimistic locking on event reads. Publishes domain events to RabbitMQ on publish, cancel, and update actions. Provides `getParticipantCount(Long eventId)` to query confirmed registration count for live updates. `uploadBanner(Long eventId, MultipartFile file)` — validates file type (JPEG/PNG/GIF/WebP), saves to `banners/` directory with unique filename, updates entity `bannerUrl`, deletes old banner. `serveBanner(String filename)` — path-traversal protection. `getCategories()` returns all `EventCategory` enum values. `getActiveCategories()` returns categories with at least one published event. |
-| `src/main/java/com/emconnect/api/service/RegistrationService.java` | Manages user-to-event registrations. Uses pessimistic locking on the event row to enforce capacity constraints under concurrent access. Validates that the event is published and has available capacity. Generates UUID-based ticket codes. Supports cancellation and re-registration (reactivation of a cancelled registration). Publishes registration domain events to RabbitMQ with `currentParticipants` count for real-time WebSocket broadcasts. |
-| `src/main/java/com/emconnect/api/service/EventPublisher.java` | Publishes all domain events to the RabbitMQ `em.events` exchange. 11 publish methods covering all routing keys: `publishRegistrationConfirmed()` (`registration.confirmed`), `publishRegistrationCancelled()` (`registration.cancelled`), `publishCheckIn()` (`registration.checkedin`), `publishEventPublished()` (`event.published`), `publishEventCancelled()` (`event.cancelled`), `publishEventUpdated()` (`event.updated`), `publishEventReminder()` (`event.reminder`), `publishUserRegistered()` (`user.registered`), `publishUserLogin()` (`user.login`), `publishUserPasswordChanged()` (`user.password_changed`), and `publishPasswordResetRequested()` (`user.password_reset`). Serializes events as JSON. |
-| `src/main/java/com/emconnect/api/service/PasswordResetService.java` | Handles the forgot-password flow. `requestReset(email)` — finds user, invalidates any existing codes, generates a 6-digit alphanumeric code with 15-minute expiry, persists to `password_reset_codes` table, publishes `PasswordResetRequestedEvent` (which triggers the reset code email). `verifyCode(email, code)` — validates the code exists, is not expired, and is not used (read-only check). `resetPassword(email, code, newPassword)` — validates code, BCrypt-hashes the new password, updates user, marks code as used, publishes `UserPasswordChangedEvent` (triggers confirmation email). Dependencies: `UserRepository`, `PasswordResetCodeRepository`, `EventPublisher`, `PasswordEncoder`. |
-| `src/main/java/com/emconnect/api/service/EventReminderScheduler.java` | Scheduled service that sends reminder emails before events. Annotated with `@Scheduled(fixedRate = 900000)` — runs every 15 minutes. Queries upcoming published events, then for each event checks registered users. Sends two types of reminders: 24-hour before (`reminderType = "24H"`) and 1-hour before (`reminderType = "1H"`). Uses `EventReminderRepository` to prevent duplicate reminders (unique constraint on `eventId + registrationId + reminderType`). For each eligible reminder, publishes an `EventReminderEvent` via `EventPublisher` which triggers the notification worker email. |
-| `src/main/java/com/emconnect/api/service/TicketService.java` | Ticket business logic. `getMyTickets()` retrieves all registrations for a user with `Pageable.unpaged()` and maps them to `TicketResponse` DTOs (including a `qrReady` flag based on QR file existence on disk). `getTicketByCode()` enforces ownership/admin/organizer access. `getQRCodeImage()` serves QR PNG files from the configured `ticket.qr.storage-path` via `UrlResource`. `validateTicket()` performs idempotent check-in: sets `checkedInAt` timestamp on first scan, publishes `CheckInEvent`, returns `alreadyUsed` on subsequent scans. Uses `@Transactional` for check-in. |
+| Path | Description |
+| --- | --- |
+| `services/api/src/main/java/com/emconnect/api/service/AuthService.java` | Core auth logic. Handles register/login/Google login, publishes user events, records login activity, trims retained login-activity rows to the latest 100, and links existing email accounts to Google when needed. |
+| `services/api/src/main/java/com/emconnect/api/service/CustomUserDetailsService.java` | Bridge between the app's `User` entity and Spring Security's `UserDetails` lookup model. Supports lookup by email and by user id. |
+| `services/api/src/main/java/com/emconnect/api/service/EventPublisher.java` | RabbitMQ publisher for all domain events: registration confirmed/cancelled/check-in, event published/cancelled/updated/reminder, and user registered/login/password-changed/password-reset. |
+| `services/api/src/main/java/com/emconnect/api/service/EventReminderScheduler.java` | Scheduled reminder service running every 15 minutes. Sends `24H` and `1H` reminder events while deduplicating via the `event_reminders` table. |
+| `services/api/src/main/java/com/emconnect/api/service/EventService.java` | Event business logic: create, update, publish, cancel, complete, organizer ownership checks, category/tag filtering, participant counting, and banner upload/storage. |
+| `services/api/src/main/java/com/emconnect/api/service/JwtService.java` | Generates and parses HS256 JWTs with user id, email, and role claims. |
+| `services/api/src/main/java/com/emconnect/api/service/PasswordResetService.java` | Forgot-password backend: invalidates older codes, generates 6-digit codes, enforces 30-second resend cooldown, verifies codes without consuming them, and completes password resets. |
+| `services/api/src/main/java/com/emconnect/api/service/RegistrationService.java` | Registration workflow with pessimistic locking, capacity enforcement, duplicate-prevention/reactivation, per-status listing, and RabbitMQ event publishing with live participant counts. |
+| `services/api/src/main/java/com/emconnect/api/service/TicketService.java` | Ticket retrieval and check-in logic. Maps registrations to ticket DTOs, checks QR-file existence, serves QR images from disk, and performs idempotent validation/check-in. |
+| `services/api/src/main/java/com/emconnect/api/service/UserService.java` | Profile logic: get/update current user, fetch login history, change password, upload avatars, and safely resolve avatar paths. |
 
-### Entities
+### Entities and Enums
 
-| File | Description |
-|------|-------------|
-| `src/main/java/com/emconnect/api/entity/User.java` | JPA entity mapped to the `users` table. Fields: `id` (auto-generated), `email` (unique), `password` (BCrypt-hashed, **nullable** for OAuth users), `name`, `role` (USER or ADMIN), `avatarUrl` (VARCHAR 500, nullable), `oauthProvider` (VARCHAR 20, nullable — e.g. `"GOOGLE"`), `createdAt`, `updatedAt`. Timestamps are auto-set via `@PrePersist` / `@PreUpdate`. |
-| `src/main/java/com/emconnect/api/entity/Event.java` | JPA entity mapped to the `events` table. Fields: `title`, `description`, `location`, `startDate`, `endDate`, `capacity`, `status` (EventStatus enum), `category` (EventCategory enum, nullable), `tags` (TEXT, comma-separated string), `bannerUrl` (VARCHAR 500, nullable — path to uploaded banner image), `organizer` (many-to-one FK to User), `createdAt`, `updatedAt`. Provides `getTagList()` method to parse the comma-separated tags string into a `List<String>`. |
-| `src/main/java/com/emconnect/api/entity/Registration.java` | JPA entity mapped to the `registrations` table. Has a unique constraint on `(user_id, event_id)`. Fields: `user` (FK), `event` (FK), `status` (RegistrationStatus), `ticketCode` (UUID-based, unique), `registeredAt`, `cancelledAt`, `checkedInAt` (set when ticket is validated/scanned), `createdAt`, `updatedAt`. Includes a `cancel()` method that sets the status and cancelled timestamp. |
-| `src/main/java/com/emconnect/api/entity/EventStatus.java` | Enum defining the event lifecycle state machine: `DRAFT` → `PUBLISHED` → `CANCELLED` or `COMPLETED`. Each state defines allowed transitions, whether it is terminal, publicly visible, editable, and whether it can accept registrations. |
-| `src/main/java/com/emconnect/api/entity/EventCategory.java` | Enum defining event categories: `TECHNOLOGY`, `SOCIAL`, `SPORTS`, `MUSIC`, `EDUCATION`, `BUSINESS`, `HEALTH`, `ART`, `OTHER`. Used for event filtering and browsing. |
-| `src/main/java/com/emconnect/api/entity/RegistrationStatus.java` | Enum with four values: `CONFIRMED`, `CANCELLED`, `ATTENDED`, and `NO_SHOW`. |
-| `src/main/java/com/emconnect/api/entity/Role.java` | Enum with two values: `USER` and `ADMIN`. |
-| `src/main/java/com/emconnect/api/entity/EventReminder.java` | JPA entity mapped to the `event_reminders` table. Fields: `id` (auto-generated), `eventId` (FK to events), `registrationId` (FK to registrations), `reminderType` (VARCHAR — `"24H"` or `"1H"`), `sentAt` (timestamp). Has a unique constraint on `(event_id, registration_id, reminder_type)` to prevent duplicate reminders. Used by `EventReminderScheduler` to track which reminders have been sent. |
-| `src/main/java/com/emconnect/api/entity/PasswordResetCode.java` | JPA entity mapped to the `password_reset_codes` table. Fields: `id` (auto-generated), `userId` (FK to users), `code` (6-character alphanumeric string), `expiresAt` (LocalDateTime — 15 minutes from creation), `used` (boolean, default false), `createdAt`. Indexes: `idx_password_reset_codes_user_id`, `idx_password_reset_codes_lookup` (composite on `user_id`, `code`, `used`). |
+| Path | Description |
+| --- | --- |
+| `services/api/src/main/java/com/emconnect/api/entity/Event.java` | Event aggregate root with organizer relation, category/tags/banner fields, and lifecycle timestamps. |
+| `services/api/src/main/java/com/emconnect/api/entity/EventCategory.java` | Event-category enum used by search filters and admin/event forms. |
+| `services/api/src/main/java/com/emconnect/api/entity/EventReminder.java` | Dedupe record for reminder emails already sent for a registration/event/reminder-type combination. |
+| `services/api/src/main/java/com/emconnect/api/entity/EventStatus.java` | Lifecycle enum (`DRAFT`, `PUBLISHED`, `CANCELLED`, `COMPLETED`) with transition helpers/business rules. |
+| `services/api/src/main/java/com/emconnect/api/entity/LoginActivity.java` | Login audit row storing user, login method, source IP, user-agent summary inputs, and timestamp. |
+| `services/api/src/main/java/com/emconnect/api/entity/PasswordResetCode.java` | Reset-code entity with expiry, used flag, and timestamp metadata. |
+| `services/api/src/main/java/com/emconnect/api/entity/Registration.java` | Registration aggregate containing user/event relations, ticket code, status, cancel/check-in timestamps, and lifecycle helpers. |
+| `services/api/src/main/java/com/emconnect/api/entity/RegistrationStatus.java` | Registration state enum (`CONFIRMED`, `CANCELLED`, `ATTENDED`, `NO_SHOW`). |
+| `services/api/src/main/java/com/emconnect/api/entity/Role.java` | User role enum (`USER`, `ADMIN`). |
+| `services/api/src/main/java/com/emconnect/api/entity/User.java` | User entity with email/password, role, avatar URL, optional OAuth provider, and timestamps. |
 
-### DTOs (Data Transfer Objects)
+### DTOs
 
-| File | Description |
-|------|-------------|
-| `src/main/java/com/emconnect/api/dto/RegisterRequest.java` | Request body for user registration: `email` (@Email), `password` (@Size min 8), and `name` (@Size 2–100). |
-| `src/main/java/com/emconnect/api/dto/LoginRequest.java` | Request body for login: `email` (@Email) and `password` (@NotBlank). |
-| `src/main/java/com/emconnect/api/dto/GoogleTokenRequest.java` | Request body for Google OAuth login: `credential` (@NotBlank) — the Google ID token string. |
-| `src/main/java/com/emconnect/api/dto/AuthResponse.java` | Response for authentication endpoints. Contains a `message`, nested `UserResponse`, and the JWT `token`. |
-| `src/main/java/com/emconnect/api/dto/UserResponse.java` | User details response (password omitted): `id`, `email`, `name`, `role`, `createdAt`, `avatarUrl`, `oauthProvider`. Constructed from `User` entity. |
-| `src/main/java/com/emconnect/api/dto/UpdateProfileRequest.java` | Request body for profile update: `name` (@NotBlank, @Size 2–100). |
-| `src/main/java/com/emconnect/api/dto/ChangePasswordRequest.java` | Request body for password change: `currentPassword` (@NotBlank) and `newPassword` (@Size 6–128). |
-| `src/main/java/com/emconnect/api/dto/CreateEventRequest.java` | Request body for creating an event: `title` (@Size 3–255), `description` (max 5000), `location` (max 255), `startDate` (@Future), `endDate` (@Future), `capacity` (1–100000), `category` (@Size max 50, optional), `tags` (List\<String\>, each tag @Size max 50, optional). |
-| `src/main/java/com/emconnect/api/dto/UpdateEventRequest.java` | Request body for updating an event. All fields are optional to support partial updates. Includes `category` and `tags` alongside the original fields. |
-| `src/main/java/com/emconnect/api/dto/EventResponse.java` | Event response DTO. Includes event details (`id`, `title`, `description`, `location`, `startDate`, `endDate`, `capacity`, `status`, `category`, `tags` as `List<String>`, `bannerUrl`, `createdAt`, `updatedAt`) plus a nested `OrganizerSummary` (id, name, email) for the event organizer. |
-| `src/main/java/com/emconnect/api/dto/RegistrationResponse.java` | Registration response DTO. Includes registration details plus nested `EventSummary` and `UserSummary` objects. |
-| `src/main/java/com/emconnect/api/dto/TicketResponse.java` | Ticket response DTO. Fields: `id`, `ticketCode`, `status`, `registeredAt`, `checkedInAt`, `qrReady` (boolean indicating whether the QR PNG file exists on disk). Contains nested `EventSummary` (id, title, location, dates, status) and `UserSummary` (id, name, email) inner classes. |
-| `src/main/java/com/emconnect/api/dto/TicketValidationResponse.java` | Ticket validation result DTO. Fields: `valid` (boolean), `message`, `ticketCode`, `userName`, `userEmail`, `eventTitle`, `checkedInAt`. Provides static factory methods: `success()`, `alreadyUsed()`, and `invalid()` for clean construction of the three possible validation outcomes. |
-| `src/main/java/com/emconnect/api/dto/ForgotPasswordRequest.java` | Request body for initiating a password reset: `email` (@Email, @NotBlank). |
-| `src/main/java/com/emconnect/api/dto/VerifyResetCodeRequest.java` | Request body for verifying a reset code: `email` (@Email, @NotBlank) and `code` (@NotBlank). |
-| `src/main/java/com/emconnect/api/dto/ResetPasswordRequest.java` | Request body for completing a password reset: `email` (@Email, @NotBlank), `code` (@NotBlank), and `newPassword` (@Size min 8, @NotBlank). |
+| Path | Description |
+| --- | --- |
+| `services/api/src/main/java/com/emconnect/api/dto/AuthResponse.java` | Auth success payload containing message, user snapshot, and JWT token. |
+| `services/api/src/main/java/com/emconnect/api/dto/ChangePasswordRequest.java` | Current/new password request body for the profile password-change flow. |
+| `services/api/src/main/java/com/emconnect/api/dto/CreateEventRequest.java` | Request body for creating events. Includes title, time range, capacity, and optional category/tags. |
+| `services/api/src/main/java/com/emconnect/api/dto/EventResponse.java` | Public/admin event response with organizer summary, category, tag list, and banner URL normalized to an API path. |
+| `services/api/src/main/java/com/emconnect/api/dto/ForgotPasswordRequest.java` | Simple email-only request body used for both request-reset and resend-reset-code flows. |
+| `services/api/src/main/java/com/emconnect/api/dto/GoogleTokenRequest.java` | Request body wrapping the Google credential token. |
+| `services/api/src/main/java/com/emconnect/api/dto/LoginActivityResponse.java` | Profile login-activity item. Converts raw IP + user-agent into a friendlier `source` string such as `Chrome on Windows`. |
+| `services/api/src/main/java/com/emconnect/api/dto/LoginRequest.java` | Email/password login request body. |
+| `services/api/src/main/java/com/emconnect/api/dto/RegisterRequest.java` | User-registration request body. |
+| `services/api/src/main/java/com/emconnect/api/dto/RegistrationResponse.java` | Registration payload with nested event summary and nested user summary. |
+| `services/api/src/main/java/com/emconnect/api/dto/ResetPasswordRequest.java` | Final reset-password body with email, code, and new password. |
+| `services/api/src/main/java/com/emconnect/api/dto/TicketResponse.java` | Ticket summary returned by `/api/tickets/*`, including nested event/user summaries and `qrReady` state. |
+| `services/api/src/main/java/com/emconnect/api/dto/TicketValidationResponse.java` | Structured response for ticket validation/check-in, including success, already-used, and invalid variants. |
+| `services/api/src/main/java/com/emconnect/api/dto/UpdateEventRequest.java` | Editable event fields for update flows. |
+| `services/api/src/main/java/com/emconnect/api/dto/UpdateProfileRequest.java` | Current-user profile update body (name only). |
+| `services/api/src/main/java/com/emconnect/api/dto/UserResponse.java` | Sanitized user snapshot returned to the frontend. Includes `avatarUrl` and `oauthProvider`. |
+| `services/api/src/main/java/com/emconnect/api/dto/VerifyResetCodeRequest.java` | Email + code request body for the intermediate reset-code verification step. |
 
 ### Repositories
 
-| File | Description |
-|------|-------------|
-| `src/main/java/com/emconnect/api/repository/UserRepository.java` | Spring Data JPA repository for `User`. Custom queries: `findByEmail()`, `existsByEmail()`. **Analytics:** `countDailyNewUsers(since)` — native SQL for daily new user counts. |
-| `src/main/java/com/emconnect/api/repository/EventRepository.java` | Spring Data JPA repository for `Event`. Custom queries include: `findByStatus()`, `findByOrganizerId()`, `findByStatusAndStartDateAfter()`, `searchByTitle()` (case-insensitive LIKE), `countByOrganizerId()`, `findByIdWithLock()` (pessimistic write lock via `@Lock(PESSIMISTIC_WRITE)`), and `findUpcomingPublishedEvents()` (published events with future start dates, ordered by date). **Analytics:** `findPopularEvents(limit)`, `findTopLocations(limit)`, `countByStatus(status)` — all native SQL. |
-| `src/main/java/com/emconnect/api/repository/RegistrationRepository.java` | Spring Data JPA repository for `Registration`. Custom queries: `existsByUserIdAndEventId()`, `existsByUserIdAndEventIdAndStatus()`, `findByUserIdAndEventId()`, `findByTicketCode()`, `findByUserId()` (paginated), `findByUserIdAndStatus()`, `findByEventId()`, `findByEventIdAndStatus()`, `countByEventIdAndStatus()`, `countByEventId()`, `countByStatus()`, `findUpcomingRegistrations()` (JPQL). **Analytics:** `countDailyRegistrations(since)`, `countRegistrationsByHour()`, `countRegistrationsByDayOfWeek()`, `findRecentActivity()` — all native SQL. |
-| `src/main/java/com/emconnect/api/repository/PasswordResetCodeRepository.java` | Spring Data JPA repository for `PasswordResetCode`. Custom queries: `findByUserIdAndCodeAndUsedFalse(userId, code)` — looks up a valid (unused) code for a user. `invalidateAllForUser(userId)` — bulk update marks all existing codes as used (called before generating a new code). `deleteExpired(cutoff)` — removes codes older than the cutoff timestamp for cleanup. |
-| `src/main/java/com/emconnect/api/repository/EventReminderRepository.java` | Spring Data JPA repository for `EventReminder`. Custom query: `existsByEventIdAndRegistrationIdAndReminderType(eventId, registrationId, type)` — checks whether a specific reminder has already been sent, preventing duplicates (used by `EventReminderScheduler`). |
+| Path | Description |
+| --- | --- |
+| `services/api/src/main/java/com/emconnect/api/repository/EventReminderRepository.java` | Dedupe lookup for reminder records. |
+| `services/api/src/main/java/com/emconnect/api/repository/EventRepository.java` | Event queries: status filters, organizer listing, public search, category/tag queries, active categories, locking reads, and analytics aggregations. |
+| `services/api/src/main/java/com/emconnect/api/repository/LoginActivityRepository.java` | Login-activity lookup/count helpers used by the profile timeline and retention trimming. |
+| `services/api/src/main/java/com/emconnect/api/repository/PasswordResetCodeRepository.java` | Reset-code lookups, latest-code lookup for resend cooldown, invalidation query, and cleanup query. |
+| `services/api/src/main/java/com/emconnect/api/repository/RegistrationRepository.java` | Registration lookups by user/event/status/ticket plus analytics helpers (daily/hourly/day-of-week trends, recent activity) and reminder scheduler query helpers. |
+| `services/api/src/main/java/com/emconnect/api/repository/UserRepository.java` | User lookup/existence checks and daily new-user aggregation for analytics. |
 
 ### Domain Events
 
-| File | Description |
-|------|-------------|
-| `src/main/java/com/emconnect/api/event/BaseEvent.java` | Abstract base class for all domain events. Contains `eventId` (UUID string), `eventType` (string), and `timestamp` (epoch seconds). Provides static factory methods for creating child event instances. |
-| `src/main/java/com/emconnect/api/event/RegistrationConfirmedEvent.java` | Domain event fired when a user successfully registers for an event. Carries: `registrationId`, `userId`, `userEmail`, `userName`, `eventId`, `eventTitle`, `eventLocation`, `eventStartDate`, `eventEndDate`, `ticketCode`, `currentParticipants` (live confirmed count for WebSocket broadcasts). Provides overloaded `fromRegistration(Registration, long)` factory method. |
-| `src/main/java/com/emconnect/api/event/RegistrationCancelledEvent.java` | Domain event fired when a registration is cancelled. Carries: `registrationId`, `userId`, `userEmail`, `userName`, `eventId`, `eventTitle`, `cancelledAt`, `currentParticipants` (live confirmed count for WebSocket broadcasts). Provides overloaded `fromRegistration(Registration, long)` factory method. |
-| `src/main/java/com/emconnect/api/event/EventPublishedEvent.java` | Domain event fired when an event transitions to PUBLISHED status. Carries: `eventId`, `title`, `description`, `location`, `startDate`, `endDate`, `capacity`, `organizerId`, `organizerName`, `organizerEmail`. |
-| `src/main/java/com/emconnect/api/event/EventCancelledEvent.java` | Domain event fired when an event is cancelled. Carries: `eventId`, `title`, `originalStartDate`, `organizerId`, `organizerEmail`, `affectedRegistrations` (count of impacted registrations). |
-| `src/main/java/com/emconnect/api/event/EventUpdatedEvent.java` | Domain event fired when a published event is updated. Carries all event fields (`eventId`, `title`, `description`, `location`, `startDate`, `endDate`, `capacity`, `status`, `category`, `tags`) plus `registeredCount` (current confirmed registrations) and organizer details. Routing key: `event.updated`. |
-| `src/main/java/com/emconnect/api/event/EventReminderEvent.java` | Domain event fired by the `EventReminderScheduler` before an event starts. Carries: `eventId`, `eventTitle`, `eventLocation`, `userId`, `userEmail`, `userName`, `eventStartDate`, `ticketCode`, `reminderType` (`"24H"` or `"1H"`). Routing key: `event.reminder`. |
-| `src/main/java/com/emconnect/api/event/UserRegisteredEvent.java` | Domain event fired when a new user account is created. Carries: `userId`, `email`, `name`, `oauthProvider`. Routing key: `user.registered`. |
-| `src/main/java/com/emconnect/api/event/UserLoginEvent.java` | Domain event fired on each user login. Carries: `userId`, `email`, `name`, `loginMethod` (e.g. `"PASSWORD"` or `"GOOGLE"`). Routing key: `user.login`. |
-| `src/main/java/com/emconnect/api/event/UserPasswordChangedEvent.java` | Domain event fired when a user changes or resets their password. Carries: `userId`, `email`, `name`. Routing key: `user.password_changed`. |
-| `src/main/java/com/emconnect/api/event/CheckInEvent.java` | Domain event fired when a ticket is validated/scanned for check-in. Carries: `registrationId`, `userId`, `userEmail`, `userName`, `eventId`, `eventTitle`, `eventLocation`, `eventStartDate`, `ticketCode`. Routing key: `registration.checkedin`. |
-| `src/main/java/com/emconnect/api/event/PasswordResetRequestedEvent.java` | Domain event fired when a user requests a password reset. Carries: `userId`, `email`, `name`, `resetCode` (the 6-digit code). Routing key: `user.password_reset`. |
+| Path | Description |
+| --- | --- |
+| `services/api/src/main/java/com/emconnect/api/event/BaseEvent.java` | Common event metadata shared by all RabbitMQ payloads. |
+| `services/api/src/main/java/com/emconnect/api/event/CheckInEvent.java` | Published when a ticket is validated for the first time. |
+| `services/api/src/main/java/com/emconnect/api/event/EventCancelledEvent.java` | Event-cancelled broadcast payload. |
+| `services/api/src/main/java/com/emconnect/api/event/EventPublishedEvent.java` | Event-published broadcast payload. |
+| `services/api/src/main/java/com/emconnect/api/event/EventReminderEvent.java` | Reminder-email payload emitted by the scheduler. |
+| `services/api/src/main/java/com/emconnect/api/event/EventUpdatedEvent.java` | Event-updated broadcast payload. |
+| `services/api/src/main/java/com/emconnect/api/event/PasswordResetRequestedEvent.java` | Password-reset-code email payload. |
+| `services/api/src/main/java/com/emconnect/api/event/RegistrationCancelledEvent.java` | Registration-cancelled payload including current participant count. |
+| `services/api/src/main/java/com/emconnect/api/event/RegistrationConfirmedEvent.java` | Registration-confirmed payload used by ticket generation, notifications, and realtime updates. |
+| `services/api/src/main/java/com/emconnect/api/event/UserLoginEvent.java` | Login-alert payload with auth method. |
+| `services/api/src/main/java/com/emconnect/api/event/UserPasswordChangedEvent.java` | Password-changed email payload. |
+| `services/api/src/main/java/com/emconnect/api/event/UserRegisteredEvent.java` | Welcome-email payload for newly created users. |
 
-### Exception Handling
+### Exceptions
 
-| File | Description |
-|------|-------------|
-| `src/main/java/com/emconnect/api/exception/GlobalExceptionHandler.java` | Centralized `@ControllerAdvice` that handles all exceptions. Maps validation errors, custom business exceptions, access-denied errors, and generic exceptions to structured JSON `ErrorResponse` objects with appropriate HTTP status codes. |
-| `src/main/java/com/emconnect/api/exception/ErrorResponse.java` | Simple DTO for error responses. Contains an HTTP status `code` and a `message` string. |
-| `src/main/java/com/emconnect/api/exception/EmailAlreadyExistsException.java` | Thrown when a user tries to register with an email that already exists. Returns HTTP 409 Conflict. |
-| `src/main/java/com/emconnect/api/exception/InvalidCredentialsException.java` | Thrown when login credentials are invalid. Returns HTTP 401 Unauthorized. |
-| `src/main/java/com/emconnect/api/exception/ResourceNotFoundException.java` | Thrown when a requested entity (user, event, registration) is not found. Returns HTTP 404 Not Found. |
-| `src/main/java/com/emconnect/api/exception/DuplicateRegistrationException.java` | Thrown when a user attempts to register for an event they are already registered for. Returns HTTP 409 Conflict. |
-| `src/main/java/com/emconnect/api/exception/EventNotAvailableException.java` | Thrown when an event cannot accept registrations (e.g., not published, at capacity). Returns HTTP 400 Bad Request. |
-| `src/main/java/com/emconnect/api/exception/InvalidStateTransitionException.java` | Thrown when an invalid state machine transition is attempted on an event (e.g., publishing a cancelled event). Returns HTTP 400 Bad Request. |
+| Path | Description |
+| --- | --- |
+| `services/api/src/main/java/com/emconnect/api/exception/DuplicateRegistrationException.java` | Thrown when a new registration would duplicate an existing active one. |
+| `services/api/src/main/java/com/emconnect/api/exception/EmailAlreadyExistsException.java` | Raised during register flows when the email is already taken. |
+| `services/api/src/main/java/com/emconnect/api/exception/ErrorResponse.java` | Standard error payload wrapper returned by global exception handling. |
+| `services/api/src/main/java/com/emconnect/api/exception/EventNotAvailableException.java` | Raised when an event cannot be registered against due to status/capacity constraints. |
+| `services/api/src/main/java/com/emconnect/api/exception/GlobalExceptionHandler.java` | Maps common exceptions and validation errors to HTTP responses. |
+| `services/api/src/main/java/com/emconnect/api/exception/InvalidCredentialsException.java` | Login/auth failure exception. |
+| `services/api/src/main/java/com/emconnect/api/exception/InvalidStateTransitionException.java` | Used when event lifecycle transitions are not allowed. |
+| `services/api/src/main/java/com/emconnect/api/exception/ResourceNotFoundException.java` | Generic not-found exception. |
 
-### Resources
+### Resources and Migrations
 
-| File | Description |
-|------|-------------|
-| `src/main/resources/application.yml` | Main application configuration. Configures: PostgreSQL datasource connection (with `TimeZone=Asia/Kolkata`), JPA/Hibernate settings (validate mode, SQL logging), Flyway migration paths, RabbitMQ connection details (with publisher confirms), server port (8080), Spring Actuator health endpoints, JWT secret/expiration (24 hours), and ticket QR storage path (`ticket.qr.storage-path` pointing to the ticket-worker's QR output directory). |
-
-### Database Migrations (Flyway)
-
-| File | Description |
-|------|-------------|
-| `src/main/resources/db/migration/V1__initial_schema.sql` | Enables the `uuid-ossp` PostgreSQL extension and creates a `schema_info` table to verify that Flyway migrations are working. |
-| `src/main/resources/db/migration/V2__create_users_table.sql` | Creates the `users` table with columns: `id`, `email` (unique), `password`, `name`, `role` (default USER), `created_at`, `updated_at`. Adds an index on `email`. |
-| `src/main/resources/db/migration/V3__create_admin_user.sql` | Seeds a default admin user (`admin@emconnect.com`) with a BCrypt-hashed password. Uses `ON CONFLICT DO NOTHING` for idempotency. |
-| `src/main/resources/db/migration/V4__create_events_table.sql` | Creates the `events` table with columns: `id`, `title`, `description`, `location`, `start_date`, `end_date`, `capacity`, `status` (default DRAFT), `organizer_id` (FK to `users`), timestamps. Adds indexes on `organizer_id`, `status`, and `start_date`. |
-| `src/main/resources/db/migration/V5__create_registrations_table.sql` | Creates the `registrations` table with columns: `id`, `user_id` (FK), `event_id` (FK), `status` (default CONFIRMED), `ticket_code` (unique), `registered_at`, `cancelled_at`, timestamps. Adds a unique constraint on `(user_id, event_id)` and indexes on `user_id`, `event_id`, `status`, and `ticket_code`. Also adds a `checked_in_at` column via `ALTER TABLE` for tracking ticket validation timestamps. |
-| `src/main/resources/db/migration/V6__add_avatar_to_users.sql` | Adds `avatar_url VARCHAR(500)` column to the `users` table for storing user profile avatar image paths. |
-| `src/main/resources/db/migration/V7__add_oauth_provider_to_users.sql` | Adds `oauth_provider VARCHAR(20)` column to the `users` table (e.g. `'GOOGLE'`), makes `password` column nullable (OAuth users have no password), and adds `idx_users_oauth_provider` index. |
-| `src/main/resources/db/migration/V8__add_category_tags_banner_to_events.sql` | Adds three columns to the `events` table: `category VARCHAR(50)` (nullable, for EventCategory enum), `tags TEXT` (nullable, comma-separated tag string), and `banner_url VARCHAR(500)` (nullable, path to uploaded banner image). |
-| `src/main/resources/db/migration/V9__create_event_reminders_table.sql` | Creates the `event_reminders` table with columns: `id` (auto-generated), `event_id` (FK to events), `registration_id` (FK to registrations), `reminder_type` (VARCHAR — `"24H"` or `"1H"`), `sent_at` (timestamp). Adds a unique constraint on `(event_id, registration_id, reminder_type)` to prevent duplicate reminders. Used by `EventReminderScheduler`. |
-| `src/main/resources/db/migration/V10__create_password_reset_codes_table.sql` | Creates the `password_reset_codes` table with columns: `id` (auto-generated), `user_id` (FK to users), `code` (VARCHAR 6), `expires_at` (timestamp), `used` (boolean, default false), `created_at` (timestamp). Adds indexes: `idx_password_reset_codes_user_id` and `idx_password_reset_codes_lookup` (composite on `user_id`, `code`, `used`). |
+| Path | Description |
+| --- | --- |
+| `services/api/src/main/resources/application.yml` | Local/default runtime config: PostgreSQL, RabbitMQ, Flyway, multipart limits, JWT settings, Google OAuth client id, and ticket QR storage path. |
+| `services/api/src/main/resources/application-prod.yml` | Production-profile override currently wired to the hosted stack. Mirrors the same major settings as `application.yml` but with production endpoints/credentials. |
+| `services/api/src/main/resources/db/migration/V1__initial_schema.sql` | Base schema bootstrap. |
+| `services/api/src/main/resources/db/migration/V2__create_users_table.sql` | Users table creation. |
+| `services/api/src/main/resources/db/migration/V3__create_admin_user.sql` | Seeds the initial admin account. |
+| `services/api/src/main/resources/db/migration/V4__create_events_table.sql` | Events table creation. |
+| `services/api/src/main/resources/db/migration/V5__create_registrations_table.sql` | Registrations table creation, including ticket/check-in-oriented fields. |
+| `services/api/src/main/resources/db/migration/V6__add_avatar_to_users.sql` | Adds avatar support to users. |
+| `services/api/src/main/resources/db/migration/V7__add_oauth_provider_to_users.sql` | Adds `oauth_provider` and supports password-less OAuth users. |
+| `services/api/src/main/resources/db/migration/V8__add_category_tags_banner_to_events.sql` | Adds category, tag, and banner fields for richer event discovery. |
+| `services/api/src/main/resources/db/migration/V9__create_event_reminders_table.sql` | Creates reminder-send tracking table used to prevent duplicate reminder emails. |
+| `services/api/src/main/resources/db/migration/V10__create_password_reset_codes_table.sql` | Adds password reset code storage with expiry and used flags. |
+| `services/api/src/main/resources/db/migration/V11__create_login_activity_table.sql` | Adds login activity timeline storage for profile security visibility. |
 
 ### Tests
 
-| File | Description |
-|------|-------------|
-| `src/test/java/com/emconnect/api/ApiApplicationTests.java` | Empty test class placeholder for the Spring Boot application context load test. |
-| `src/test/java/com/emconnect/api/service/RegistrationConcurrencyTest.java` | Integration test that verifies pessimistic locking prevents event overbooking. Creates an event with limited capacity and fires 15 concurrent registration attempts across threads. Asserts that confirmed registrations never exceed the event capacity. Also tests concurrent cancel-and-re-register scenarios. Requires a running PostgreSQL instance. |
-| `src/test/java/com/emconnect/api/resources/application-test.properties` | Test profile configuration. Overrides datasource URL, enables Flyway with `ddl-auto=none`, configures a test JWT secret with shorter expiration, and enables DEBUG logging for `com.emconnect` and Hibernate SQL. |
-
----
-
-## Services / Notification Worker (Go)
-
-**Path:** `services/notification-worker/`
-
-The notification worker is a Go service that consumes domain events from RabbitMQ and sends templated HTML notification emails via SMTP. It includes retry logic, dead-letter queue support, and graceful shutdown handling.
-
-### Entry Point
-
-| File | Description |
-|------|-------------|
-| `main.go` | Application entry point. Initializes structured logging, loads configuration, creates the email and handler services, establishes a RabbitMQ connection with exponential backoff retry logic, listens for OS signals (`SIGINT`, `SIGTERM`) for graceful shutdown, and starts the message consumer. |
-
-### Config
-
-| File | Description |
-|------|-------------|
-| `config/config.go` | Loads all configuration from environment variables with sensible defaults. Settings include: RabbitMQ connection (URL, exchange `em.events`, queue, routing keys `registration.*`, `event.*`, and `user.*`, consumer tag, prefetch count, DLQ exchange `em.events.dlx`, DLQ queue `notification.dlq`), email settings (SendGrid API key, from address, from name, max retries, retry backoff), and service metadata (name, environment). Provides `getEnv()` and `getEnvInt()` helper functions. |
-
-### Consumer
-
-| File | Description |
-|------|-------------|
-| `consumer/consumer.go` | Manages the RabbitMQ consumer lifecycle. Connects to the AMQP broker, sets QoS prefetch count. Self-declares queue topology: declares the `em.events` topic exchange, declares the consumption queue with `x-dead-letter-exchange` argument pointing to `em.events.dlx`, and binds the queue to `registration.*`, `event.*`, and `user.*` routing keys. Declares the Dead Letter Queue infrastructure (DLX exchange + DLQ queue + binding with `notification.failed` routing key). Consumes messages with manual acknowledgment; on failure, routes messages to the DLQ with error metadata headers (original routing key, error message, original exchange). Provides graceful connection and channel closure. |
-
-### Email
-
-| File | Description |
-|------|-------------|
-| `email/email.go` | Provides email sending capabilities via SendGrid HTTP API (raw HTTP, no SDK). `SendWithRetry(email)` implements retry loop with linear backoff (`attempt × base`). Payload struct `sgMailBody` with Personalizations/From/Subject/Content. Expects HTTP 202 from SendGrid. 15-second HTTP timeout per attempt. |
-
-### Handler
-
-| File | Description |
-|------|-------------|
-| `handler/handler.go` | Routes incoming RabbitMQ messages by `eventType` field. Supports ten event types: `REGISTRATION_CONFIRMED` (confirmation email to user), `REGISTRATION_CANCELLED` (cancellation notice to user), `EVENT_PUBLISHED` (notification to organizer), `EVENT_CANCELLED` (notice to organizer), `EVENT_REMINDER` (upcoming event reminder to user), `USER_REGISTERED` (welcome email), `USER_LOGIN` (login alert / security notification), `USER_PASSWORD_CHANGED` (password change confirmation), `CHECK_IN` (check-in receipt to user), and `PASSWORD_RESET_REQUESTED` (reset code email to user). For each event, it unmarshals the JSON payload into the corresponding Go struct, renders the appropriate HTML email template via `templates.Render()`, and sends the email with retry. Logs with emoji indicators. |
-
-### Model
-
-| File | Description |
-|------|-------------|
-| `model/events.go` | Defines Go structs for all domain events consumed from RabbitMQ. Includes custom JSON unmarshaling for two timestamp formats to handle Java-Go interoperability: `Timestamp` (handles both epoch seconds and RFC 3339 strings) and `LocalDateTime` (handles both Java `LocalDateTime` arrays `[year, month, day, hour, minute, second]` and ISO 8601 strings). 13 structs: `Timestamp`, `LocalDateTime`, `BaseEvent`, `RegistrationConfirmedEvent`, `RegistrationCancelledEvent`, `EventPublishedEvent`, `EventCancelledEvent`, `EventReminderEvent`, `UserRegisteredEvent`, `UserLoginEvent`, `UserPasswordChangedEvent`, `CheckInEvent`, `PasswordResetRequestedEvent`. |
-
-### Templates
-
-| File | Description |
-|------|-------------|
-| `templates/templates.go` | Bauhaus-branded HTML email templates (~900+ lines). Shared layout: `layoutHead` (DOCTYPE, brand bar red/yellow/blue, dark header with "EM-CONNECT" logo, dynamic accent bar) + `layoutFoot` (footer, brand bar). **Ten templates**: `registration_confirmed` (green badge — confirmation with event details and ticket code), `registration_cancelled` (red badge — cancellation notice), `event_published` (blue badge — event published notification to organizer), `event_cancelled` (yellow badge — event cancelled notice), `event_reminder` (yellow badge — upcoming event reminder with countdown), `welcome` (blue badge — welcome email for new users), `login_alert` (red badge — login security notification with timestamp/method), `password_changed` (red badge — password change confirmation), `check_in` (green badge — check-in receipt with event details), `password_reset_code` (red badge — displays 6-digit reset code in large monospace font). All templates use the Bauhaus design system: same color palette (#D02020, #F0C020, #1040C0), blocky layout, brand bar. Uses `TemplateData` struct for dynamic data injection. `init()` pre-compiles all 10 templates at startup. `Render(name, data)` executes template to string. |
-
-### Dependencies
-
-| File | Description |
-|------|-------------|
-| `go.mod` | Go module definition. Declares module path `github.com/emconnect/notification-worker`, requires Go 1.25.0, and depends on `github.com/rabbitmq/amqp091-go v1.10.0` for RabbitMQ AMQP support. |
-| `go.sum` | Go module checksum file. Contains cryptographic hashes for dependency verification (auto-generated, not manually edited). |
-
----
-
-## Services / Ticket Worker (Go)
-
-**Path:** `services/ticket-worker/`
-
-The ticket worker is a Go service that consumes `REGISTRATION_CONFIRMED` events from RabbitMQ and generates signed QR code tickets. It creates HMAC-SHA256–signed payloads embedded in QR code PNG images and saves ticket metadata as JSON files. Includes idempotent ticket generation, retry logic, dead-letter queue support, and graceful shutdown handling.
-
-### Entry Point
-
-| File | Description |
-|------|-------------|
-| `main.go` | Application entry point. Initializes structured logging, loads configuration, creates the QR generator, ticket service, and message handler. Establishes a RabbitMQ connection with exponential backoff retry logic (5 attempts with 2×/4×/8×/16× delays). Listens for OS signals (`SIGINT`, `SIGTERM`) for graceful shutdown, and starts the message consumer. |
-
-### Config
-
-| File | Description |
-|------|-------------|
-| `config/config.go` | Loads all configuration from environment variables with sensible defaults. Three config sections: RabbitMQ (URL, queue `ticket.queue`, consumer tag, prefetch count, DLQ exchange `em.events.dlx`, DLQ queue `ticket.dlq`), Ticket (secret key for HMAC signing, QR output directory, metadata directory, QR image size defaulting to 512px), and Service metadata (name, environment). Provides `getEnv()` and `getEnvInt()` helper functions. |
-
-### Consumer
-
-| File | Description |
-|------|-------------|
-| `consumer/consumer.go` | Manages the RabbitMQ consumer lifecycle. Connects to the AMQP broker, sets QoS prefetch count. Self-declares queue topology: declares the `em.events` topic exchange, declares the `ticket.queue` with `x-dead-letter-exchange` argument pointing to `em.events.dlx`, and binds the queue to the `registration.confirmed` routing key. Declares the Dead Letter Queue infrastructure (DLX topic exchange + `ticket.dlq` queue + binding with `ticket.failed` routing key). Consumes messages with manual acknowledgment; on failure, routes messages to the DLQ with error metadata headers (original routing key, error message, original exchange). Provides graceful connection and channel closure via `Close()`. |
-
-### Handler
-
-| File | Description |
-|------|-------------|
-| `handler/handler.go` | Routes incoming RabbitMQ messages by `eventType` field. Only processes `REGISTRATION_CONFIRMED` events: unmarshals the JSON payload into `RegistrationConfirmedEvent`, logs the event details, and delegates to `ticketService.GenerateTicket()`. Gracefully ignores all other event types (logs and skips). |
-
-### Model
-
-| File | Description |
-|------|-------------|
-| `model/events.go` | Defines Go structs for domain events and ticket data. Includes custom JSON unmarshaling for two timestamp formats to handle Java-Go interoperability: `Timestamp` (handles both epoch seconds and RFC 3339 strings) and `LocalDateTime` (handles both Java `LocalDateTime` arrays `[year, month, day, hour, minute, second]` and ISO 8601 strings). Structs: `BaseEvent`, `RegistrationConfirmedEvent` (with event/user/ticket details), `TicketPayload` (data encoded into QR codes, including HMAC signature), and `TicketMetadata` (stored alongside QR images with ticket status tracking). |
-
-### QR Code Generation
-
-| File | Description |
-|------|-------------|
-| `qr/generator.go` | Handles QR code image generation using `github.com/skip2/go-qrcode`. Creates the output directory on initialization. `GenerateQR()` encodes a string payload into a PNG file with medium error correction (~15% damage recovery), named `{ticketCode}.png`. Also provides `GetQRPath()` for path resolution and `Exists()` for idempotency checks. |
-
-### Ticket Service
-
-| File | Description |
-|------|-------------|
-| `ticket/service.go` | Core ticket generation and signing logic. `GenerateTicket()` is idempotent — checks for existing QR image and metadata file before proceeding. Pipeline: (1) create payload from event data, (2) sign with HMAC-SHA256 using a deterministic string `ticketCode:eventId:userId:eventDate`, (3) marshal to JSON, (4) generate QR code PNG, (5) save ticket metadata as JSON. Also provides `VerifySignature()` for payload validation, `saveMetadata()` / `LoadMetadata()` for JSON file I/O. |
-
-### Dependencies
-
-| File | Description |
-|------|-------------|
-| `go.mod` | Go module definition. Declares module path `github.com/emconnect/ticket-worker`, requires Go 1.25.0, and depends on `github.com/rabbitmq/amqp091-go v1.10.0` for RabbitMQ AMQP support and `github.com/skip2/go-qrcode` for QR code generation. |
-
----
-
-## Services / WebSocket Hub (Go)
-
-**Path:** `services/websocket-hub/`
-
-The WebSocket Hub is a Go service that provides real-time communication between the backend and browser clients. It consumes domain events from RabbitMQ (event published/cancelled, registration confirmed/cancelled) and broadcasts them to connected WebSocket clients based on topic subscriptions. Uses the Hub pattern with per-client read/write goroutine pumps, topic-based routing, and supports live participant count updates.
-
-### Entry Point
-
-| File | Description |
-|------|-------------|
-| `main.go` | Application entry point. Initializes structured logging, loads configuration, creates the Hub and starts it in a goroutine. Creates the message handler and RabbitMQ consumer, connects with exponential backoff retry logic (5 attempts with 2× delays). Registers HTTP routes: `/ws` (WebSocket upgrade), `/health` (JSON health check), `/stats` (live client/topic stats). Serves `test.html` as a static file. Listens for OS signals (`SIGINT`, `SIGTERM`) for graceful shutdown. Starts HTTP server on configured port. |
-
-### Config
-
-| File | Description |
-|------|-------------|
-| `config/config.go` | Loads all configuration from environment variables with sensible defaults. Three config sections: RabbitMQ (URL, exchange `em.events`, queue `websocket.queue`, routing keys for all 4 event types `event.published`, `event.cancelled`, `registration.confirmed`, `registration.cancelled`, consumer tag, prefetch count 10, DLQ exchange `em.events.dlx`, DLQ queue `websocket.dlq`), Server (port, default `8081`), and Service metadata (name, environment). Provides `getEnv()` and `getEnvInt()` helper functions. |
-
-### Consumer
-
-| File | Description |
-|------|-------------|
-| `consumer/consumer.go` | Manages the RabbitMQ consumer lifecycle. Connects to the AMQP broker, sets QoS prefetch count. Self-declares queue topology: declares the `em.events` topic exchange, declares `websocket.queue` with `x-dead-letter-exchange` argument pointing to `em.events.dlx`, and binds the queue to all 4 routing keys (`event.published`, `event.cancelled`, `registration.confirmed`, `registration.cancelled`). Declares Dead Letter Queue infrastructure (DLX topic exchange + `websocket.dlq` queue + binding with `websocket.failed` routing key). Consumes messages with manual acknowledgment; on failure, routes messages to the DLQ with error metadata headers (original routing key, error message, original exchange). Provides graceful connection and channel closure via `Close()`. |
-
-### Hub
-
-| File | Description |
-|------|-------------|
-| `hub/hub.go` | Core Hub implementation using Go channels for thread-safe client management. Maintains a map of active clients and a map of topic subscriptions (`topic -> set of clients`). The `Run()` loop handles three channel operations: `register` (adds client, sends welcome message with client count), `unregister` (removes client from all topics, closes send channel), and `broadcast` (routes messages). Broadcast routing: empty topic = all clients, non-empty topic = only subscribed clients. Handles slow clients by closing their connections when send buffer is full. Provides `Subscribe(client, eventID)` / `Unsubscribe(client, eventID)` with confirmation messages. `Stats()` returns current client count and per-topic subscriber counts. Uses `sync.RWMutex` for topic map access. WebSocket upgrader allows all origins for development. |
-| `hub/client.go` | Represents a single WebSocket connection. Each client has a `send` channel (buffered, 256 messages) and a `subscriptions` map tracking subscribed topics. `ReadPump()` goroutine reads client messages with a 1KB size limit and 60s pong timeout, dispatches to `handleClientMessage()` which routes by `type` field: `subscribe` (adds to topic), `unsubscribe` (removes from topic), `ping` (responds with `pong` + timestamp). `WritePump()` goroutine writes queued messages with 10s write deadline, batches multiple pending messages into a single WebSocket write frame, and sends periodic ping frames every 54s for keepalive. Constants: `writeWait=10s`, `pongWait=60s`, `pingPeriod=54s`, `maxMessageSize=1024`. |
-| `hub/message.go` | Defines all WebSocket message types. Client-to-server: `ClientMessage` (type + raw JSON payload), `SubscribePayload` (eventId). Server-to-client: `ServerMessage` (type + payload interface), `ParticipantCountPayload` (eventId, eventTitle, count, action `registered`/`cancelled`, userName), `EventUpdatePayload` (eventId, eventTitle, eventType `EVENT_PUBLISHED`/`EVENT_CANCELLED`, location, startDate, organizerName, capacity, affectedRegistrations). Internal: `BroadcastMessage` (Topic string + ServerMessage, empty topic = broadcast to all). |
-
-### Handler
-
-| File | Description |
-|------|-------------|
-| `handler/handler.go` | Routes incoming RabbitMQ messages to WebSocket broadcasts by `eventType` field. Supports four event types: `EVENT_PUBLISHED` (broadcasts `event.published` to ALL clients with title, location, start date, organizer name, and capacity), `EVENT_CANCELLED` (broadcasts `event.cancelled` to ALL clients AND topic subscribers with affected registrations count), `REGISTRATION_CONFIRMED` (broadcasts `participant.count` to topic `event:{id}` subscribers with current participant count, action `registered`, and user name), `REGISTRATION_CANCELLED` (broadcasts `participant.count` to topic subscribers with decremented count and action `cancelled`). Logs all operations with emoji indicators and participant counts. |
-
-### Model
-
-| File | Description |
-|------|-------------|
-| `model/events.go` | Defines Go structs for all domain events consumed from RabbitMQ. Includes custom JSON unmarshaling for two timestamp formats to handle Java-Go interoperability: `Timestamp` (handles both epoch seconds and RFC 3339 strings) and `LocalDateTime` (handles both Java `LocalDateTime` arrays `[year, month, day, hour, minute, second]` and ISO 8601 strings). Structs: `BaseEvent` (eventId, eventType, timestamp), `EventPublishedEvent` (title, description, location, dates, capacity, organizer details), `EventCancelledEvent` (title, originalStartDate, organizerEmail, affectedRegistrations), `RegistrationConfirmedEvent` (registration/user/event details, ticketCode, currentParticipants), `RegistrationCancelledEvent` (registration/user details, cancelledAt, currentParticipants). |
-
-### Test Dashboard
-
-| File | Description |
-|------|-------------|
-| `test.html` | Browser-based WebSocket test dashboard served at `http://localhost:8081/test.html`. Features: auto-connect on page load, connection status indicator (green/red/yellow dot with color-coded status bar), exponential backoff reconnection (1s → 2s → 4s → ... → 30s cap with ±20% jitter), automatic re-subscription to all topics after reconnect, topic subscription management (subscribe/unsubscribe with visual tags), live participant count cards (per-event counters that update in real-time showing count + last action), color-coded message log (green for event.published, red for event.cancelled, blue for participant.count, yellow for system messages), ping/pong support, and a 200-message log buffer limit. |
-
-### Dependencies
-
-| File | Description |
-|------|-------------|
-| `go.mod` | Go module definition. Declares module path `github.com/emconnect/websocket-hub`, requires Go 1.25.0, and depends on `github.com/gorilla/websocket v1.5.3` for WebSocket support and `github.com/rabbitmq/amqp091-go v1.10.0` for RabbitMQ AMQP support. |
-
----
-
-## Frontend (React — Vite)
-
-**Stack:** Vite 6.x, React 19, React Router 7, Tailwind CSS 4, Lucide React, Recharts 3.x, @react-oauth/google
-**Design System:** Bauhaus — geometric shapes, thick borders, hard shadows, primary palette (red/blue/yellow/black), Outfit font
-**Dev Server:** Port 3000 with API proxy to `:8080` and WebSocket proxy to `:8081`
-
-### Root Files
-
-| File | Description |
-|------|-------------|
-| `index.html` | Entry HTML file. Links Google Fonts (Outfit, weights 400/500/700/900), mount point `<div id="root">`, loads `src/main.jsx` as ES module. |
-| `package.json` | Project config. Dependencies: `react`, `react-dom`, `react-router-dom`, `lucide-react`, `recharts` (analytics charts), `@react-oauth/google` (Google OAuth). Dev deps: `vite`, `@vitejs/plugin-react`, `tailwindcss`, `@tailwindcss/vite`. Scripts: `dev`, `build`, `preview`. |
-| `vite.config.js` | Vite config with `@vitejs/plugin-react` and `@tailwindcss/vite` plugins. Server runs on port 3000 with dual proxy: `/api` → `http://localhost:8080` (Spring Boot REST API, changeOrigin true), `/ws` → `ws://localhost:8081` (WebSocket Hub, `ws: true`). |
-
-### Entry Point & App
-
-| File | Description |
-|------|-------------|
-| `src/main.jsx` | React 19 root. Mounts `<App />` inside provider hierarchy: `<BrowserRouter>` → `<ThemeProvider>` → `<AuthProvider>` → `<WebSocketProvider>` → `<ToastProvider>`. Conditionally wraps in `<GoogleOAuthProvider>` if `VITE_GOOGLE_CLIENT_ID` env var is set. Imports global CSS (`index.css`). Wrapped in `<React.StrictMode>`. Provider nesting order ensures theme is available to auth, auth is available to WebSocket, and WebSocket events are available to toasts. |
-| `src/App.jsx` | Top-level route definitions using React Router 7 `<Routes>`. Public routes: `/login` → Login, `/register` → Register, `/forgot-password` → ForgotPassword, `/events` → EventList, `/events/:id` → EventDetail. Protected routes (wrapped in `<ProtectedRoute>`): `/dashboard` → Dashboard, `/my-registrations` → MyRegistrations, `/profile` → Profile. Admin-only routes (wrapped in `<ProtectedRoute adminOnly>`): `/admin` → Admin, `/analytics` → Analytics. Catch-all `*` → redirects to `/login`. Renders `<LiveAnnouncements>` globally so WebSocket-driven toast notifications appear on every page. |
-
-### Styling
-
-| File | Description |
-|------|-------------|
-| `src/index.css` | Global styles with Tailwind CSS 4 (`@import "tailwindcss"`). Defines Bauhaus design tokens via `@theme` directive: custom colors (`bauhaus-bg #F0F0F0`, `bauhaus-fg #121212`, `bauhaus-red #D02020`, `bauhaus-blue #1040C0`, `bauhaus-yellow #F0C020`), font family (`outfit`), hard shadows (`bauhaus-sm/md/lg/pressed` — offset-only, no blur). **Dark mode** via `[data-theme='dark']` selector overriding all tokens (bg→`#050816`, fg→`#E5E7EB`, red→`#FF4040`, blue→`#4080FF`, yellow→`#FFD84D`, white→`#1A1A2E`). Includes utility classes for geometric corner decorations (`.bauhaus-corner`), diagonal stripe accents (`.bauhaus-stripe`), Bauhaus-style input focus rings (blue offset shadow), scrollbar styling, a tri-color loading spinner animation (`.bauhaus-spinner`), toast slide-in animation (`.animate-slide-in`), and a live-pulse keyframe (`.animate-live-pulse`) for the WebSocket status indicator. |
+| Path | Description |
+| --- | --- |
+| `services/api/src/test/java/com/emconnect/api/ApiApplicationTests.java` | Basic Spring context smoke test. |
+| `services/api/src/test/java/com/emconnect/api/service/RegistrationConcurrencyTest.java` | Concurrency-focused test around registration locking/capacity behavior. |
+| `services/api/src/test/resources/application-test.properties` | Test profile properties. |
+
+## Services / Notification Worker (`services/notification-worker`)
+
+Go service that consumes RabbitMQ events and sends HTML emails through the SendGrid HTTP API.
+
+| Path | Description |
+| --- | --- |
+| `services/notification-worker/go.mod` | Go module definition for the notification worker. |
+| `services/notification-worker/go.sum` | Locked transitive dependency hashes. |
+| `services/notification-worker/main.go` | Bootstraps config, starts a lightweight `/health` server for hosted deployments, connects to RabbitMQ with retry, and keeps the consumer running with graceful shutdown. |
+| `services/notification-worker/config/config.go` | Env-driven config loader for RabbitMQ, SendGrid sender settings, retry behavior, and service metadata. |
+| `services/notification-worker/consumer/consumer.go` | RabbitMQ consumer implementation with queue declaration, wildcard bindings, manual ACKs, prefetch, and DLQ forwarding on handler failure. |
+| `services/notification-worker/email/email.go` | Raw SendGrid v3 API client with retry/backoff and no SDK dependency. |
+| `services/notification-worker/handler/handler.go` | Event router that handles registration confirmed/cancelled, event published/cancelled/reminder, user registered/login/password-changed, check-in, and password-reset-code events. Also formats dates in a configurable timezone. |
+| `services/notification-worker/model/events.go` | Shared event structs plus custom timestamp unmarshalling helpers that can ingest Java array/string/timestamp formats. |
+| `services/notification-worker/templates/templates.go` | Embedded HTML template registry. Contains Bauhaus-styled templates for registration confirmed/cancelled, event published/cancelled/reminder, welcome, login alert, password changed, check-in, and password reset code emails. |
+
+## Services / Ticket Worker (`services/ticket-worker`)
+
+Go service that consumes `registration.confirmed`, generates signed QR payloads, and saves ticket artifacts to disk.
+
+| Path | Description |
+| --- | --- |
+| `services/ticket-worker/go.mod` | Go module definition for the ticket worker. |
+| `services/ticket-worker/go.sum` | Locked transitive dependency hashes. |
+| `services/ticket-worker/main.go` | Bootstraps config, starts a lightweight `/health` server, builds the QR/ticket services, connects to RabbitMQ with retry, and supervises the consumer loop. |
+| `services/ticket-worker/config/config.go` | Env-driven RabbitMQ and ticket-generation config, including secret key, output directories, and QR size. |
+| `services/ticket-worker/consumer/consumer.go` | Queue consumer that binds only the ticket queue and forwards failed messages to the DLQ exchange. |
+| `services/ticket-worker/handler/handler.go` | Routes incoming messages and only acts on `REGISTRATION_CONFIRMED`. Other event types are ignored. |
+| `services/ticket-worker/model/events.go` | Registration-confirmed event struct plus `TicketPayload` and `TicketMetadata` structs used during QR generation and metadata storage. |
+| `services/ticket-worker/qr/generator.go` | Creates PNG QR codes and exposes helpers to check whether a QR already exists. |
+| `services/ticket-worker/ticket/service.go` | Core ticket pipeline: idempotency checks, payload creation, HMAC-SHA256 signing, QR generation, metadata JSON saving, and signature verification. |
+| `services/ticket-worker/tickets/qr/` | Runtime QR image output directory. The repo currently contains sample generated ticket PNGs. |
+| `services/ticket-worker/tickets/metadata/` | Runtime metadata output directory. The repo currently contains sample generated ticket JSON files. |
+
+## Services / WebSocket Hub (`services/websocket-hub`)
+
+Go service that consumes RabbitMQ updates and fans them out to browser clients over WebSocket.
+
+| Path | Description |
+| --- | --- |
+| `services/websocket-hub/go.mod` | Go module definition for the WebSocket hub. |
+| `services/websocket-hub/go.sum` | Locked transitive dependency hashes. |
+| `services/websocket-hub/main.go` | Loads config, boots the hub loop, starts the RabbitMQ consumer, and exposes `/ws`, `/health`, and `/stats` over HTTP. |
+| `services/websocket-hub/config/config.go` | Env loader for RabbitMQ settings plus server port resolution. Supports `PORT` first, then `SERVER_PORT`, then `8081`. |
+| `services/websocket-hub/consumer/consumer.go` | RabbitMQ consumer with explicit bindings for `event.published`, `event.cancelled`, `registration.confirmed`, and `registration.cancelled`. Includes DLQ handling. |
+| `services/websocket-hub/handler/handler.go` | Converts backend events into frontend-facing socket messages such as `event.published`, `event.cancelled`, and `participant.count`. |
+| `services/websocket-hub/hub/client.go` | Per-connection read/write pump implementation with send buffer, ping/pong handling, topic subscription messages, and slow-client cleanup. |
+| `services/websocket-hub/hub/hub.go` | Central hub that tracks connected clients, topic subscriptions, broadcasting, connection stats, and the actual HTTP upgrade path. |
+| `services/websocket-hub/hub/message.go` | Client/server message contracts, including subscribe/unsubscribe/ping requests and broadcast payload structs. |
+| `services/websocket-hub/model/events.go` | Event structs required by the realtime fan-out layer, plus timestamp conversion helpers. |
+| `services/websocket-hub/test.html` | Browser-based test dashboard for manual socket debugging, subscriptions, reconnect behavior, and log inspection. |
+| `services/websocket-hub/websocket-dashboard-7.2result.png` | Screenshot artifact of the WebSocket dashboard/test tooling. |
+
+## Frontend (`frontend`)
+
+React 19 + Vite 6 + Tailwind CSS 4 client for discovery, auth, registrations, profile, admin, analytics, and realtime UI.
+
+### Root and Platform Files
+
+| Path | Description |
+| --- | --- |
+| `frontend/package.json` | Frontend package manifest. Includes React 19, React Router 7, Lucide, Recharts, and Google OAuth support. |
+| `frontend/package-lock.json` | Locked npm dependency tree. |
+| `frontend/vite.config.js` | Vite dev config. Proxies `/api` to the Spring API and `/ws` to the WebSocket hub during local development. |
+| `frontend/netlify.toml` | Netlify SPA fallback rule that rewrites every route to `index.html`. |
+| `frontend/vercel.json` | Vercel SPA rewrite equivalent. |
+| `frontend/index.html` | Root HTML shell. Loads the Outfit font family from Google Fonts and currently uses `logo-07-three-dots.svg` as the favicon. |
+
+### Public Assets
+
+| Path | Description |
+| --- | --- |
+| `frontend/public/favicon.svg` | Legacy standalone favicon asset. |
+| `frontend/public/favicons/logo-01-monogram.svg` | Alternate logo concept: monogram-based mark. |
+| `frontend/public/favicons/logo-02-connected-nodes.svg` | Alternate logo concept: connected-node motif. |
+| `frontend/public/favicons/logo-03-ticket-badge.svg` | Alternate logo concept: ticket-badge motif. |
+| `frontend/public/favicons/logo-04-shield-em.svg` | Alternate logo concept: shield-styled EM mark. |
+| `frontend/public/favicons/logo-05-grid-stripe.svg` | Alternate logo concept: grid/stripe treatment. |
+| `frontend/public/favicons/logo-06-minimal-mark.svg` | Alternate logo concept: stripped-down minimal mark. |
+| `frontend/public/favicons/logo-07-three-dots.svg` | Current favicon used by `index.html`. Three-dot Bauhaus brand mark. |
+
+### Entry, App Shell, and Styling
+
+| Path | Description |
+| --- | --- |
+| `frontend/src/main.jsx` | Frontend bootstrap. Mounts `BrowserRouter -> ThemeProvider -> AuthProvider -> WebSocketProvider -> ToastProvider -> App`, and conditionally wraps everything in `GoogleOAuthProvider`. |
+| `frontend/src/App.jsx` | Route table for the whole app. Public routes now include `/about`, and the wildcard route renders `NotFound` instead of redirecting to login. |
+| `frontend/src/index.css` | Global Tailwind-backed design tokens, light/dark theme variables, scrollbars, focus treatment, loading/toast animations, and Google Identity button centering. |
 
 ### Context Providers
 
-| File | Description |
-|------|-------------|
-| `src/context/AuthContext.jsx` | Authentication state management via React Context API. Provides `AuthProvider` component and `useAuth()` hook. State: `user` (from localStorage on init), `loading`, `error`. Actions: `login(email, password)` calls API and stores user + token in localStorage, `register(email, password, name)` same flow, `googleLogin(credential)` for Google OAuth, `logout()` clears storage and state, `clearError()` resets error, `refreshUser()` re-fetches profile from API and syncs localStorage. `isAuthenticated` is computed from user presence AND token existence. |
-| `src/context/ThemeContext.jsx` | Theme/dark-mode state management via React Context. Provides `ThemeProvider` and `useTheme()` hook. Storage key: `emconnect-theme`. `getInitialTheme()` checks localStorage, then `prefers-color-scheme`. Sets `document.documentElement.dataset.theme` (`'light'` or `'dark'`). **Force-light on auth pages** (`FORCE_LIGHT_PATHS = ['/login', '/register']`) — ensures Bauhaus brand consistency. Exposes: `theme`, `effectiveTheme` (may differ from `theme` on forced pages), `isDark`, `toggleTheme`. |
-| `src/context/WebSocketContext.jsx` | Persistent WebSocket connection manager via React Context. Provides `WebSocketProvider` and `useWebSocket()` hook. Connects to `/ws` endpoint (proxied to port 8081). Features: auto-reconnect with exponential backoff (1s→30s max), keep-alive pings every 30s, topic subscribe/unsubscribe by `eventId`, typed message listener registry (supports wildcard `*` listener), and automatic re-subscription on reconnect. Uses `useRef` for mutable WS state (socket, timers, listener map, subscription set) to avoid unnecessary re-renders. Exposes `isConnected`, `subscribe(eventId)`, `unsubscribe(eventId)`, `addListener(type, fn)`, `removeListener(type, fn)`. |
-| `src/context/ToastContext.jsx` | Toast notification system via React Context. Provides `ToastProvider` and `useToast()` hook. `addToast({ title, message, type, duration })` creates a toast with auto-dismiss timer (default 6s). Toast UI renders as a fixed overlay in top-right corner with slide-in animation. Supports three color schemes mapped to types: `published` (green accent, Megaphone icon), `cancelled` (red accent, Ban icon), and default `info` (blue accent). Each toast has a close button. Module-level counter ensures unique IDs. `useRef` tracks timers to prevent stale closure issues. |
+| Path | Description |
+| --- | --- |
+| `frontend/src/context/AuthContext.jsx` | Stores the current user from localStorage, wraps login/register/google flows, exposes logout and `refreshUser()`, and reports a computed `isAuthenticated` value. |
+| `frontend/src/context/ThemeContext.jsx` | Theme state manager. Defaults to light mode, persists the chosen theme, and force-locks `/login` and `/register` to light mode. |
+| `frontend/src/context/ToastContext.jsx` | Global toast overlay with auto-dismiss timers and published/cancelled/info styling. |
+| `frontend/src/context/WebSocketContext.jsx` | Persistent socket manager. Uses deploy-aware URL helpers, auto-reconnect with backoff, heartbeat pings, topic subscriptions, wildcard listeners, and reconnect-time resubscription. |
 
 ### Components
 
-| File | Description |
-|------|-------------|
-| `src/components/AppLayout.jsx` | Shared layout shell used by all authenticated and public pages. Top navbar: Bauhaus tri-color brand bar (red/yellow/blue stripe), "EM-Connect" brand, responsive nav links (conditional on auth state — `PUBLIC_NAV`: Events; `AUTH_NAV`: Dashboard, Events, My Registrations, Profile; `ADMIN_NAV_ITEMS`: Analytics, Admin). User email display with admin badge (yellow), `ThemeToggle` button, logout button. Includes a green "LIVE" indicator badge that pulsates when WebSocket is connected. Mobile bottom nav (thumb-friendly). Footer: "EM-Connect © 2026" text + colored accent bar. |
-| `src/components/LiveAnnouncements.jsx` | Headless component (renders `null`) that bridges WebSocket events to toast notifications. Subscribes to `event.published` and `event.cancelled` message types via `useWebSocket().addListener`. When events arrive, fires corresponding toasts via `useToast().addToast` with appropriate titles, messages, and auto-dismiss durations. Cleanup via `removeListener` in `useEffect` return. Decoupled observer pattern — no UI of its own, rendered globally in `App.jsx`. |
-| `src/components/ProtectedRoute.jsx` | Route guard component with optional role enforcement. Props: `children`, `adminOnly` (default false). Uses `useAuth()` — if not authenticated, renders `<Navigate to="/login" replace />`. If `adminOnly` and role is not ADMIN, renders `<Navigate to="/dashboard" replace />`. Otherwise renders `children`. Used in `App.jsx` to wrap protected and admin-only routes. |
-| `src/components/ThemeToggle.jsx` | Minimal Sun/Moon icon toggle button for dark/light mode switching. Uses `useTheme()` hook. Circular button with white border. Single-responsibility component. |
-| `src/components/EventFormModal.jsx` | Reusable modal for event creation and editing. Props: `isOpen`, `onClose`, `onSubmit`, `initialData` (for edit mode), `isEditing` flag. Form fields: title, description (textarea), location, start date, end date, capacity. Validation: required fields, start < end, capacity > 0. Backdrop click-to-close. Date inputs use `datetime-local` type. Bauhaus-styled card with thick border, hard shadow, accent bars. Switches submit button label between "Create Event" / "Save Changes". |
-| `src/components/TicketModal.jsx` | Shared ticket modal overlay used by Dashboard, EventDetail, and MyRegistrations. Displays QR code image, event info, and ticket code. Fetches QR from `/api/tickets/{code}/qr` using authenticated `fetch()` with JWT Bearer token (from `localStorage` `em_token`) → blob → `URL.createObjectURL()`. This approach is necessary because browser `<img>` tags cannot send custom Authorization headers. Features: loading spinner during fetch, error/"QR generating..." fallback, download button (creates a temporary `<a>` element for programmatic PNG save). Backdrop click-to-close with `stopPropagation` on inner card. Green accent bar, event details section, centered QR image, ticket code display. |
+| Path | Description |
+| --- | --- |
+| `frontend/src/components/AppLayout.jsx` | Shared shell with desktop nav, mobile overflow nav, About route link, user dropdown, theme toggle, login CTA, and live socket indicator. |
+| `frontend/src/components/EventFormModal.jsx` | Create/edit event modal with title/description/location/time/capacity/category/tags plus optional banner upload and preview. |
+| `frontend/src/components/LiveAnnouncements.jsx` | Headless bridge from socket messages to toasts for `event.published` and `event.cancelled`. |
+| `frontend/src/components/ProtectedRoute.jsx` | Route guard that preserves the current location for post-login redirection and optionally enforces admin access. |
+| `frontend/src/components/ThemeToggle.jsx` | Small theme switch used in the shared layout. |
+| `frontend/src/components/TicketModal.jsx` | Authenticated QR fetcher modal. Shows event info, ticket code, a QR image when ready, and a PNG download action. |
 
 ### Pages
 
-| File | Description |
-|------|-------------|
-| `src/pages/Login.jsx` | Full-screen Bauhaus-styled login page with split-panel layout. Left panel (desktop): solid blue (`#1040C0`) background with decorative geometric shapes (yellow circle, red square with hard shadow, black circle, white grid lines) and "EM-Connect" branding. Right panel: white card with thick black border and hard shadow (`shadow-[5px_5px_0px_0px_#121212]`), corner decorations (yellow square + red square), icon header (red square with LogIn icon), email/password inputs, red primary submit button with press animation, **Google Login button** (conditional on `VITE_GOOGLE_CLIENT_ID`), error alert bar (red tint with AlertCircle icon), divider, "Forgot Password?" link (navigates to `/forgot-password`), and "Create Account" link button. Bottom: three colored squares (red, blue circle, yellow) as decorative dots. Mobile: hides left panel, shows compact brand header. Clear-on-type pattern clears auth errors as user types. Client-side email regex validation. |
-| `src/pages/ForgotPassword.jsx` | Three-step password reset flow with Bauhaus styling. **Step 1 — Email:** user enters email address, calls `forgotPassword(email)` API → server generates 6-digit code and emails it. **Step 2 — Code Verification:** user enters the 6-digit code received via email, calls `verifyResetCode(email, code)` API → validates without consuming. **Step 3 — New Password:** user enters new password + confirmation, calls `resetPassword(email, code, newPassword)` API → updates password and sends confirmation email. Each step has its own form with validation, loading states, and error handling. Success redirects to `/login` with a message. Back link to login page. Uses the same Bauhaus card design as Login/Register. |
-| `src/pages/Register.jsx` | Full-screen Bauhaus-styled registration page, mirrored layout from Login. Left panel: form side. Right panel (desktop): solid red (`#D02020`) background with blue rectangle, yellow circle, white square, grid lines, and "Join Us" branding. Card: blue corner decorations, blue icon (UserPlus), four fields (name, email, password, confirm password). Password strength meter with `useMemo`-based computation — evaluates length, uppercase, digits, and special chars, displays 4-bar visual indicator (Weak→Fair→Good→Strong with color gradient). `touched` state tracking for field-level validation, password match indicator icons, dynamic border colors. **Google signup button** (conditional). Blue primary submit button. Same Bauhaus card design as Login with reversed brand panel side (right, red). |
-| `src/pages/Dashboard.jsx` | Post-login user dashboard. Welcome header with user name and role badge. Four stat cards (Events, Registrations, Tickets, Live Now) fetched in parallel via `Promise.all` — events count from `searchEvents` totalElements, registrations count from `getMyRegistrations` totalElements, tickets count from `getMyTickets` list length, live-now computed client-side by filtering events where `startDate <= now <= endDate`. Two-column preview section: left shows top 3 published events as linked cards (with status accent bar, location, date/time), right shows top 3 user registrations as cards (with status badge, ticket code, event link, date, cancel QR button for confirmed tickets). QR button opens shared `TicketModal`. Graceful degradation with `.catch(() => defaults)` for each API call. Loading states with spinner indicators. `StatCard` sub-component with colored icon square, value, and subtitle. Status-to-color mapping for accent bars. `en-IN` locale for date/time formatting. |
-| `src/pages/EventList.jsx` | Paginated, searchable event browsing page. Debounced search input (400ms via `useRef` + `setTimeout`) calls `searchEvents(keyword, page, size)`. Displays events in a responsive 3-column grid via `EventCard` sub-component — each card shows status badge, title, description (truncated via `line-clamp-2`), date range, location, and hover effect (`hover:shadow-[3px_3px_0px_0px_#121212]`). Includes loading skeleton placeholders (8 animated cards), empty state message, error state with retry button, and prev/next pagination controls. Status-styled badges with color mapping. |
-| `src/pages/EventDetail.jsx` | Full event detail page loaded via `useParams()` for event ID. Top section: status badge, event title, meta grid with `MetaItem` helper (date, time, location, capacity). Description section. Capacity progress bar with live WebSocket updates — subscribes to `participant.count` events for the specific event, animates bar width transitions. Live activity banner shows "X just registered" when real-time registration events arrive. Registration action section with complex conditional rendering based on auth state × registration state × event state: register button (with loading), cancel button (for confirmed registrations), "Sold Out" indicator, "Event Ended" state, "View Ticket" button (opens shared `TicketModal`). Uses `useWebSocket().subscribe/unsubscribe` with cleanup on unmount. |
-| `src/pages/MyRegistrations.jsx` | Paginated list of user's registrations loaded via `getMyRegistrations(page, size, activeOnly)`. Toggle for active-only filtering (re-fetches from page 0). Each registration rendered via `RegistrationRow` sub-component showing: status badge (colored by status — CONFIRMED, CANCELLED, ATTENDED, NO_SHOW), ticket code (monospace font), event title (linked to event detail), date/location info, and action buttons. Actions: view ticket QR (opens shared `TicketModal`, available for confirmed registrations), download .ics calendar file, Google Calendar link, view event link, cancel registration (inline with loading state, only for confirmed + future events). Prev/next pagination. |
-| `src/pages/Profile.jsx` | User profile page (~576 lines). **Avatar upload** — camera button overlaying circular avatar → hidden file input → FormData POST to `/api/users/me/avatar`. Inline name editing (click to edit → save/cancel buttons). Display: email, role badge (yellow ADMIN / blue USER), member since date. **Registration History Stats** section: total registrations, active, cancelled, tickets counts with MiniStat cards. Color-coded horizontal distribution bar (stacked divs — green confirmed, red cancelled, blue tickets). **Change Password form** with current password, new password, confirm password fields. Password match indicator (Check/X). Account Details section (user ID, account type — Google OAuth or Email). Helper sub-components: `InfoRow`, `MiniStat`, `Msg`, `PwInput`. |
-| `src/pages/Admin.jsx` | Admin panel (~803 lines, largest page). **3-tab layout**: (1) **Overview** tab — platform stats cards (total users, events, registrations, confirmed) + events-by-status breakdown. (2) **Events** tab — full CRUD lifecycle: create event (EventFormModal), edit (draft only, modal pre-filled), publish (DRAFT→PUBLISHED), complete (PUBLISHED→COMPLETED), cancel (to CANCELLED), delete (non-published, with confirmation). Status filter dropdown. Expandable registrations viewer per event. Pagination (15/page). Each event card: status badge, title, location, date, capacity, organizer name. (3) **Users** tab — all users with search (by name, email, role), promote/demote with confirmation dialogs, cannot modify own account. Color-coded top border per role (yellow=admin, blue=user). |
-| `src/pages/Analytics.jsx` | Analytics dashboard (~545 lines, admin-only). Uses **Recharts** extensively. `AnimatedNumber` counter component for stat transitions. Custom `BauhausTooltip` for chart hovers. **4 stat cards**: Events, Registrations, Users, Avg Fill Rate (computed from capacity utilization). **9 visualizations**: (1) 30-Day Registration Trend (AreaChart), (2) Popular Events (horizontal BarChart, top 8), (3) Peak Registration Hours (BarChart with time-based coloring), (4) Event Status (PieChart donut), (5) Registration Status (PieChart donut), (6) Day of Week (BarChart), (7) Capacity Utilization (progress bars per event), (8) Top Locations (horizontal bars), (9) Recent Activity feed (last 10, with relative timestamps). Bauhaus color palette applied to all charts: red, blue, yellow, green, purple, orange, cyan, pink. All data from single `getAnalytics()` API call. |
+| Path | Description |
+| --- | --- |
+| `frontend/src/pages/About.jsx` | Product/about page with architecture blocks, live service links, project links, and founder profile/contact links. |
+| `frontend/src/pages/Admin.jsx` | Admin control panel with three tabs: overview stats, event management (including banner upload and registration viewer), and user search/promote/demote. |
+| `frontend/src/pages/Analytics.jsx` | Admin analytics dashboard using Recharts. Combines trend, status, fill-rate, location, and recent-activity views from a single analytics payload. |
+| `frontend/src/pages/Dashboard.jsx` | Authenticated landing page with headline stats, recent event preview cards, recent registration cards, and quick ticket viewing. |
+| `frontend/src/pages/EventDetail.jsx` | Full event page with live participant counts, live activity banner, schedule-clash check before register, confirmation dialogs, post-register success dialog, copy-ticket-code action, calendar export, and QR modal access. |
+| `frontend/src/pages/EventList.jsx` | Public event browser with debounced search, active-category fetch, quick category pills, tag filter, client-side sort, live seat-count updates on visible cards, and deterministic fallback banners. |
+| `frontend/src/pages/ForgotPassword.jsx` | Three-step reset flow with resend cooldown, OTP paste intelligence, code verification, password reset, email normalization, and Caps Lock indicators on password fields. |
+| `frontend/src/pages/Login.jsx` | Bauhaus login page with email normalization, post-auth return-to-intent redirect, Caps Lock warning, password visibility toggle, and optional Google sign-in. |
+| `frontend/src/pages/MyRegistrations.jsx` | Registration history page with status filter, local search, cancel-confirm dialog, ticket modal, and calendar export actions. Defaults to showing confirmed registrations first. |
+| `frontend/src/pages/NotFound.jsx` | Dedicated 404 page with auth-aware recovery actions (`Dashboard`, `Admin`, `Events`, `Login`, `Register`) and a `Go Back` fallback. |
+| `frontend/src/pages/Profile.jsx` | User profile page with inline name editing, avatar upload, registration history stats, login activity timeline, and change-password form. |
+| `frontend/src/pages/Register.jsx` | Bauhaus sign-up page with password strength meter, email normalization, post-auth return-to-intent redirect, Caps Lock indicators, and optional Google sign-up. |
 
-### Services
+### Frontend Services
 
-| File | Description |
-|------|-------------|
-| `src/services/api.js` | Central HTTP client layer (~300 lines). Core `request(path, options)` function wraps `fetch()` with automatic JWT injection (from `localStorage` `em_token`), JSON content-type header, 401 auto-redirect (clears token, redirects to `/login` only if token existed), structured error message extraction, and 204/content-type handling. **Auth functions:** `login(email, password)` → POST `/api/auth/login` (stores token + user), `register(email, password, name)` → POST `/api/auth/register`, `googleLogin(credential)` → POST `/api/auth/google`, `forgotPassword(email)` → POST `/api/auth/forgot-password`, `verifyResetCode(email, code)` → POST `/api/auth/verify-reset-code`, `resetPassword(email, code, newPassword)` → POST `/api/auth/reset-password`, `logout()` clears storage, `getStoredUser()` / `getToken()` / `isAuthenticated()` read from localStorage. **Event functions:** `getEvents(page, size)`, `getEvent(id)`, `searchEvents(keyword, page, size, category, tags)`, `getMyEvents()`, `createEvent(data)`, `updateEvent(id, data)`, `deleteEvent(id)`, `publishEvent(id)`, `cancelEvent(id)`, `completeEvent(id)`, `uploadBanner(eventId, file)`, `getBanner(eventId)`, `getCategories()`, `getActiveCategories()`. **Registration functions:** `registerForEvent(eventId)`, `cancelRegistration(id)`, `getMyRegistrations(page, size, activeOnly)`, `getRegistration(id)`, `getRegistrationByTicket(code)`, `getEventRegistrationStatus(eventId)`, `getEventRegistrations(eventId, page, size)`. **Ticket functions:** `getMyTickets()` → GET `/api/tickets/my`. **Profile functions:** `getCurrentUser()`, `updateProfile(data)`, `changePassword(data)`, `uploadAvatar(file)` (FormData multipart without Content-Type header — browser sets boundary). **Admin functions:** `getAdminDashboard()`, `getAnalytics()`, `getAllUsers()`, `promoteUser(id)`, `demoteUser(id)`, `getAdminEvents(page, size, status)`. **Generic CRUD:** `api.get/post/put/delete` for ad-hoc requests. |
-| `src/services/calendar.js` | Calendar export utility module (pure functions, no API calls). `generateICS(event)` → returns standard iCalendar `.ics` file content string with `VEVENT` block (UID, DTSTART, DTEND, SUMMARY, DESCRIPTION, LOCATION). `downloadICS(event)` → triggers browser download by creating a Blob, object URL, and temporary `<a>` element click. `getGoogleCalendarUrl(event)` → returns Google Calendar "Add Event" public URL (no API key required). Helpers: `toICSDate()` (ISO to `YYYYMMDDTHHmmssZ`), `escICS()` (escape special chars), `toGCalDate()`. |
-| `src/services/bauhausBanner.js` | SVG banner generator in Bauhaus style for events without uploaded banners. Generates deterministic geometric compositions using the event title as a seed (ensures the same event always gets the same banner). Uses the Bauhaus color palette: red (`#D02020`), yellow (`#F0C020`), blue (`#1040C0`). Renders geometric shapes (rectangles, circles, triangles) as inline SVG data URIs. Exported as a fallback for `EventCard` and `EventDetail` components when `bannerUrl` is null. |
+| Path | Description |
+| --- | --- |
+| `frontend/src/services/api.js` | Central fetch wrapper plus exported helpers for auth, events, registrations, tickets, profile, admin, analytics, avatar/banner upload, and session-expiry handling. |
+| `frontend/src/services/bauhausBanner.js` | Deterministic SVG banner generator used when events have no uploaded banner. |
+| `frontend/src/services/calendar.js` | Browser-side `.ics` generation and Google Calendar deep-link creation. |
+| `frontend/src/services/email.js` | Tiny email normalization helper used across auth/reset flows. |
+| `frontend/src/services/redirect.js` | Safe redirect helper for return-to-intent auth flows. Rejects invalid, root-only, auth-route, or external targets. |
+| `frontend/src/services/urls.js` | API and WebSocket URL helpers that make local proxy mode and split-origin deployments work cleanly. |
 
+## Notes on Runtime Artifacts
+
+- Uploaded banners and avatars currently live on local disk under `services/api/banners/` and `services/api/avatars/`.
+- Ticket QR images and JSON metadata live under `services/ticket-worker/tickets/`.
+- Sample runtime files are present in the repo today, but those directories should still be thought of as generated/storage paths rather than hand-maintained source code.
