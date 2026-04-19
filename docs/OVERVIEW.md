@@ -1,8 +1,10 @@
 # EM-Connect - Overview
 
-EM-Connect is an event management platform built with a Spring Boot API, Go background processors, and a React frontend connected through RabbitMQ events.
+Last updated: 2026-04-19
 
-This document is the quick orientation guide. For setup and runbook details, see [../README.md](../README.md) and [DEPLOY.md](DEPLOY.md).
+EM-Connect is a multi-service event management platform built around a Spring Boot API, three Go services, RabbitMQ domain events, and a React frontend.
+
+Use this as the quick orientation doc. For a file-by-file repo map, see [CODE.md](CODE.md). For local setup and deployment details, see [../README.md](../README.md) and [DEPLOY.md](DEPLOY.md).
 
 ## Current Deployment
 
@@ -11,59 +13,57 @@ This document is the quick orientation guide. For setup and runbook details, see
 - API health: https://em-connect-backend-api.onrender.com/actuator/health
 - WebSocket hub: https://em-connect-websocket-hub.onrender.com
 - WebSocket health: https://em-connect-websocket-hub.onrender.com/health
-- Notification service health: https://em-connect-notification-worker.onrender.com/health
-- Ticket service health: https://em-connect-ticket-worker.onrender.com/health
-- Uptime dashboard (public): https://stats.uptimerobot.com/v6aGZHL957
+- Notification worker health: https://em-connect-notification-worker.onrender.com/health
+- Ticket worker health: https://em-connect-ticket-worker.onrender.com/health
+- Uptime dashboard: https://stats.uptimerobot.com/v6aGZHL957
 
-## System Summary
+## What The System Does
 
-Core capabilities:
-- JWT and Google OAuth authentication
-- Event CRUD and lifecycle transitions (draft/published/cancelled/completed)
-- Concurrency-safe registrations
-- Asynchronous ticket generation and notification delivery
-- Real-time websocket announcements and participant updates
-- Profile management and admin analytics
+- Auth: email/password login, Google OAuth, forgot-password verification codes, login activity tracking
+- Events: create, edit, publish, cancel, complete, categorize, tag, and upload banners
+- Registrations: concurrency-safe registration, cancellation, ticket-code lookups, registration history
+- Tickets: async QR generation, authenticated QR download, validation/check-in flow
+- Notifications: registration, event, reminder, welcome, login alert, password-reset, password-change, and check-in emails
+- Realtime UX: WebSocket participant-count updates and live event announcements
+- Admin and analytics: dashboard, user promotion/demotion, event oversight, charts and reporting
 
-Core runtime components:
-- Spring Boot API (Java 17)
-- PostgreSQL 16
-- RabbitMQ 3.13 topic exchange and DLQ
-- Go services: notification-worker, ticket-worker, websocket-hub
-- React 19 + Vite 6 frontend
+## Runtime Shape
 
-## Architecture at a Glance
+1. The React app calls the Spring API for auth, event, registration, profile, admin, and ticket flows.
+2. The API persists state in PostgreSQL and publishes domain events to RabbitMQ.
+3. The notification worker consumes mail-related events and sends SendGrid email.
+4. The ticket worker consumes registration confirmations and writes QR/metadata files.
+5. The WebSocket hub consumes registration and event broadcasts and pushes live updates to browsers.
 
-1. Frontend calls API for CRUD/auth flows.
-2. API writes domain state to PostgreSQL.
-3. API publishes domain events to RabbitMQ.
-4. Go services consume events:
-   - Notification worker sends emails via SendGrid.
-   - Ticket worker generates ticket QR assets/metadata.
-   - WebSocket hub broadcasts live updates to clients.
+## Production Notes
 
-## Important Free-Tier Behavior
-
-On Render free tier, notification and ticket processors are deployed as web services (not native background workers) and can sleep after inactivity. They expose /health for port binding and wake-up behavior.
-
-Current keep-alive setup:
-- UptimeRobot is active with 4 HTTP monitors (API, websocket, notification worker, ticket worker).
-- Polling interval is 5 minutes.
-- Public status page: https://stats.uptimerobot.com/v6aGZHL957
+- The app is deployed across Netlify/Vercel, Render, Neon, and CloudAMQP.
+- On Render free tier, the notification and ticket workers run as web services with lightweight `/health` endpoints so they can stay routable.
+- UptimeRobot pings all four Render services every 5 minutes to reduce cold-start pain.
+- Avatar, banner, and ticket QR assets are still file-backed. That works for the current deployment, but durable shared object storage is still a future hardening task.
 
 ## Admin Bootstrap
 
-Flyway seeds a default admin account in migration V3:
-- Email: admin@emconnect.com
-- Password: password123
+Flyway seeds a default admin in migration `V3__create_admin_user.sql`:
 
-If missing, promote an existing user in PostgreSQL by setting role = 'ADMIN'.
+- Email: `admin@emconnect.com`
+- Password: `password123`
 
-## Documentation Map
+If you do not want to use the seeded admin, promote an existing user in PostgreSQL by setting `role = 'ADMIN'`.
 
-- [API.md](API.md): endpoint reference
-- [AUTHENTICATION.md](AUTHENTICATION.md): auth, JWT, roles, CORS
-- [DATABASE.md](DATABASE.md): schema and migrations
+## Active Docs
+
+- [CODE.md](CODE.md): current repo and file guide
+- [API.md](API.md): active endpoint reference
+- [AUTHENTICATION.md](AUTHENTICATION.md): auth model, JWT, password reset, CORS, auth caveats
+- [DATABASE.md](DATABASE.md): schema, migrations, enums, and operational notes
 - [EVENT_STATES.md](EVENT_STATES.md): event lifecycle rules
-- [RABBITMQ_TOPOLOGY_DESIGN.md](RABBITMQ_TOPOLOGY_DESIGN.md): exchange/queue topology
-- [DEPLOY.md](DEPLOY.md): production runbook (do not alter historical decisions)
+- [RABBITMQ_TOPOLOGY_DESIGN.md](RABBITMQ_TOPOLOGY_DESIGN.md): exchange, queues, bindings, and DLQ
+- [DEPLOY.md](DEPLOY.md): deployment runbook
+- [SECURITY_AUDIT.md](SECURITY_AUDIT.md): security findings and follow-up
+- [INCREMENTAL_FEATURES.md](INCREMENTAL_FEATURES.md): smaller shipped and pending UX improvements
+- [FUTURE.md](FUTURE.md): forward-looking roadmap
+
+## Archived Docs
+
+Historical docs that are still kept but no longer part of the active reference set now live in [archive/README.md](archive/README.md).

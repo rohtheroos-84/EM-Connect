@@ -1,185 +1,68 @@
-# EM-Connect – Future Enhancements Roadmap
+# EM-Connect - Future Roadmap
 
-Organized by priority (P0 = Critical, P1 = High, P2 = Medium, P3 = Nice to Have)
+Last updated: 2026-04-19
 
----
+This roadmap keeps only the still-relevant forward work. Completed historical build phases live better in the archived planning docs and in the active repo docs.
 
-## 🔴 P0 – Security & Stability (Highest Priority)
+Priority scale:
 
-- [x] Security Hardening  
-  - [x] Audit and fix all reported vulnerabilities  
-  - [x] Review authentication, JWT handling, and role enforcement  
-  - [x] Validate input sanitization across all endpoints  
-  - [x] Add security headers (CSP, HSTS, etc.)  
+- `P0`: security or correctness work
+- `P1`: production hardening
+- `P2`: major product capabilities
+- `P3`: quality-of-life and polish
 
-<!-- - [ ] Rate Limiting & Abuse Prevention  
-  - [ ] Apply rate limiting on auth endpoints  
-  - [ ] Apply rate limiting on registration endpoints  
-  - [ ] Protect against brute force attacks   -->
+## P0 - Security And Correctness
 
-<!-- - [ ] Prevent Double UI Loading / Duplicate Requests  
-  - [ ] Disable buttons during API calls  
-  - [ ] Add idempotency protection for critical actions  
-  - [ ] Prevent duplicate registration submissions   -->
+- [ ] Add rate limiting for auth and registration endpoints
+- [ ] Remove or hard-disable `/api/test/**` outside development
+- [ ] Stop committing live-like secrets in config and move all production credentials to platform env vars
+- [ ] Tighten authorization on `GET /api/events/{eventId}/registrations`
+- [ ] Reconcile ticket validation authorization with the actual role model (`USER` / `ADMIN`)
+- [ ] Add stronger audit logging for sensitive admin and account actions
 
----
+## P1 - Production Hardening
 
-## 🟠 P1 – Production Readiness & Deployment
+- [ ] Move avatar, banner, and ticket QR storage to durable shared object storage
+- [ ] Improve worker observability, retry visibility, and failure dashboards
+- [ ] Add safer environment separation for local, staging, and production config
+- [ ] Add automated smoke tests for deploy verification
+- [ ] Reduce duplicated event timestamp parsing logic across Go services
 
-- [x] Production Email Integration  
-  - [x] Replace MailHog with real SMTP provider  
-  - [x] Configure production email credentials securely  
-  - [x] Add retry and failure monitoring  
+## P2 - Product Features
 
-<!-- - [ ] Hosting & Deployment Strategy  
-  - [ ] Decide hosting provider (VPS / cloud)  
-  - [ ] Containerize frontend + backend properly  
-  - [ ] Configure reverse proxy (Nginx or similar)  
-  - [ ] Set up production environment variables   -->
+- [ ] Attendee scanner UI for on-site check-in
+- [ ] Waitlist support for full events
+- [ ] Persistent in-app notification inbox drawer
+- [ ] Command palette for power-user navigation and actions
+- [ ] Guest browse mode with clearer upgrade-to-sign-in prompts
+- [ ] Weekly admin digest or export workflow for analytics
 
-- [x] Background Service Orchestration  
-  - [x] Docker containers auto-start  
-  - [x] Spring Boot API auto-start  
-  - [x] Notification worker auto-start  
-  - [x] Ticket worker auto-start  
-  - [x] WebSocket hub auto-start  
+## P3 - UX And Developer Experience
 
-- [x] OAuth Login  
-  - [x] Google login    
-  - [x] Role mapping for OAuth users  
+- [ ] Unsaved-changes guard in the event form modal
+- [ ] Better user-facing feedback for ticket QR generation/download failures
+- [ ] More end-to-end test coverage for auth, registration, and admin flows
+- [ ] Optional dashboard/view personalization
+- [ ] Longer-term observability and audit tooling
 
----
+## Already Shipped
 
-## 🟡 P2 – Core Product Enhancements
+These items were future work in older docs and are now live:
 
-- [x] Admin Dashboard & Event CRUD UI  
-  - [x] Create/edit/publish/cancel/complete events via frontend  
-  - [x] Admin-only management panel  
+- [x] Google OAuth login
+- [x] Forgot-password flow with verification codes
+- [x] Event categories, tags, and banner upload
+- [x] Admin dashboard and analytics UI
+- [x] Profile editing, avatar upload, and password change
+- [x] Calendar export support
+- [x] Rich HTML email templates and reminder delivery
+- [x] Login activity timeline
+- [x] Resend reset code cooldown
+- [x] Return-to-intent auth redirect
+- [x] Dedicated Not Found page
 
-- [ ] Attendee Check-in System  
-  - [ ] QR scanner page  
-  - [ ] Mark attendance status  
-  - [ ] Prevent duplicate check-ins  
+## Related Docs
 
-<!-- - [ ] Waitlist System  
-  - [ ] Allow waitlist when capacity full  
-  - [ ] Auto-promote on cancellation  
-  - [ ] Notify promoted users   -->
-
-<!-- - [ ] Event Reminders  
-  - [ ] 24h reminder  
-  - [ ] 1h reminder  
-  - [ ] Scheduled message handling   -->
-
-- [x] Event Categories & Tags  
-  - [x] Categorization  
-  - [x] Filtering and search  
-  - [x] Tag-based discovery  
- 
-- [x] Event Image / Banner Upload  
-  - [x] File upload endpoint
-  - [x] Display banner on event page  
-
-- [x] User Profile Page  
-  - [x] Edit name  
-  - [x] Change password  
-  - [x] Upload avatar  
-  - [x] Registration history stats  
-
-- [x] Email Templates  
-  - [x] Rich HTML templates  
-  - [x] Confirmation email  
-  - [x] Reminder email  
-  - [x] Cancellation email  
-
-- [x] Export to Calendar  
-  - [x] Generate .ics file  
-  - [x] Google Calendar support  
-  - [x] Outlook support  
-
-- [x] Forgot Password Flow and Implementation  
-  - [x] Password reset request page  
-  - [x] Email with reset link  
-  - [x] Reset password form  
-
----
-
-## 🟢 P3 – Advanced & Experience Enhancements
-
-- [x] Analytics Dashboard  
-  - [x] Registration trends  
-  - [x] Popular events  
-  - [x] Peak registration hours  
-  - [x] Charts integration  
-
-<!-- - [ ] Event Comments / Discussion  
-  - [ ] Real-time comment threads  
-  - [ ] WebSocket-based updates  
-  - [ ] Moderation controls   -->
-
-- [x] Dark Mode  
-  - [x] Bauhaus dark variant  
-  - [x] Persist user preference  
-<!-- 
-- [ ] View Customizations  
-  - [ ] User-selectable layout preferences  
-  - [ ] Saved dashboard views   -->
-
-- [x] Professional UI Polish  
-  - [x] Refine spacing system  
-  - [x] Improve interaction states  
-  - [x] Ensure consistent component behavior  
-
----
-
-<!-- ## Long-Term Direction
-
-- [ ] Full observability dashboard  
-- [ ] Audit logging for admin actions  
-- [ ] Multi-tenant event organizations  
-- [ ] Scalable message retry infrastructure  
-- [ ] Advanced permission management   -->
-
----
-
-## verbatim stuff for ref.
-<!--
-VERBATIM FEATURE LIST for reference (PRIORITY ORDERED)
-
-P0 – Critical
-
-1. verbatim: 'ASK SAME GITHUB COPILOT CHAT THE SAME VULNERABILITIES QUESTION AND FIX EM ALL' -> PRIORITY 19 "DO AT LAST"
-2. Rate Limiting & Abuse Prevention — Spring Boot rate limiter (Bucket4j) on registration and auth endpoints
-3. figuring out preventing double loading ui for updates
-
-P1 – Production Readiness
-
-4. actually sending mails to users instead of mailhog
-5. figuring out how to host
-6. figuring out how to run all these always in the background:
-   - docker containers startup
-   - springboot api startup
-   - ticket, notification and websocket workers' startup
-7. oauth login
-
-P2 – Core Product Features
-
-8. Admin Dashboard & Event CRUD UI — Admin panel to create/edit/publish/cancel/complete events from the frontend instead of API-only
-9. Attendee Check-in System — QR scanner page (using device camera via html5-qrcode) for on-site ticket validation, marking ATTENDED status
-10. Waitlist System — When capacity is full, allow users to join a waitlist; auto-promote on cancellation
-11. Event Reminders — Scheduled notifications (24h/1h before) via a cron job or RabbitMQ delayed messages
-12. Event Categories & Tags — Categorize events (tech, social, sports), filter/search by category
-13. Event Image/Banner Upload — File upload endpoint + S3/MinIO storage for event cover images
-14. User Profile Page — Edit name, change password, upload avatar, view registration history stats
-15. Email Templates — Rich HTML email templates for confirmations, reminders, and cancellations instead of plain text
-16. Export to Calendar — .ics file download for registered events (Google Calendar / Outlook integration)
-17. Forgot Password Flow and Implementation — Password reset request page, email with reset link, reset form, token expiration handling
-
-P3 – Experience & Enhancements
-
-18. Analytics Dashboard — Registration trends over time, popular events, peak registration hours (charts via Recharts)
-19. Event Comments/Discussion — Real-time comment thread per event via WebSocket
-20. Dark Mode — Bauhaus dark variant with inverted palette
-21. view customizations
-22. professional ui
--->
+- [SECURITY_AUDIT.md](SECURITY_AUDIT.md)
+- [INCREMENTAL_FEATURES.md](INCREMENTAL_FEATURES.md)
+- [DEPLOY.md](DEPLOY.md)

@@ -4,7 +4,7 @@ Last updated: 2026-04-19
 
 This document maps the EM-Connect repository as it exists now. It covers maintained source code, config, deployment, documentation, and support files. Runtime-generated artifacts such as uploaded avatars/banners and generated ticket QR files are summarized by directory instead of documented one-by-one.
 
-Older docs and the README still reference files like `docs/ARCHITECTURE.md` or `docs/ADMIN.md`. Those files are not currently present in this repo, so this guide documents only files that actually exist.
+This guide documents the current repo layout, including the smaller active docs set and the `docs/archive/` area for historical notes.
 
 ## Recent Additions Since Earlier CODE.md Versions
 
@@ -28,20 +28,21 @@ Older docs and the README still reference files like `docs/ARCHITECTURE.md` or `
 
 | Path | Description |
 | --- | --- |
-| `docs/API.md` | REST API reference. Helpful, but parts of it lag behind the live code. |
-| `docs/AUTHENTICATION.md` | Auth and security notes for JWT/session flow. |
+| `docs/API.md` | REST API reference covering the active controller surface, query params, auth expectations, and current access-control caveats. |
+| `docs/AUTHENTICATION.md` | Auth and security notes for JWT flow, Google OAuth, password reset, login activity, CORS, and current guardrail gaps. |
 | `docs/CODE.md` | This file. Current repo map and code guide. |
-| `docs/CONTEXT.md` | Long-form handoff document for AI/dev onboarding. Useful, but some sections are now older than the code. |
-| `docs/DATABASE.md` | Database schema notes and migration overview. |
+| `docs/DATABASE.md` | Database schema, migration chain through V11, enums, and operational notes. |
 | `docs/DEPLOY.md` | Live deployment runbook for Netlify/Vercel + Render + Neon + CloudAMQP, including required cross-origin/runtime fixes. |
 | `docs/EVENT_STATES.md` | Event lifecycle and valid state-transition rules. |
 | `docs/FUTURE.md` | Roadmap and backlog of future improvements. |
 | `docs/INCREMENTAL_FEATURES.md` | Smaller UX/product improvements tracked separately from the main roadmap. Includes completed items like OTP paste, resend cooldown, login activity, return-to-intent redirect, and Not Found routing. |
-| `docs/NOTES.md` | Development journal and detailed build/debug notes. |
 | `docs/OVERVIEW.md` | Quick orientation doc for the deployed system. |
-| `docs/PLAN.md` | Original staged build/learning plan. |
 | `docs/RABBITMQ_TOPOLOGY_DESIGN.md` | Broker topology, routing keys, queues, and DLQ design. |
 | `docs/SECURITY_AUDIT.md` | Repository-wide security review, findings, and phased remediation plan. |
+| `docs/archive/README.md` | Index for archived docs that are kept for history but no longer part of the active reference set. |
+| `docs/archive/CONTEXT.md` | Archived long-form handoff doc. |
+| `docs/archive/PLAN.md` | Archived original phased plan. |
+| `docs/archive/NOTES.md` | Archived development journal. |
 
 ## Support and Archive Files
 

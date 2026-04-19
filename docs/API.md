@@ -1,211 +1,178 @@
 # API Reference
 
-This is the current endpoint map based on the active controllers in services/api.
+Last updated: 2026-04-19
+
+This is the active controller-level API map for `services/api`.
 
 ## Base URLs
 
-- Local API: http://localhost:8080
-- Live API: https://em-connect-backend-api.onrender.com
+- Local API: `http://localhost:8080`
+- Live API: `https://em-connect-backend-api.onrender.com`
+
+Browser clients typically use the `/api` prefix through the frontend URL helpers.
 
 ## Auth Header
 
-Authenticated routes require:
+Authenticated requests require:
 
+```text
 Authorization: Bearer <jwt>
+```
+
+## Response Patterns
+
+- Most list endpoints return Spring `Page<T>` JSON with keys like `content`, `totalElements`, `totalPages`, `number`, and `size`.
+- File upload endpoints use `multipart/form-data`.
+- QR image responses return `image/png`.
+- Error responses are normalized by the global exception handler into the usual Spring-style JSON shape with `status`, `error`, `message`, `path`, and `timestamp`.
 
 ## Public Endpoints
 
-Health:
-- GET /api/health
-- GET /api/ping
+### Health
 
-Auth:
-- POST /api/auth/register
-- POST /api/auth/login
-- POST /api/auth/google
-- POST /api/auth/forgot-password
-- POST /api/auth/verify-reset-code
-- POST /api/auth/reset-password
+- `GET /api/health`
+- `GET /api/ping`
+- `GET /actuator/health`
 
-Event browsing:
-- GET /api/events
-- GET /api/events/{id}
-- GET /api/events/search
-- GET /api/events/categories
-- GET /api/events/categories/active
+### Auth
 
-Static media:
-- GET /api/events/banners/{filename}
-- GET /api/users/avatars/{filename}
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `POST /api/auth/google`
+- `POST /api/auth/forgot-password`
+- `POST /api/auth/resend-reset-code`
+- `POST /api/auth/verify-reset-code`
+- `POST /api/auth/reset-password`
+
+### Event Browsing
+
+- `GET /api/events`
+- `GET /api/events/{id}`
+- `GET /api/events/search`
+- `GET /api/events/categories`
+- `GET /api/events/categories/active`
+
+### Public Lookups And Media
+
+- `GET /api/registrations/ticket/{ticketCode}`
+- `GET /api/events/banners/{filename}`
+- `GET /api/users/avatars/{filename}`
 
 ## Authenticated Endpoints
 
-User profile:
-- GET /api/users/me
-- PUT /api/users/me
-- PUT /api/users/me/password
-- POST /api/users/me/avatar
+### User Profile
 
-Events (organizer-owned operations):
-- GET /api/events/my-events
-- POST /api/events
-- PUT /api/events/{id}
-- DELETE /api/events/{id}
-- POST /api/events/{id}/publish
-- POST /api/events/{id}/cancel
-- POST /api/events/{id}/complete
-- POST /api/events/{id}/banner
-- GET /api/events/{id}/participants/count
+- `GET /api/users/me`
+- `GET /api/users/me/login-activity`
+- `PUT /api/users/me`
+- `PUT /api/users/me/password`
+- `POST /api/users/me/avatar`
 
-Registrations:
-- POST /api/events/{eventId}/register
-- POST /api/registrations/{id}/cancel
-- GET /api/registrations/my-registrations
-- GET /api/registrations/{id}
-- GET /api/registrations/ticket/{ticketCode}
-- GET /api/events/{eventId}/registration-status
-- GET /api/events/{eventId}/registrations
+Notes:
 
-Tickets:
-- GET /api/tickets/my
-- GET /api/tickets/{code}
-- GET /api/tickets/{code}/qr
-- POST /api/tickets/{code}/validate (guarded by role check in controller)
+- `GET /api/users/me/login-activity` returns recent sign-in entries with `timestamp`, `loginMethod`, and a summarized `source`.
+- Avatar upload is file-backed and currently stored on disk under the API service.
 
-Admin:
-- GET /api/admin/users
-- GET /api/admin/dashboard
-- GET /api/admin/events
-- PUT /api/admin/users/{id}/promote
-- PUT /api/admin/users/{id}/demote
-- GET /api/admin/analytics
+### Events
 
-## Test Endpoints (Keep Disabled in Production)
+- `POST /api/events`
+- `GET /api/events/my-events`
+- `PUT /api/events/{id}`
+- `DELETE /api/events/{id}`
+- `POST /api/events/{id}/publish`
+- `POST /api/events/{id}/cancel`
+- `POST /api/events/{id}/complete`
+- `GET /api/events/{id}/participants/count`
+- `POST /api/events/{id}/banner`
 
-- POST /api/test/users
-- GET /api/test/users
-- POST /api/test/concurrent-register
+Notes:
+
+- Public event listing and search only surface published events.
+- Search supports `keyword`, `category`, `tag`, `page`, and `size`.
+- Banner upload is also file-backed and currently served by the API.
+
+### Registrations
+
+- `POST /api/events/{eventId}/register`
+- `POST /api/registrations/{id}/cancel`
+- `GET /api/registrations/my-registrations`
+- `GET /api/registrations/{id}`
+- `GET /api/events/{eventId}/registration-status`
+- `GET /api/events/{eventId}/registrations`
+
+Notes:
+
+- `GET /api/registrations/my-registrations` supports `page`, `size`, `status`, and legacy `activeOnly`.
+- `GET /api/events/{eventId}/registrations` is intended for organizers/admins, but the controller still carries a TODO and currently relies on the general authenticated-route guard rather than an explicit ownership/role check.
+
+### Tickets
+
+- `GET /api/tickets/my`
+- `GET /api/tickets/{code}`
+- `GET /api/tickets/{code}/qr`
+- `POST /api/tickets/{code}/validate`
+
+Notes:
+
+- Ticket reads are user-scoped and require the authenticated ticket owner.
+- Validation is annotated with `hasAnyRole('ADMIN', 'ORGANIZER')`, but the current `Role` enum only contains `USER` and `ADMIN`, so this is effectively admin-only today.
+
+### Admin
+
+- `GET /api/admin/users`
+- `GET /api/admin/dashboard`
+- `GET /api/admin/events`
+- `PUT /api/admin/users/{id}/promote`
+- `PUT /api/admin/users/{id}/demote`
+- `GET /api/admin/analytics`
+
+`/api/admin/**` is role-protected in `SecurityConfig`.
+
+## Test Endpoints
+
+These routes are still public in the current security config and should stay disabled or removed outside controlled development use:
+
+- `POST /api/test/users`
+- `GET /api/test/users`
+- `POST /api/test/concurrent-register`
 
 ## Common Query Parameters
 
-- Pagination: page, size
-- Search/filter: keyword, category, tag
-- Registrations: status, activeOnly
+- Pagination: `page`, `size`
+- Event search: `keyword`, `category`, `tag`
+- User registrations: `status`, `activeOnly`
+- Admin events: `status`, `page`, `size`
 
-## Notes
+## Example Success Shapes
 
-- API publishes domain events to RabbitMQ for notification, ticket, and websocket services.
-- For browser clients on another origin (Netlify/Vercel), API CORS allowlist must include the frontend origin through CORS_ALLOWED_ORIGINS.
-- See [AUTHENTICATION.md](AUTHENTICATION.md), [DATABASE.md](DATABASE.md), and [RABBITMQ_TOPOLOGY_DESIGN.md](RABBITMQ_TOPOLOGY_DESIGN.md) for deeper details.
+### `GET /api/users/me`
 
-### GET /api/users/me
-Get current authenticated user's profile.
-
-**Authentication:** Required
-
-**Response (200 OK):**
 ```json
 {
   "id": 1,
   "email": "user@example.com",
   "name": "John Doe",
   "role": "USER",
-  "createdAt": "2024-01-01T10:00:00"
+  "avatarUrl": "/api/users/avatars/avatar-123.png",
+  "createdAt": "2026-04-01T10:00:00"
 }
 ```
 
----
+### `GET /api/users/me/login-activity`
 
-## Admin Endpoints
-
-### GET /api/admin/users
-Get all users (admin only).
-
-**Authentication:** Required (ADMIN role)
-
-**Response (200 OK):**
 ```json
 [
   {
-    "id": 1,
-    "email": "admin@emconnect.com",
-    "name": "Admin",
-    "role": "ADMIN",
-    "createdAt": "2024-01-01T00:00:00"
-  },
-  {
-    "id": 2,
-    "email": "user@example.com",
-    "name": "John Doe",
-    "role": "USER",
-    "createdAt": "2024-01-05T10:00:00"
+    "timestamp": "2026-04-19T09:10:00",
+    "loginMethod": "PASSWORD",
+    "source": "127.0.0.1 - Chrome on Windows"
   }
 ]
 ```
 
-**Error Responses:**
-- `403 Forbidden` - Not an admin
+## Related Docs
 
----
-
-## Error Response Format
-
-All errors follow this format:
-
-```json
-{
-  "status": 404,
-  "error": "Not Found",
-  "message": "Event not found with id: 999",
-  "path": "/api/events/999",
-  "timestamp": "2024-01-15T10:30:00"
-}
-```
-
-### Common Error Codes
-
-| Status | Description |
-|--------|-------------|
-| 400 | Bad Request - Validation error or business rule violation |
-| 401 | Unauthorized - Missing or invalid token |
-| 403 | Forbidden - Insufficient permissions |
-| 404 | Not Found - Resource doesn't exist |
-| 409 | Conflict - Resource already exists (e.g., duplicate email) |
-| 500 | Internal Server Error |
-
----
-
-## Testing with cURL
-
-### Register
-```bash
-curl -X POST http://localhost:8080/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"password123","name":"Test User"}'
-```
-
-### Login
-```bash
-curl -X POST http://localhost:8080/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"password123"}'
-```
-
-### Create Event (with token)
-```bash
-curl -X POST http://localhost:8080/api/events \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
-  -d '{"title":"My Event","startDate":"2024-06-15T09:00:00","endDate":"2024-06-15T17:00:00","capacity":100}'
-```
-
-### Get Published Events
-```bash
-curl http://localhost:8080/api/events
-```
-
-### Publish Event
-```bash
-curl -X POST http://localhost:8080/api/events/1/publish \
-  -H "Authorization: Bearer YOUR_TOKEN_HERE"
-```
+- [AUTHENTICATION.md](AUTHENTICATION.md)
+- [DATABASE.md](DATABASE.md)
+- [RABBITMQ_TOPOLOGY_DESIGN.md](RABBITMQ_TOPOLOGY_DESIGN.md)
+- [SECURITY_AUDIT.md](SECURITY_AUDIT.md)
