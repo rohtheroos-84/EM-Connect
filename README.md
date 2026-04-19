@@ -170,12 +170,16 @@ em-connect/
 |  |- API.md
 |  |- AUTHENTICATION.md
 |  |- DATABASE.md
+|  |- DEPLOY.md
 |  |- EVENT_STATES.md
 |  |- CODE.md
-|  |- CONTEXT.md
-|  |- PLAN.md
-|  |- NOTES.md
 |  |- FUTURE.md
+|  |- INCREMENTAL_FEATURES.md
+|  |- SECURITY_AUDIT.md
+|  |- archive/
+|  |  |- CONTEXT.md
+|  |  |- PLAN.md
+|  |  '- NOTES.md
 |  '- RABBITMQ_TOPOLOGY_DESIGN.md
 |- services/
 |  |- api/
@@ -188,7 +192,7 @@ em-connect/
 |  |  |  |- exception/
 |  |  |  |- repository/
 |  |  |  '- service/
-|  |  '- src/main/resources/db/migration/   # flyway v1-v10
+|  |  '- src/main/resources/db/migration/   # flyway v1-v11
 |  |- notification-worker/
 |  |- ticket-worker/
 |  '- websocket-hub/
@@ -294,6 +298,7 @@ update users set role = 'ADMIN' where email = 'your-email@example.com';
 | v8 | event category/tags/banner fields |
 | v9 | event reminders tracking |
 | v10 | password reset codes |
+| v11 | login activity timeline storage |
 
 ---
 
@@ -339,7 +344,7 @@ this project covered and reinforced:
 7. websocket fan-out patterns and resilient frontend real-time integration
 8. practical frontend architecture with react context, protected routes, and ui systems
 
-full phase-by-phase notes live in [docs/NOTES.md](docs/NOTES.md).
+full phase-by-phase notes live in [docs/archive/NOTES.md](docs/archive/NOTES.md).
 
 ---
 
@@ -348,17 +353,17 @@ full phase-by-phase notes live in [docs/NOTES.md](docs/NOTES.md).
 | document | what it covers |
 |----------|---------------|
 | [OVERVIEW.md](docs/OVERVIEW.md) | high-level system summary |
-| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | architecture and service interactions |
 | [API.md](docs/API.md) | rest endpoints |
 | [AUTHENTICATION.md](docs/AUTHENTICATION.md) | auth and security internals |
 | [DATABASE.md](docs/DATABASE.md) | schema + migration details |
+| [DEPLOY.md](docs/DEPLOY.md) | deployment runbook for the live stack |
 | [EVENT_STATES.md](docs/EVENT_STATES.md) | event lifecycle rules |
 | [CODE.md](docs/CODE.md) | source file inventory |
-| [CONTEXT.md](docs/CONTEXT.md) | full project context for ai/dev handoff |
+| [INCREMENTAL_FEATURES.md](docs/INCREMENTAL_FEATURES.md) | shipped and pending smaller UX improvements |
 | [RABBITMQ_TOPOLOGY_DESIGN.md](docs/RABBITMQ_TOPOLOGY_DESIGN.md) | broker topology design |
-| [PLAN.md](docs/PLAN.md) | build plan and milestones |
-| [NOTES.md](docs/NOTES.md) | development journal |
+| [SECURITY_AUDIT.md](docs/SECURITY_AUDIT.md) | security review and remediation tracking |
 | [FUTURE.md](docs/FUTURE.md) | roadmap and next improvements |
+| [archive/README.md](docs/archive/README.md) | archived planning and historical handoff docs |
 
 ---
 
