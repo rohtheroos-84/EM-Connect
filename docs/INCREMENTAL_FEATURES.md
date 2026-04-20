@@ -209,8 +209,8 @@ Avoid silent failures when QR download is not ready or request fails.
 - Provide actionable hint (for example, retry after a few seconds).
 
 #### Checklist
-- [ ] Add visible error message/toast on QR download failure.
-- [ ] Add retry-friendly copy for generation-in-progress cases.
+- [x] Add visible error message/toast on QR download failure.
+- [x] Add retry-friendly copy for generation-in-progress cases.
 
 ### 4) Email Input Normalization
 
