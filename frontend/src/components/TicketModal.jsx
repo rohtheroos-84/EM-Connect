@@ -14,6 +14,7 @@ export default function TicketModal({ ticketCode, event, onClose }) {
   const [imgSrc, setImgSrc] = useState(null);
   const [imgError, setImgError] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState('');
 
   const token = localStorage.getItem('em_token');
   const qrUrl = `/api/tickets/${ticketCode}/qr`;
@@ -41,11 +42,16 @@ export default function TicketModal({ ticketCode, event, onClose }) {
   /* Download QR as PNG file */
   const handleDownload = async () => {
     setDownloading(true);
+    setDownloadError('');
     try {
       const res = await fetch(qrUrl, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
-      if (!res.ok) throw new Error('Download failed');
+      if (!res.ok) {
+        const err = new Error('Download failed');
+        err.status = res.status;
+        throw err;
+      }
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -55,10 +61,15 @@ export default function TicketModal({ ticketCode, event, onClose }) {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-    } catch {
-      /* ignore – QR may still be generating */
+    } catch (err) {
+      if ([404, 409, 423, 425, 503].includes(err?.status)) {
+        setDownloadError('QR code is still being generated. Please wait a few seconds and try downloading again.');
+      } else {
+        setDownloadError('Could not download the QR code right now. Please retry in a few seconds.');
+      }
+    } finally {
+      setDownloading(false);
     }
-    setDownloading(false);
   };
 
   return (
@@ -120,7 +131,7 @@ export default function TicketModal({ ticketCode, event, onClose }) {
               <div className="w-48 h-48 border border-dashed border-bauhaus-fg/30 flex flex-col items-center justify-center text-center p-4 rounded">
                 <QrCode className="w-8 h-8 text-bauhaus-fg/40 mb-2" />
                 <p className="text-[11px] text-bauhaus-fg/60">
-                  QR code is being generated. Check back shortly.
+                  QR code is still being generated. Please retry download in a few seconds.
                 </p>
               </div>
             ) : (
@@ -139,6 +150,11 @@ export default function TicketModal({ ticketCode, event, onClose }) {
             <Download className="w-4 h-4" />
             {downloading ? 'Saving…' : 'Download QR Code'}
           </button>
+          {downloadError && (
+            <p className="mt-3 text-[11px] font-medium text-bauhaus-red" role="alert" aria-live="polite">
+              {downloadError}
+            </p>
+          )}
         </div>
       </div>
     </div>
