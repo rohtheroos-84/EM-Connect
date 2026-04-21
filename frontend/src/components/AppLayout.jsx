@@ -173,7 +173,8 @@ export default function AppLayout({ children, preserveLoginFrom = true }) {
             ) : (
               <div className="flex items-center gap-2">
                 {guestMode && (
-                  <span className="hidden md:inline-flex items-center px-2 h-7 bg-bauhaus-yellow text-bauhaus-fg text-[9px] font-bold uppercase tracking-wider">
+                  <span className="hidden md:inline-flex items-center gap-1.5 px-2.5 h-7 border border-white/20 bg-white/5 text-white/75 text-[8px] font-bold uppercase tracking-[0.14em]">
+                    <span className="w-1.5 h-1.5 bg-bauhaus-yellow rounded-full" />
                     Guest Mode
                   </span>
                 )}
