@@ -33,10 +33,12 @@ export default function Register() {
   const [capsLockConfirmOn, setCapsLockConfirmOn] = useState(false);
   const [touched, setTouched] = useState({});
   const [localError, setLocalError] = useState(null);
-  const { register, googleLogin, loading, error, clearError, isAuthenticated } = useAuth();
+  const { register, googleLogin, loading, error, clearError, isAuthenticated, enterGuestMode } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const postAuthRedirect = resolvePostAuthRedirect(location.state?.from);
+  const fromPath = typeof location.state?.from === 'string' ? location.state.from.split(/[?#]/)[0] : '';
+  const showAuthPrompt = Boolean(fromPath) && !['/login', '/register', '/forgot-password', '/events'].includes(fromPath);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -75,6 +77,12 @@ export default function Register() {
 
   const handleGoogleError = () => {
     clearError();
+  };
+
+  const handleContinueAsGuest = () => {
+    clearError();
+    enterGuestMode();
+    navigate('/events', { replace: true });
   };
 
   const displayError = localError || error;
@@ -151,6 +159,15 @@ export default function Register() {
               </div>
 
               {/* Error */}
+              {showAuthPrompt && !displayError && (
+                <div className="mb-6 flex items-start gap-3 bg-[#EFF6FF] border-l-[3px] border-bauhaus-blue px-4 py-3 rounded-sm">
+                  <AlertCircle className="w-4 h-4 text-bauhaus-blue shrink-0 mt-0.5" />
+                  <p className="flex-1 text-sm text-bauhaus-blue">
+                    Create an account to access that page. Or continue as guest to explore events first.
+                  </p>
+                </div>
+              )}
+
               {displayError && (
                 <div className="mb-8 flex items-start gap-3 bg-[#FEF2F2] border-l-[3px] border-bauhaus-red px-4 py-3 rounded-sm">
                   <AlertCircle className="w-4 h-4 text-bauhaus-red shrink-0 mt-0.5" />
@@ -355,6 +372,14 @@ export default function Register() {
                 </div>
                 </div>
               )}
+
+              <button
+                type="button"
+                onClick={handleContinueAsGuest}
+                className="w-full mt-4 h-11 border border-[#1F2937]/25 bg-bauhaus-bg text-bauhaus-fg text-[11px] font-bold uppercase tracking-wider hover:border-bauhaus-blue hover:text-bauhaus-blue transition-colors cursor-pointer"
+              >
+                Continue as Guest
+              </button>
             </div>
 
             {/* Footer */}
