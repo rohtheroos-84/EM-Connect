@@ -250,13 +250,15 @@ export default function Login() {
                 </div>
               )}
 
-              <button
-                type="button"
-                onClick={handleContinueAsGuest}
-                className="w-full mt-4 h-11 border border-[#1F2937]/25 bg-bauhaus-bg text-bauhaus-fg text-[11px] font-bold uppercase tracking-wider hover:border-bauhaus-blue hover:text-bauhaus-blue transition-colors cursor-pointer"
-              >
-                Continue as Guest
-              </button>
+              <div className="mt-4 flex justify-center">
+                <button
+                  type="button"
+                  onClick={handleContinueAsGuest}
+                  className="text-[11px] font-semibold text-[#6B7280] uppercase tracking-[0.08em] underline underline-offset-2 hover:text-bauhaus-blue transition-colors cursor-pointer"
+                >
+                  Continue as Guest
+                </button>
+              </div>
             </div>
 
             {/* Footer */}
