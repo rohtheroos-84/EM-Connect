@@ -173,7 +173,7 @@ export default function AppLayout({ children, preserveLoginFrom = true }) {
             ) : (
               <div className="flex items-center gap-2">
                 {guestMode && (
-                  <span className="hidden md:inline-flex items-center gap-1.5 px-2.5 h-7 border border-white/20 bg-white/5 text-white/75 text-[8px] font-bold uppercase tracking-[0.14em]">
+                  <span className="hidden md:inline-flex items-center gap-1 text-white/55 text-[8px] font-bold uppercase tracking-[0.14em]">
                     <span className="w-1.5 h-1.5 bg-bauhaus-yellow rounded-full" />
                     Guest Mode
                   </span>
@@ -181,7 +181,7 @@ export default function AppLayout({ children, preserveLoginFrom = true }) {
                 <Link
                   to="/login"
                   state={authState}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-bauhaus-blue text-white text-[11px] font-bold uppercase tracking-wider hover:bg-[#0D3399] transition-colors duration-150"
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 border border-white/15 text-white/80 text-[10px] font-bold uppercase tracking-[0.1em] hover:border-white/35 hover:text-white transition-colors duration-150"
                 >
                   <LogIn className="w-3.5 h-3.5" />
                   Sign In
@@ -190,7 +190,7 @@ export default function AppLayout({ children, preserveLoginFrom = true }) {
                   <Link
                     to="/register"
                     state={authState}
-                    className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-bauhaus-red text-white text-[11px] font-bold uppercase tracking-wider hover:bg-[#B91C1C] transition-colors duration-150"
+                    className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 border border-white/15 text-white/70 text-[10px] font-bold uppercase tracking-[0.1em] hover:border-white/35 hover:text-white transition-colors duration-150"
                   >
                     <UserPlus className="w-3.5 h-3.5" />
                     Register
