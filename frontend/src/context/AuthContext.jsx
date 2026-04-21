@@ -13,6 +13,7 @@ const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(getStoredUser);
+  const [guestMode, setGuestMode] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -22,6 +23,7 @@ export function AuthProvider({ children }) {
     try {
       const data = await apiLogin(email, password);
       setUser(data.user);
+      setGuestMode(false);
       return data;
     } catch (err) {
       setError(err.message);
@@ -37,6 +39,7 @@ export function AuthProvider({ children }) {
     try {
       const data = await apiRegister(email, password, name);
       setUser(data.user);
+      setGuestMode(false);
       return data;
     } catch (err) {
       setError(err.message);
@@ -49,6 +52,7 @@ export function AuthProvider({ children }) {
   const logout = useCallback(() => {
     apiLogout();
     setUser(null);
+    setGuestMode(false);
   }, []);
 
   const clearError = useCallback(() => setError(null), []);
@@ -59,6 +63,7 @@ export function AuthProvider({ children }) {
     try {
       const data = await apiGoogleLogin(credential);
       setUser(data.user);
+      setGuestMode(false);
       return data;
     } catch (err) {
       setError(err.message);
@@ -66,6 +71,18 @@ export function AuthProvider({ children }) {
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  const enterGuestMode = useCallback(() => {
+    // Ensure guest entry never carries a persisted auth session.
+    apiLogout();
+    setUser(null);
+    setError(null);
+    setGuestMode(true);
+  }, []);
+
+  const exitGuestMode = useCallback(() => {
+    setGuestMode(false);
   }, []);
 
   const refreshUser = useCallback(async () => {
@@ -82,11 +99,14 @@ export function AuthProvider({ children }) {
 
   const value = {
     user,
+    guestMode,
     loading,
     error,
     login,
     register,
     logout,
+    enterGuestMode,
+    exitGuestMode,
     clearError,
     googleLogin: googleLoginFn,
     refreshUser,

@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { NavLink, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useWebSocket } from '../context/WebSocketContext';
-import { LogOut, LayoutDashboard, Calendar, ClipboardList, LogIn, UserCircle, ShieldCheck, TrendingUp, MoreHorizontal, ChevronDown, Info } from 'lucide-react';
+import { LogOut, LayoutDashboard, Calendar, ClipboardList, LogIn, UserCircle, ShieldCheck, TrendingUp, MoreHorizontal, ChevronDown, Info, UserPlus } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 
 const PUBLIC_NAV = [
@@ -23,7 +23,7 @@ const ADMIN_NAV_ITEMS = [
 const ABOUT_NAV_ITEM = { to: '/about', label: 'About', icon: Info };
 
 export default function AppLayout({ children, preserveLoginFrom = true }) {
-  const { user, logout, isAuthenticated } = useAuth();
+  const { user, logout, isAuthenticated, guestMode } = useAuth();
   const { connected } = useWebSocket();
   const navigate = useNavigate();
   const location = useLocation();
@@ -70,6 +70,8 @@ export default function AppLayout({ children, preserveLoginFrom = true }) {
     logout();
     navigate('/login');
   };
+
+  const authState = preserveLoginFrom ? { from: `${location.pathname}${location.search}${location.hash}` } : undefined;
 
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-bauhaus-bg">
@@ -169,14 +171,31 @@ export default function AppLayout({ children, preserveLoginFrom = true }) {
                 )}
               </div>
             ) : (
-              <Link
-                to="/login"
-                state={preserveLoginFrom ? { from: `${location.pathname}${location.search}${location.hash}` } : undefined}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-bauhaus-blue text-white text-[11px] font-bold uppercase tracking-wider hover:bg-[#0D3399] transition-colors duration-150"
-              >
-                <LogIn className="w-3.5 h-3.5" />
-                Login
-              </Link>
+              <div className="flex items-center gap-2">
+                {guestMode && (
+                  <span className="hidden md:inline-flex items-center px-2 h-7 bg-bauhaus-yellow text-bauhaus-fg text-[9px] font-bold uppercase tracking-wider">
+                    Guest Mode
+                  </span>
+                )}
+                <Link
+                  to="/login"
+                  state={authState}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-bauhaus-blue text-white text-[11px] font-bold uppercase tracking-wider hover:bg-[#0D3399] transition-colors duration-150"
+                >
+                  <LogIn className="w-3.5 h-3.5" />
+                  Sign In
+                </Link>
+                {guestMode && (
+                  <Link
+                    to="/register"
+                    state={authState}
+                    className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-bauhaus-red text-white text-[11px] font-bold uppercase tracking-wider hover:bg-[#B91C1C] transition-colors duration-150"
+                  >
+                    <UserPlus className="w-3.5 h-3.5" />
+                    Register
+                  </Link>
+                )}
+              </div>
             )}
           </div>
         </div>
