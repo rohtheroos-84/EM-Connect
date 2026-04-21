@@ -148,11 +148,11 @@ Allow users to explore events first, then sign in only when they are ready to re
 - Show clear sign-in prompts when guest tries protected actions.
 
 ### Checklist
-- [ ] Add Continue as Guest CTA on login page and register page.
-- [ ] Route guest entry to public events list (instead of forcing auth first).
-- [ ] Keep all protected pages guarded (dashboard, profile, registrations, admin, analytics).
-- [ ] Add a subtle guest-mode indicator with quick Sign In / Register actions.
-- [ ] Ensure no token/user session is written for guest mode.
+- [x] Add Continue as Guest CTA on login page and register page.
+- [x] Route guest entry to public events list (instead of forcing auth first).
+- [x] Keep all protected pages guarded (dashboard, profile, registrations, admin, analytics).
+- [x] Add a subtle guest-mode indicator with quick Sign In / Register actions.
+- [x] Ensure no token/user session is written for guest mode.
 
 ## 8) Auth Flow: Return-to-Intent Redirect
 
