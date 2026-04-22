@@ -55,11 +55,13 @@ export default function NotFound() {
                 </div>
               </div>
 
-              <div className="mt-6 flex items-center justify-center w-full max-w-2xl mx-auto px-3 py-2.5 bg-bauhaus-bg border border-[#1F2937]/20 text-xs text-bauhaus-fg/75 font-mono break-all">
-                {missingPath}
+              <div className="mt-6 flex justify-center">
+                <div className="inline-flex items-center justify-center w-fit max-w-full sm:max-w-xl px-4 py-2.5 bg-bauhaus-bg border border-[#1F2937]/20 text-xs text-bauhaus-fg/75 font-mono text-center break-all">
+                  {missingPath}
+                </div>
               </div>
 
-              <div className="mt-7 flex flex-wrap gap-2.5 justify-center">
+              <div className="mt-6 sm:mt-7 pt-1 flex flex-wrap gap-2.5 justify-center">
                 <button
                   type="button"
                   onClick={handleGoBack}
