@@ -60,66 +60,66 @@ export default function NotFound() {
               </div>
 
               <div className="mt-7 flex flex-wrap gap-2.5 justify-center">
-              <button
-                type="button"
-                onClick={handleGoBack}
-                className="inline-flex items-center gap-2 h-10 px-4 border border-[#1F2937]/30 bg-bauhaus-bg text-bauhaus-fg text-xs font-bold uppercase tracking-wider hover:border-bauhaus-blue hover:text-bauhaus-blue transition-colors cursor-pointer"
-              >
-                <ArrowLeft className="w-3.5 h-3.5" />
-                Go Back
-              </button>
+                <button
+                  type="button"
+                  onClick={handleGoBack}
+                  className="inline-flex items-center gap-2 h-10 px-4 border border-[#1F2937]/30 bg-bauhaus-bg text-bauhaus-fg text-xs font-bold uppercase tracking-wider hover:border-bauhaus-blue hover:text-bauhaus-blue transition-colors cursor-pointer"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  Go Back
+                </button>
 
-              {isAuthenticated ? (
-                <>
-                  <Link
-                    to="/dashboard"
-                    className="inline-flex items-center gap-2 h-10 px-4 bg-bauhaus-blue border border-bauhaus-fg text-white text-xs font-bold uppercase tracking-wider hover:bg-[#0D3399] transition-colors"
-                  >
-                    <LayoutDashboard className="w-3.5 h-3.5" />
-                    Dashboard
-                  </Link>
-                  <Link
-                    to="/events"
-                    className="inline-flex items-center gap-2 h-10 px-4 border border-[#1F2937]/30 bg-bauhaus-bg text-bauhaus-fg text-xs font-bold uppercase tracking-wider hover:border-bauhaus-blue hover:text-bauhaus-blue transition-colors"
-                  >
-                    <Calendar className="w-3.5 h-3.5" />
-                    Browse Events
-                  </Link>
-                  {isAdmin && (
+                {isAuthenticated ? (
+                  <>
                     <Link
-                      to="/admin"
+                      to="/dashboard"
+                      className="inline-flex items-center gap-2 h-10 px-4 bg-bauhaus-blue border border-bauhaus-fg text-white text-xs font-bold uppercase tracking-wider hover:bg-[#0D3399] transition-colors"
+                    >
+                      <LayoutDashboard className="w-3.5 h-3.5" />
+                      Dashboard
+                    </Link>
+                    <Link
+                      to="/events"
                       className="inline-flex items-center gap-2 h-10 px-4 border border-[#1F2937]/30 bg-bauhaus-bg text-bauhaus-fg text-xs font-bold uppercase tracking-wider hover:border-bauhaus-blue hover:text-bauhaus-blue transition-colors"
                     >
-                      <ShieldCheck className="w-3.5 h-3.5" />
-                      Admin
+                      <Calendar className="w-3.5 h-3.5" />
+                      Browse Events
                     </Link>
-                  )}
-                </>
-              ) : (
-                <>
-                  <Link
-                    to="/login"
-                    className="inline-flex items-center gap-2 h-10 px-4 bg-bauhaus-blue border border-bauhaus-fg text-white text-xs font-bold uppercase tracking-wider hover:bg-[#0D3399] transition-colors"
-                  >
-                    <LogIn className="w-3.5 h-3.5" />
-                    Login
-                  </Link>
-                  <Link
-                    to="/register"
-                    className="inline-flex items-center gap-2 h-10 px-4 bg-bauhaus-red border border-bauhaus-fg text-white text-xs font-bold uppercase tracking-wider hover:bg-[#B91C1C] transition-colors"
-                  >
-                    <UserPlus className="w-3.5 h-3.5" />
-                    Register
-                  </Link>
-                  <Link
-                    to="/events"
-                    className="inline-flex items-center gap-2 h-10 px-4 border border-[#1F2937]/30 bg-bauhaus-bg text-bauhaus-fg text-xs font-bold uppercase tracking-wider hover:border-bauhaus-blue hover:text-bauhaus-blue transition-colors"
-                  >
-                    <Calendar className="w-3.5 h-3.5" />
-                    Browse Events
-                  </Link>
-                </>
-              )}
+                    {isAdmin && (
+                      <Link
+                        to="/admin"
+                        className="inline-flex items-center gap-2 h-10 px-4 border border-[#1F2937]/30 bg-bauhaus-bg text-bauhaus-fg text-xs font-bold uppercase tracking-wider hover:border-bauhaus-blue hover:text-bauhaus-blue transition-colors"
+                      >
+                        <ShieldCheck className="w-3.5 h-3.5" />
+                        Admin
+                      </Link>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      to="/login"
+                      className="inline-flex items-center gap-2 h-10 px-4 bg-bauhaus-blue border border-bauhaus-fg text-white text-xs font-bold uppercase tracking-wider hover:bg-[#0D3399] transition-colors"
+                    >
+                      <LogIn className="w-3.5 h-3.5" />
+                      Login
+                    </Link>
+                    <Link
+                      to="/register"
+                      className="inline-flex items-center gap-2 h-10 px-4 bg-bauhaus-red border border-bauhaus-fg text-white text-xs font-bold uppercase tracking-wider hover:bg-[#B91C1C] transition-colors"
+                    >
+                      <UserPlus className="w-3.5 h-3.5" />
+                      Register
+                    </Link>
+                    <Link
+                      to="/events"
+                      className="inline-flex items-center gap-2 h-10 px-4 border border-[#1F2937]/30 bg-bauhaus-bg text-bauhaus-fg text-xs font-bold uppercase tracking-wider hover:border-bauhaus-blue hover:text-bauhaus-blue transition-colors"
+                    >
+                      <Calendar className="w-3.5 h-3.5" />
+                      Browse Events
+                    </Link>
+                  </>
+                )}
               </div>
             </div>
           </div>
