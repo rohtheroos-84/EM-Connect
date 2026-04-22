@@ -181,7 +181,7 @@ export default function AppLayout({ children, preserveLoginFrom = true }) {
                 <Link
                   to="/login"
                   state={authState}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 border border-white/15 text-white/80 text-[10px] font-bold uppercase tracking-[0.1em] hover:border-white/35 hover:text-white transition-colors duration-150"
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 border border-white/15 text-white/80 text-[10px] font-bold uppercase tracking-widest hover:border-white/35 hover:text-white transition-colors duration-150"
                 >
                   <LogIn className="w-3.5 h-3.5" />
                   Sign In
@@ -190,7 +190,7 @@ export default function AppLayout({ children, preserveLoginFrom = true }) {
                   <Link
                     to="/register"
                     state={authState}
-                    className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 border border-white/15 text-white/70 text-[10px] font-bold uppercase tracking-[0.1em] hover:border-white/35 hover:text-white transition-colors duration-150"
+                    className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 border border-white/15 text-white/70 text-[10px] font-bold uppercase tracking-widest hover:border-white/35 hover:text-white transition-colors duration-150"
                   >
                     <UserPlus className="w-3.5 h-3.5" />
                     Register
