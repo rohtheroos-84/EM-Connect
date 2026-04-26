@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { X, Loader2, Upload, Image as ImageIcon } from 'lucide-react';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { X, Loader2, Upload } from 'lucide-react';
 import { toApiUrl } from '../services/urls';
 
 const EVENT_CATEGORIES = [
@@ -33,40 +33,47 @@ function toLocalDatetimeString(iso) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+function buildInitialFormState(sourceEvent) {
+  return {
+    title: sourceEvent?.title || '',
+    description: sourceEvent?.description || '',
+    location: sourceEvent?.location || '',
+    startDate: toLocalDatetimeString(sourceEvent?.startDate),
+    endDate: toLocalDatetimeString(sourceEvent?.endDate),
+    capacity: sourceEvent?.capacity || 100,
+    category: sourceEvent?.category || '',
+    tags: Array.isArray(sourceEvent?.tags) ? sourceEvent.tags.join(', ') : '',
+  };
+}
+
+function hasFormChanges(currentForm, initialForm) {
+  return Object.keys(initialForm).some((key) => currentForm[key] !== initialForm[key]);
+}
+
 export default function EventFormModal({ event, onSubmit, onClose }) {
   const isEdit = !!event;
   const fileInputRef = useRef(null);
-  const [form, setForm] = useState({
-    title: '',
-    description: '',
-    location: '',
-    startDate: '',
-    endDate: '',
-    capacity: 100,
-    category: '',
-    tags: '',
-  });
+  const initialFormRef = useRef(buildInitialFormState(event));
+  const initialBannerPreviewRef = useRef(event?.bannerUrl ? toApiUrl(event.bannerUrl) : null);
+  const submitSucceededRef = useRef(false);
+  const [form, setForm] = useState(() => buildInitialFormState(event));
   const [bannerFile, setBannerFile] = useState(null);
-  const [bannerPreview, setBannerPreview] = useState(null);
+  const [bannerPreview, setBannerPreview] = useState(() => (event?.bannerUrl ? toApiUrl(event.bannerUrl) : null));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (event) {
-      setForm({
-        title: event.title || '',
-        description: event.description || '',
-        location: event.location || '',
-        startDate: toLocalDatetimeString(event.startDate),
-        endDate: toLocalDatetimeString(event.endDate),
-        capacity: event.capacity || 100,
-        category: event.category || '',
-        tags: Array.isArray(event.tags) ? event.tags.join(', ') : '',
-      });
-      if (event.bannerUrl) {
-        setBannerPreview(toApiUrl(event.bannerUrl));
-      }
-    }
+    const nextInitialForm = buildInitialFormState(event);
+    const nextInitialBannerPreview = event?.bannerUrl ? toApiUrl(event.bannerUrl) : null;
+
+    initialFormRef.current = nextInitialForm;
+    initialBannerPreviewRef.current = nextInitialBannerPreview;
+    submitSucceededRef.current = false;
+
+    setForm(nextInitialForm);
+    setBannerFile(null);
+    setBannerPreview(nextInitialBannerPreview);
+    setError(null);
   }, [event]);
 
   // Cleanup blob URL on unmount
@@ -78,14 +85,42 @@ export default function EventFormModal({ event, onSubmit, onClose }) {
     };
   }, [bannerPreview]);
 
+  const isDirty = useMemo(() => {
+    const formDirty = hasFormChanges(form, initialFormRef.current);
+    const initialBannerPreview = initialBannerPreviewRef.current;
+    const bannerDirty =
+      !!bannerFile ||
+      (initialBannerPreview && !bannerPreview) ||
+      (!initialBannerPreview && !!bannerPreview) ||
+      (!!initialBannerPreview && !!bannerPreview && initialBannerPreview !== bannerPreview);
+
+    return formDirty || bannerDirty;
+  }, [form, bannerFile, bannerPreview]);
+
+  const handleRequestClose = () => {
+    if (saving) return;
+
+    if (submitSucceededRef.current || !isDirty) {
+      onClose();
+      return;
+    }
+
+    const shouldDiscard = window.confirm('You have unsaved changes. Discard them and close this form?');
+    if (shouldDiscard) {
+      onClose();
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
+    submitSucceededRef.current = false;
     setForm((prev) => ({ ...prev, [name]: name === 'capacity' ? Number(value) : value }));
   };
 
   const handleBannerSelect = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    submitSucceededRef.current = false;
     if (file.size > 5 * 1024 * 1024) {
       setError('Banner image must be under 5 MB');
       return;
@@ -104,6 +139,7 @@ export default function EventFormModal({ event, onSubmit, onClose }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    submitSucceededRef.current = false;
     setError(null);
     setSaving(true);
     try {
@@ -117,7 +153,9 @@ export default function EventFormModal({ event, onSubmit, onClose }) {
         endDate: form.endDate ? new Date(form.endDate).toISOString() : null,
       };
       await onSubmit(payload, bannerFile);
+      submitSucceededRef.current = true;
     } catch (err) {
+      submitSucceededRef.current = false;
       setError(err.message || 'Failed to save event');
     } finally {
       setSaving(false);
@@ -125,7 +163,7 @@ export default function EventFormModal({ event, onSubmit, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={handleRequestClose}>
       <div
         className="bg-bauhaus-bg border border-[#1F2937]/30 w-full max-w-lg max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
@@ -143,7 +181,9 @@ export default function EventFormModal({ event, onSubmit, onClose }) {
             {isEdit ? 'Edit Event' : 'Create Event'}
           </h2>
           <button
-            onClick={onClose}
+            type="button"
+            onClick={handleRequestClose}
+            disabled={saving}
             className="w-8 h-8 flex items-center justify-center text-bauhaus-fg/50 hover:text-bauhaus-fg transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
@@ -314,6 +354,7 @@ export default function EventFormModal({ event, onSubmit, onClose }) {
                 <button
                   type="button"
                   onClick={() => {
+                    submitSucceededRef.current = false;
                     setBannerFile(null);
                     if (bannerPreview.startsWith('blob:')) URL.revokeObjectURL(bannerPreview);
                     setBannerPreview(null);
@@ -348,7 +389,8 @@ export default function EventFormModal({ event, onSubmit, onClose }) {
           <div className="flex items-center justify-end gap-3 pt-2">
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleRequestClose}
+              disabled={saving}
               className="px-4 py-2 text-xs font-bold text-bauhaus-fg/60 uppercase tracking-wider hover:text-bauhaus-fg transition-colors cursor-pointer"
             >
               Cancel
