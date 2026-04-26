@@ -235,9 +235,9 @@ Prevent accidental data loss while creating or editing events.
 - Warn before closing modal if there are unsaved edits.
 
 #### Checklist
-- [ ] Detect dirty state for all editable fields (including banner selection).
-- [ ] Confirm before close on backdrop/X/cancel when form is dirty.
-- [ ] Skip warning when submit succeeds or no changes were made.
+- [x] Detect dirty state for all editable fields (including banner selection).
+- [x] Confirm before close on backdrop/X/cancel when form is dirty.
+- [x] Skip warning when submit succeeds or no changes were made.
 
 ### 6) Not Found Page for Unknown Routes
 
